@@ -23,10 +23,12 @@ om een aangepaste kopie te maken kun je als tweede argument opgeven:
 import os
 import sys
 import shutil
-basepath = os.path.dirname(__file__)
+basepath = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(basepath))
 appsfile = os.path.join(basepath,"apps.dat")
 USAGE = __doc__
+ROOT_FILES = ('__init__','models','views','urls','admin','initial_data.json')
+TEMPLATE_FILES = ('index','actie','tekst','voortgang','select','order','settings')
 
 def copyover(root,name,appname):
     name = name if "." in name else name + ".py"
@@ -35,7 +37,7 @@ def copyover(root,name,appname):
     with open(os.path.join(copyfrom,name)) as oldfile:
         with open(os.path.join(copyto,name),"w") as newfile:
             for line in oldfile:
-               if "basic" in line:
+                if "basic" in line:
                     if name == "models.py":
                         line = line.replace("basic",root)
                     else:
@@ -94,19 +96,23 @@ def newproj(*args):
     if action == "undo":
         print("removing app root...")
         shutil.rmtree(os.path.join(basepath,root))
-        if root != "probreg":
+        if root != "actiereg":
             print("removing templates...")
             shutil.rmtree(os.sep.join((basepath,"templates",root)))
     elif action in ("copy", "all"):
         print("creating and populating app root...")
         os.mkdir(os.path.join(basepath,root))
-        newfile = open(os.sep.join((basepath,root,"__init__.py")),"w")
-        newfile.close()
-        for name in ('models','views','urls','admin','initial_data.json'):
+        ## newfile = open(os.sep.join((basepath,root,"__init__.py")),"w")
+        ## newfile.close()
+        for name in ROOT_FILES:
             copyover(root,name,app)
-        if root != "probreg":
-                print("creating templates...")
-                shutil.copytree(basepath + "/templates/probreg",basepath + "/templates/" + root)
+        if root != "actiereg":
+            print("creating templates...")
+            newdir = os.path.join(basepath,"templates",root)
+            os.mkdir(newdir)
+            for name in TEMPLATE_FILES:
+                with open(os.path.join(newdir,"{0}.html".format(name)),"w") as f:
+                    f.write(' '.join(("{% extends",'"basic/{0}.html"'.format(name)," %}\n")))
     if action in ("activate", "all", "undo"):
         # toevoegen aan settings.py (INSTALLED_APPS)
         print("updating settings...")
@@ -114,7 +120,7 @@ def newproj(*args):
         schrijf = False
         with open(old) as oldfile:
             with open(new,"w") as newfile:
-                new_line = "    'probreg.{0}',\n".format(root)
+                new_line = "    'actiereg.{0}',\n".format(root)
                 for line in oldfile:
                     if line.strip() == "INSTALLED_APPS = (":
                         schrijf = True
@@ -131,7 +137,7 @@ def newproj(*args):
         schrijf = False
         with open(old) as oldfile:
             with open(new,"w") as newfile:
-                new_line = "    (r'^{0}/', include('probreg.{0}.urls')),\n".format(root)
+                new_line = "    (r'^{0}/', include('actiereg.{0}.urls')),\n".format(root)
                 for line in oldfile:
                     if line.strip().startswith('urlpatterns'):
                         schrijf = True
@@ -145,7 +151,7 @@ def newproj(*args):
         # database aanpassen en initiele settings data opvoeren
         if action != "undo":
             sys.path.append(basepath)
-            os.environ["DJANGO_SETTINGS_MODULE"] = 'probreg.settings'
+            os.environ["DJANGO_SETTINGS_MODULE"] = 'actiereg.settings'
             import settings
             from django.contrib.auth.models import Group, Permission
             print("modifying database...")

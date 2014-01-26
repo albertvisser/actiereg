@@ -3,10 +3,10 @@
 import sys
 import os
 sys.path.append("/home/visser/django")
-os.environ["DJANGO_SETTINGS_MODULE"] = 'probreg.settings'
+os.environ["DJANGO_SETTINGS_MODULE"] = 'actiereg.settings'
 import sqlite3 as sql
 import settings
-import probreg._basic.models as my
+import actiereg._basic.models as my
 from django.contrib.auth.models import User, Group
 from probreg import dml
 

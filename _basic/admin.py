@@ -1,4 +1,4 @@
-import probreg._basic.models as my
+import actiereg._basic.models as my
 from django.contrib import admin
 
 admin.site.register(my.Status)

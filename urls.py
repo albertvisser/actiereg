@@ -6,13 +6,13 @@ admin.autodiscover()
 
 urlpatterns = patterns('',
     # Example:
-    # (r'^probreg/', include('probreg.foo.urls')),
-    (r'^$','probreg.views.index'),
-    (r'^new/$','probreg.views.new'),
-    (r'^add/$','probreg.views.add'),
+    # (r'^actiereg/', include('actiereg.foo.urls')),
+    (r'^$','actiereg.views.index'),
+    (r'^new/$','actiereg.views.new'),
+    (r'^add/$','actiereg.views.add'),
     (r'^accounts/login/$', 'django.contrib.auth.views.login'),
-    (r'^logout/$','probreg.views.log_out'),
-    (r'^basic/', include('probreg._basic.urls')),
+    (r'^logout/$','actiereg.views.log_out'),
+    (r'^basic/', include('actiereg._basic.urls')),
 
     # Uncomment the admin/doc line below and add 'django.contrib.admindocs'
     # to INSTALLED_APPS to enable admin documentation:

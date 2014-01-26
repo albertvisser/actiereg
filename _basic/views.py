@@ -8,7 +8,7 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 import django.contrib.auth.models as aut
 ## import sample_data as sd
-import probreg._basic.models as my
+import actiereg._basic.models as my
 import datetime as dt
 ROOT = "basic"
 NAME = "demo"

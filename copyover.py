@@ -2,7 +2,7 @@ import sys
 import os
 import dml
 import pprint as pp
-## os.environ["DJANGO_SETTINGS_MODULE"] = 'probreg.settings'
+## os.environ["DJANGO_SETTINGS_MODULE"] = 'actiereg.settings'
 import settings
 import _basic.models as my
 from django.contrib.auth.models import User

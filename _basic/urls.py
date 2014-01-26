@@ -1,6 +1,6 @@
 from django.conf.urls.defaults import *
 
-urlpatterns = patterns('probreg._basic.views',
+urlpatterns = patterns('actiereg._basic.views',
     (r'^$',                                                       'index'),
     (r'^index/$',                                                 'index'),
     (r'^select/$',                                                'select'),
@@ -12,6 +12,7 @@ urlpatterns = patterns('probreg._basic.views',
     (r'^wijzigtabs/$',                                            'settabs'),
     (r'^wijzigtypes/$',                                           'settypes'),
     (r'^wijzigstats/$',                                           'setstats'),
+    (r'^koppel/$',                                                'koppel'),
     (r'^(?P<actie>nieuw)/$',                                      'detail'),
     (r'^(?P<actie>\d+)/$',                                        'detail'),
     (r'^(?P<actie>\d+)/detail/$',                                 'detail'),
