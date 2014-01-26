@@ -15,7 +15,7 @@ function setvervolg() {
 <hr/><div style="text-align: center"><h2>{{page_titel}}</h2></div>
 <hr/> -->
 <form id="textform" action="/{{root}}/{{actie.id}}/{{page}}/update/" method="post">
-<div><textarea name="data" cols="80" rows="28"
+<div><textarea name="data" cols="106" rows="38"
     {% if actie.arch or readonly %}readonly="readonly"{% endif %}>{{page_text}}</textarea>
     </div>
 <div>{% if not actie.arch and not readonly %}
