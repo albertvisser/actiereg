@@ -639,7 +639,7 @@ def wijzig(root,my,request,actie="",doe=""):
         # indien nodig eerst naar doctool om de actie af te melden of te herleven
         follow = my.Event.objects.filter(actie=actie.id).order_by('id')[0].text
         if follow.startswith(UIT_DOCTOOL):
-            doc = "{0}meld/?status={1}&from={2}".format(follow.split()[-1],doe,doc)
+            doc = "{0}meld/?status={1}&from={2}".format(follow.split()[-1].strip(),doe,doc)
     return HttpResponseRedirect(doc)
 
 def tekst(root,name,my,request,actie="",page=""):
