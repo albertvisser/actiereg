@@ -1,4 +1,37 @@
 {% extends "base_site.html" %}
+{% block extrastyle %}<style>
+div.clear,
+span.clear {
+	background: none;
+	border: 0;
+	clear: both;
+	display: block;
+	float: none;
+	font-size: 0;
+	margin: 0;
+	padding: 0;
+	overflow: hidden;
+	visibility: hidden;
+	width: 0;
+	height: 0;
+}
+.col_link,
+.col_stats {
+/*    font-family:"Lucida Grande", Verdana, Arial, sans-serif;
+    line-height:13px; border-top:1px solid #eee; vertical-align:top;
+    padding: 5px 0 5px 0 ;
+    font-size:11px; */
+    display: inline;
+	float: left;
+}
+.col_link {
+	width: 500px;
+}
+.col_stats {
+    text-align: center;
+	width: 300px;
+}
+</style> {% endblock %}
 
 {% block branding %}<h1>ActieRegistratie | Start</h1>{% endblock %}
 
@@ -12,8 +45,16 @@
 <h4>Kies een project:</h4>
 <!-- <a href="/basic/" title="basis model">Basic</a> -->
 <div style="max-height: 600px; overflow: auto">
+<div><div class="col_link">&nbsp;</div>
+    <div class="col_stats">open acties / in behandeling</div>
+    <div class="clear">&nbsp;</div>
+    </div>
 {% for app in apps %}
-<div><a href="/{{app.root}}/" title="{{app.name}}">{{app.name|capfirst}}: {{app.desc}}</a></div>
+<div><div class="col_link">
+    <a href="/{{app.root}}/" title="{{app.name}}">{{app.name|capfirst}}: {{app.desc}}</a></div>
+    <div class="col_stats">{{app.open}} / {{app.active}} </div>
+    <div class="clear">&nbsp;</div>
+    </div>
 {% endfor %}
 </div>
 <hr/>
@@ -27,7 +68,6 @@
 {% endif %}
 <h5>TODO: </h5>
 <ul>
-    <li>meldingen komen nog niet op het detailscherm</li>
     <li>systeem events kunnen nog gewijzigd worden</li>
     <li>weergave velden in lijst flexibel maken (net als sortering)?</li>
 </ul>

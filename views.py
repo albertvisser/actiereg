@@ -6,7 +6,8 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render_to_response, get_object_or_404
-from settings import MEDIA_ROOT
+from django.db import connection
+from settings import MEDIA_ROOT, DATABASE_NAME
 import os
 import shutil
 appsfile = os.path.join(os.path.split(__file__)[0],"apps.dat")
@@ -23,20 +24,27 @@ def index(request):
             msg += ' <a href="/">hier</a> om terug te gaan naar het begin.'
    app_list = [{"name": ''},]
     new_apps = []
+    cursor = connection.cursor()
     with open(appsfile) as apps:
         for app in apps:
             ok,root,name,desc = app.split(";")
             if name == "Demo":
                 continue
             if ok == "X":
+                doe = "select count(*) from {0}_actie where arch = 0".format(root)
+                all_open = cursor.execute(doe).fetchone()[0]
+                doe += " and status_id > 1"
+                all_active = cursor.execute(doe).fetchone()[0]
                 for ix, item in enumerate(app_list):
                     inserted = False
                     if item['name'].lower() > name.lower():
-                        app_list.insert(ix, {"root": root,"name": name,"desc": desc})
+                        app_list.insert(ix, {"root": root,"name": name,
+                            "desc": desc, "open": all_open, "active": all_active})
                         inserted = True
                         break
                 if not inserted:
-                    app_list.append({"root": root,"name": name,"desc": desc})
+                    app_list.append({"root": root,"name": name,"desc": desc,
+                        "open": all_open, "active": all_active})
             else:
                 new_apps.append({"root": root,"name": name,"desc": desc})
     app_list.pop(0)
