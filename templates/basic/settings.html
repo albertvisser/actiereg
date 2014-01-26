@@ -1,6 +1,66 @@
 {% extends "basic/base_site.html" %}
 {% block branding %}<h1>{{name|capfirst}} | Instellingen</h1>{% endblock %}
 {% block extrahead %}
+<style>
+div.clear,
+span.clear {
+	background: none;
+	border: 0;
+	clear: both;
+	display: block;
+	float: none;
+	font-size: 0;
+	margin: 0;
+	padding: 0;
+	overflow: hidden;
+	visibility: hidden;
+	width: 0;
+	height: 0;
+}
+.col {
+    font-family:"Lucida Grande", Verdana, Arial, sans-serif;
+    line-height:13px; border-top:1px solid #eee; vertical-align:top;
+    padding: 5px 0 5px 0 ;
+    font-size:11px;
+    display: inline;
+	float: left;
+}
+.head {
+    font-size:12px;
+    font-weight:bold;
+}
+.bold {
+    font-weight:bold;
+}
+.sel_left {
+	width: 130px;
+    text-align: center;
+}
+.sel_mid {
+	width: 100px;
+}
+.sel_right {
+	width: 175px;
+    text-align: center;
+}
+.tab {
+	width: 110px;
+}
+.set_ord {
+	width: 80px;
+    text-align: center;
+}
+.set_nam {
+	width: 140px;
+}
+.set_wrd {
+	width: 80px;
+    text-align: center;
+}
+.set_del {
+	width: 110px;
+}
+</style>
 <script type="text/javascript">
 function move_item(from, to)
 {
@@ -39,19 +99,27 @@ function herbepaal(o,p)
 <hr/>
 <a name="usr"></a>
 <div><h3>Gebruikers</h3></div>
-<form action="/{{root}}/wijzigusers/" method="post"><table><tr>
-    <td>Bekende gebruikers:<br/>
+<form action="/{{root}}/wijzigusers/" method="post">
+<div>
+    <div class="col sel_left bold">Bekende gebruikers:</div>
+    <div class="col sel_mid">&nbsp;</div>
+    <div class="col sel_right bold">Gebruikers voor dit project:</div>
+    <div class="clear">&nbsp;</div></div>
+<div>
+    <div class="col sel_left">
         <select name="AllUsers" multiple="multiple" size="6">{% for usr in all_users %}
-            <option value="{{ usr.id }}">{{ usr }}</option>{% endfor %}</select></td>
-    <td valign="middle"><br/>  <br/>
+            <option value="{{ usr.id }}">{{ usr }}</option>{% endfor %}</select></div>
+    <div class="col sel_mid"><br/><br/>&nbsp;&nbsp;
         <input type="button" name="pbAdd" value="toevoegen ->"
-            onclick="move_item(AllUsers, ProjUsers)"><br/>
+            onclick="move_item(AllUsers, ProjUsers)"><br/>&nbsp;&nbsp;&nbsp;
         <input type="button" name="pbDel" value="<- weghalen"
-            onclick="move_item(ProjUsers,AllUsers)"/><br/></td>
-    <td>Gebruikers voor dit project:<br/>
+            onclick="move_item(ProjUsers,AllUsers)"/><br/></div>
+    <div class="col sel_right">
         <select name="ProjUsers" multiple="multiple" size="6">{% for usr in proj_users %}
             <option value="{{ usr.assigned.id }}">{{ usr.assigned }}</option>{% endfor %}
-            </select></td></tr></table>
+            </select></div>
+    <div class="clear">&nbsp;</div>
+</div>
     <input type="hidden" name="result" />
     <input type="submit" value="aanpassen"  onclick="herbepaal(ProjUsers,result)"/>
     <a href="/{{root}}/" title="back"><input type="button" value="terug naar actielijst"/></a>
@@ -60,9 +128,11 @@ function herbepaal(o,p)
 <hr/>
 <a name="tab"></a>
 <div><h3>Tab headers</h3></div>
-<form action="/{{root}}/wijzigtabs/" method="post"><table><tr>
-    {% for page in pages %}<td><input type="text" name="page{{forloop.counter}}"
-        value="{{page.title}}" size="13"/></td>{% endfor %}</tr></table>
+<form action="/{{root}}/wijzigtabs/" method="post">
+    <div>{% for page in pages %}
+        <div class="col tab"><input type="text" name="page{{forloop.counter}}"
+            value="{{page.title}}" size="13"/></div>{% endfor %}
+         <div class="clear">&nbsp;</div></div>
     <input type="submit" value="aanpassen"/>
     <a href="/{{root}}/" title="back"><input type="button" value="terug naar actielijst"/></a>
     <a href="#top">terug naar het begin van de pagina</a>
@@ -70,22 +140,30 @@ function herbepaal(o,p)
 <hr/>
 <a name="srt"></a>
 <div><h3>Soorten acties</h3></div>
-<form action="/{{root}}/wijzigtypes/" method="post"><table>
-    <tr><th>volgorde</th><th>titel</th><th>waarde</th></tr>
+<form action="/{{root}}/wijzigtypes/" method="post">
+<div>
+    <div class="col set_ord bold">volgorde</div>
+    <div class="col set_nam bold">titel</div>
+    <div class="col set_wrd bold">waarde</div>
+    <div class="col set_del">&nbsp;</div>
+    <div class="clear">&nbsp;</div>
     {% for soort in soorten %}
-<tr>
-<td><input type="text" name="order{{forloop.counter}}" value="{{soort.order}}" size="2"/></td>
-<td><input type="text" name="title{{forloop.counter}}" value="{{soort.title}}"/></td>
-<td><input type="text" name="value{{forloop.counter}}" value="{{soort.value}}" size="2"/></td>
-<td><input type="checkbox" name="del{{forloop.counter}}" value="X">verwijderen</input></td>
-</tr>
-{% endfor %}
-<tr>
-<td><input type="text" name="order0" value="" size="2"/></td>
-<td><input type="text" name="title0" value=""/></td>
-<td><input type="text" name="value0" value="" size="2"/></td>
-</tr>
-</table>
+    <div class="col set_ord">
+        <input type="text" name="order{{forloop.counter}}" value="{{soort.order}}" size="2"/></div>
+    <div class="col set_nam">
+        <input type="text" name="title{{forloop.counter}}" value="{{soort.title}}"/></div>
+    <div class="col set_wrd">
+        <input type="text" name="value{{forloop.counter}}" value="{{soort.value}}" size="2"/></div>
+    <div class="col set_del">
+        <input type="checkbox" name="del{{forloop.counter}}" value="X">verwijderen</input></div>
+    <div class="clear">&nbsp;</div>
+    {% endfor %}
+    <div class="col set_ord"><input type="text" name="order0" value="" size="2"/></div>
+    <div class="col set_nam"><input type="text" name="title0" value=""/></div>
+    <div class="col set_wrd"><input type="text" name="value0" value="" size="2"/></div>
+    <div class="col set_del">&nbsp;</div>
+    <div class="clear">&nbsp;</div>
+</div>
 <input type="submit" value="aanpassen"/> (vul de onderste regel in om toe te voegen)
 <a href="/{{root}}/" title="back"><input type="button" value="terug naar actielijst"/></a>
         <a href="#top">terug naar het begin van de pagina</a>
@@ -94,22 +172,29 @@ function herbepaal(o,p)
 <a name="stat"></a>
 <div><h3>Mogelijke statussen</h3></div>
 <form action="/{{root}}/wijzigstats/" method="post">
-<table>
-<tr><th>volgorde</th><th>titel</th><th>waarde</th></tr>
-{% for stat in stats %}
-<tr>
-<td><input type="text" name="order{{forloop.counter}}" value="{{stat.order}}" size="2"/></td>
-<td><input type="text" name="title{{forloop.counter}}" value="{{stat.title}}"/></td>
-<td><input type="text" name="value{{forloop.counter}}" value="{{stat.value}}" size="2"/></td>
-<td><input type="checkbox" name="del{{forloop.counter}}" value="X">verwijderen</input></td>
-</tr>
-{% endfor %}
-<tr>
-<td><input type="text" name="order0" value="" size="2"/></td>
-<td><input type="text" name="title0" value=""/></td>
-<td><input type="text" name="value0" value="" size="2"/></td>
-</tr>
-</table>
+<div>
+    <div class="col set_ord bold">volgorde</div>
+    <div class="col set_nam bold">titel</div>
+    <div class="col set_wrd bold">waarde</div>
+    <div class="col set_del">&nbsp;</div>
+    <div class="clear">&nbsp;</div>
+    {% for stat in stats %}
+    <div class="col set_ord">
+        <input type="text" name="order{{forloop.counter}}" value="{{stat.order}}" size="2"/></div>
+    <div class="col set_nam">
+        <input type="text" name="title{{forloop.counter}}" value="{{stat.title}}"/></div>
+    <div class="col set_wrd">
+        <input type="text" name="value{{forloop.counter}}" value="{{stat.value}}" size="2"/></div>
+    <div class="col set_del">
+        <input type="checkbox" name="del{{forloop.counter}}" value="X">verwijderen</input></div>
+    <div class="clear">&nbsp;</div>
+    {% endfor %}
+    <div class="col set_ord"><input type="text" name="order0" value="" size="2"/></div>
+    <div class="col set_nam"><input type="text" name="title0" value=""/></div>
+    <div class="col set_wrd"><input type="text" name="value0" value="" size="2"/></div>
+    <div class="col set_del">&nbsp;</div>
+    <div class="clear">&nbsp;</div>
+</div>
 <input type="submit" value="aanpassen"/> (vul de onderste regel in om toe te voegen)
 <a href="/{{root}}/" title="back"><input type="button" value="terug naar actielijst"/></a>
         <a href="#top">terug naar het begin van de pagina</a>
