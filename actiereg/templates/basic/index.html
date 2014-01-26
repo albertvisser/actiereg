@@ -75,7 +75,7 @@ span.clear {
   <div class="col_when"> {{actie.gewijzigd|date:"d-m-Y H:i:s"}} {{actie.lasteditor}} {% if actie.arch %} (A){%endif %} </div>
   <div class="col_oms"> {{actie.about}}: {{actie.title|trimat:50}} </div>
   <div class="clear">&nbsp;</div>
-% endfor %}
+{% endfor %}
 </div>
 {% else %}
 <div>{{geen_items|safe}}</div>

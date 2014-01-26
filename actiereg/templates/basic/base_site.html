@@ -50,7 +50,7 @@ span.clear {
 {% block content %}
 <div class="col_all">
     {%if message %}<span style="color: red"> {{ message }}</span>{% else %}{{msg|safe}}
-    {% endif %}</div><div class="clear">&nbsp;</div></div>
+    {% endif %}</div><div class="clear">&nbsp;</div>
 <div class="col_item"><a href="/">Home</a></div>
 {% for page in pages %}<div class="col_item">{% if forloop.first or actie %}
     <a href="/{{root}}/{% if actie and not forloop.first%}{{actie.id}}/{%endif%}{{page.link}}/">

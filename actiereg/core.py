@@ -261,7 +261,8 @@ def settings(root, name, my, request):
         "all_users": all_users,
         "proj_users": proj_users, # .order_by('username')
         }
-    return render_to_response(root + '/settings.html', page_data)
+    return render_to_response(root + '/settings.html', page_data,
+        context_instance=RequestContext(request))
 
 def setusers(root, my, request):
     """users aan project koppelen"""
@@ -417,8 +418,8 @@ def select(root, name, my, request):
             return HttpResponse("Unknown search argument: " + self.veldnm)
         ## testdata += str(page_data["selected"][sel.veldnm]) + "<br/>"
     ## return HttpResponse(testdata) # "<br>".join([str(x) for x in page_data["selected"].items()]))
-+    return render_to_response(root + '/select.html', page_data,
-+        context_instance=RequestContext(request))
+    return render_to_response(root + '/select.html', page_data,
+        context_instance=RequestContext(request))
 
 def setsel(root, my, request):
     """
@@ -617,6 +618,7 @@ def wijzig(root, my, request, actie="", doe=""):
     actor = int(data.get("user", "0"))
     soort = data.get("soort", " ")
     status = int(data.get("status", "1"))
+    arch = data.get("archstat", "False")
     vervolg = data.get("vervolg", "")
     arch = True if arch == "True" else False
     if actie == "nieuw":
@@ -626,12 +628,16 @@ def wijzig(root, my, request, actie="", doe=""):
         actie.behandelaar = request.user
         ## actie.start = start
         doe = "nieuw"
-        srt, stat = my.Soort.objects.get(value=" "), my.Status.objects.get(value="0")
+        try:
+            srt = my.Soort.objects.get(value="")
+        except ObjectDoesNotExist:
+            srt = my.Soort.objects.get(value=" ")
+        stat = my.Status.objects.get(value="0")
     else:
         actie = get_object_or_404(my.Actie, pk=actie)
         over, wat, wie = actie.about, actie.title, actie.behandelaar
         srt, stat = actie.soort, actie.status
-        arch = actie.arch
+        ## arch = actie.arch
     actie.about = about
     actie.title = title
     oldarch = actie.arch
@@ -807,6 +813,7 @@ def events(root, name, my, request, actie="", event="", msg=''):
             inuit = 'in'
         msg += '?next=/{0}/{1}/voortg/">hier</a> om {2} te loggen.'.format(root,
             actie, inuit)
+    msg += " Klik op een voortgangsregel om de tekst nader te bekijken."
     actie = my.Actie.objects.select_related().get(id=actie)
     page_data = {
         "name": name,

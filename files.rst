@@ -1,39 +1,51 @@
 Files in this directory
 =======================
 
-__init__.py
-    (lege) package indicator
-copyover.py
-    utility programma om xml over te halen naar sqlite database
-core.py
-    code waar de views in de subdirectories naar verwijzen
 fcgi_handler.py
     maakt het mogelijk deze site via fastcgi te draaien
 files.rst
     this file
+.hgignore
+    voor mercurial te negeren files
+manage.py
+    controle module
+readme.rst
+    basic info
+wsgi_handler.py
+    maakt het mogelijk deze site via wsgi te draaien
+
+actiereg (project directory)
+............................
+
+__init__.py
+    (lege) package indicator
+apps.dat.origineel
+    lijst met aangevraagde/opgenomen applicaties
+    (copy to apps.dat to make it work)
+copyover.py
+    utility programma om xml over te halen naar sqlite database
+core.py
+    code waar de views in de subdirectories naar verwijzen
 lees_probreg.py
     utility voor het utlezen van de gui/xml versie
 loaddata.py
     utility programma; onderdeel van newapp
-manage.py
-    controle module
 newapp.py
     utility programma: realiseren nieuw project
 settings.py.origineel
-    site instellingen
+    site instellingen (copy to settings.py and adapt to local specifications to make it work)
 urls.py.origineel
-    root url dispatcher
+    root url dispatcher (similar)
 views.py
     root views voor django
-wsgi_handler.py
-    maakt het mogelijk deze site via wsgi te draaien
 
-_basic/
-.......
-    views.py bevat de programmatuur voor een specifiek project
-    in de vorm van aanroepen naar gelijknamige routines in core.py
-    moet per project gekopieerd worden naar aparte map
-    dat biedt de mogelijkheid om dat per project specifieker te maken
+actiereg/_basic/ (primary app directory)
+........................................
+de views.py hier bevat de programmatuur voor een specifiek project
+in de vorm van aanroepen naar gelijknamige routines in core.py
+moet per project gekopieerd worden naar aparte map
+dat biedt de mogelijkheid om dat per project specifieker te maken
+
 __init__.py
     (lege) package indicator
 admin.py
@@ -49,20 +61,22 @@ urls.py
 views.py
     project views
 
-_basic/templatetags/
-....................
-    bevat zelfgedefinieerde tags
+actiereg/_basic/templatetags/
+.............................
+bevat zelfgedefinieerde tags
+
 __init__.py
     (lege) package indicator
 extratags.py
     de eigenlijke code
 
-templates/
-..........
+actiereg/templates/
+...................
+
 base.html
-    elementair template
+    basis template
 base_site.html
-    algemene uitbrieding van base
+    algemene uitbreiding van base
 index.html
     startpagina
 logged_out.html
@@ -70,12 +84,13 @@ logged_out.html
 nieuw.html
     pagina voor aanmelden nieuw project
 
-templates/basic/
-................
-    bevat de templates voor een project
-    bij het aanmaken van een nieuw project worden koppelingen naar deze aangemaakt
-    deze voor elk project apart hebben geeft de mogelijkheid om de
-    templates specifieker te maken zonder de andere projecten te raken
+actiereg/templates/basic/
+.........................
+bevat de templates voor een project
+bij het aanmaken van een nieuw project worden koppelingen naar deze aangemaakt
+deze voor elk project apart hebben geeft de mogelijkheid om de
+templates specifieker te maken zonder de andere projecten te raken
+
 actie.html
     pagina voor weergave actiegegevens
 base_site.html
@@ -95,7 +110,14 @@ tekst.html
 voortgang.html
     pagina voor tonen/aanpassen voortgangsmomenten
 
-templates/registration/
-.......................
+actiereg/templates/registration/
+................................
+
 login.html
     aanlog pagina
+
+actiereg/static
+...............
+
+admin
+    symlink naar admin css

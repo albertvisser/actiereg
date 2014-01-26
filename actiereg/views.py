@@ -14,7 +14,7 @@ import os
 import shutil
 appsfile = os.path.join(os.path.split(__file__)[0],"apps.dat")
 
-+def index(request, msg=""):
+def index(request, msg=""):
     ## msg = request.GET.get("msg", "")
     if not msg:
         if request.user.is_authenticated():
@@ -24,7 +24,7 @@ appsfile = os.path.join(os.path.split(__file__)[0],"apps.dat")
             msg = 'U bent niet ingelogd. '
             msg += 'Klik <a href="accounts/login/?next=/">hier</a> om in te loggen,'
             msg += ' <a href="/">hier</a> om terug te gaan naar het begin.'
-   app_list = [{"name": ''},]
+    app_list = [{"name": ''},]
     new_apps = []
     cursor = connection.cursor()
     with open(appsfile) as apps:
