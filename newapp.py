@@ -70,7 +70,7 @@ def newproj(*args):
         else:
             load_from = args[2]
     elif action not in ("copy", "activate", "undo", "all"):
-        return "foutief tweede argument\n\n" + USAGE
+        return "foutief tweede argument (actie)\n\n" + USAGE
     elif len(args) > 2:
         return "teveel argumenten\n\n" + USAGE
     found = False
@@ -93,6 +93,7 @@ def newproj(*args):
     if rt != root:
         return "leek goed, maar toch klopt de projectnaam niet"
 
+    print('performing actions for project "{0}":'.format(root))
     if action == "undo":
         print("removing app root...")
         shutil.rmtree(os.path.join(basepath,root))
