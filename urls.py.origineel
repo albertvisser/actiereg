@@ -8,6 +8,7 @@ urlpatterns = patterns('',
     # Example:
     # (r'^actiereg/', include('actiereg.foo.urls')),
     (r'^$','actiereg.views.index'),
+    (r'^msg/(?P<msg>.+)/$','actiereg.views.index'),
     (r'^new/$','actiereg.views.new'),
     (r'^add/$','actiereg.views.add'),
     (r'^addext/$','actiereg.views.add_from_doctool'),
