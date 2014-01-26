@@ -48,6 +48,40 @@ def koppel(root,my,request):
     data = request.POST
     vervolg = data.get("hFrom", "")
     usernaam = data.get("hUser", "")
+    actnum = data.get("tActie", "")
+    if actnum:
+        try:
+            actie = my.Actie.objects.get(nummer=actnum)
+        except my.Actie.DoesNotExist:
+            fout = 'Actie {} bestaat niet'.format(actnum)
+            if not vervolg:
+                msg = fout + " bij doorkoppelen vanuit DocTool zonder terugkeeradres"
+                response = "/{}/{}/mld/{}/".format(root, actie.id, msg)
+            else:
+                response = vervolg.format('0', fout)
+            return HttpResponseRedirect(response)
+        actie.starter = aut.User.objects.get(pk=1)
+        behandelaar = actie.starter
+        if usernaam:
+            try:
+                behandelaar = aut.User.objects.get(username=usernaam)
+            except ObjectDoesNotExist:
+                pass
+        actie.lasteditor = behandelaar
+        actie.save()
+        if not vervolg:
+            msg = "Aangepast vanuit DocTool zonder terugkeeradres"
+            response = "/{}/{}/mld/{}/".format(root, actie.id, msg)
+        else:
+            obj = my.Event.objects.filter(actie=actie.id).order_by('id')
+            text = "{} {}".format(UIT_DOCTOOL, vervolg.split('koppel')[0])
+            if obj:
+                obj[0].text += "; " + text
+                obj[0].save()
+            else:
+                store_event(my, text, actie, actie.starter)
+            response = vervolg.format(actie.id, actie.nummer)
+        return HttpResponseRedirect(response)
     volgnr = 0
     aant = my.Actie.objects.count()
     nw_date = dt.datetime.now()
@@ -80,21 +114,19 @@ def koppel(root,my,request):
     actie.lasteditor = actie.behandelaar
     actie.melding = data.get("hOpm", "")
     actie.save()
-    store_event(my,"{0} {1}".format(UIT_DOCTOOL, vervolg.split('koppel')[0]),
-        actie, actie.starter)
-    store_event(my,'titel: "{0}"'.format(actie.title), actie, actie.starter)
-    store_event(my,'categorie: "{0}"'.format(str(actie.soort)), actie, actie.starter)
-    store_event(my,'status: "{0}"'.format(str(actie.status)), actie, actie.starter)
+    if vervolg:
+        store_event(my,"{} {}".format(UIT_DOCTOOL, vervolg.split('koppel')[0]),
+            actie, actie.starter)
+    store_event(my,'titel: "{}"'.format(actie.title), actie, actie.starter)
+    store_event(my,'categorie: "{}"'.format(str(actie.soort)), actie, actie.starter)
+    store_event(my,'status: "{}"'.format(str(actie.status)), actie, actie.starter)
 
     if vervolg:
-        ## return HttpResponse("""\
-        ## vervolg: {0}<br/>
-        ## adres: {1}""".format(vervolg,vervolg.format(actie.id,actie.nummer)))
-        return HttpResponseRedirect(vervolg.format(actie.id, actie.nummer))
+        response = vervolg.format(actie.id, actie.nummer)
     else:
-        meld = "Opgevoerd vanuit DocTool zonder terugkeeradres"
-        return HttpResponseRedirect("/{0}/{1}/meld/?msg={2}".format(root,
-            actie.id, msg))
+        msg = "Opgevoerd vanuit DocTool zonder terugkeeradres"
+        response = "/{}/{}/mld/{}/".format(root, actie.id, msg)
+    return HttpResponseRedirect(response)
 
 def index(root, name, my, request, msg=''):
     """
@@ -651,7 +683,7 @@ def wijzig(root, my, request, actie="", doe=""):
         # indien nodig eerst naar doctool om de actie af te melden of te herleven
         doe = "arch" if actie.arch else "herl"
         follow = my.Event.objects.filter(actie=actie.id).order_by('id')[0].text
-        if follow.startswith(UIT_DOCTOOL):
+        if UIT_DOCTOOL in follow: # follow.startswith(UIT_DOCTOOL):
             doc = "{}meld/{}/{}/{}/".format(follow.split()[-1].strip(), doe, root,
                 actie.id)
     return HttpResponseRedirect(doc)
