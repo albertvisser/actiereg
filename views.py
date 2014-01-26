@@ -20,13 +20,27 @@ def index(request):
         msg += 'Klik <a href="accounts/login/?next=/">hier</a> om in te loggen,'
         msg += ' <a href="/">hier</a> om terug te gaan naar het begin.'
     msg = request.GET.get("msg","")
-    app_list = []
+    app_list = [{"name": ''},]
+    new_apps = []
     with open(appsfile) as apps:
         for app in apps:
             ok,root,name,desc = app.split(";")
+            if name == "Demo":
+                continue
             if ok == "X":
-                app_list.append({"root": root,"name": name,"desc": desc})
-    return render_to_response('index.html',{"apps": app_list, "msg": msg, "who": request.user})
+                for ix, item in enumerate(app_list):
+                    inserted = False
+                    if item['name'].lower() > name.lower():
+                        app_list.insert(ix, {"root": root,"name": name,"desc": desc})
+                        inserted = True
+                        break
+                if not inserted:
+                    app_list.append({"root": root,"name": name,"desc": desc})
+            else:
+                new_apps.append({"root": root,"name": name,"desc": desc})
+    app_list.pop(0)
+    return render_to_response('index.html',
+        {"apps": app_list, "new": new_apps, "msg": msg, "who": request.user})
 
 def new(request):
     "Toon het scherm om een nieuw project op te voeren"
