@@ -1,4 +1,43 @@
 {% extends "probreg/base_site.html" %}
+{% block extrastyle %}<style>
+div.clear,
+span.clear {
+	background: none;
+	border: 0;
+	clear: both;
+	display: block;
+	float: none;
+	font-size: 0;
+	margin: 0;
+	padding: 0;
+	overflow: hidden;
+	visibility: hidden;
+	width: 0;
+	height: 0;
+}
+.col_txt,
+.col_lbl,
+.col_inp {
+    font-family:"Lucida Grande", Verdana, Arial, sans-serif;
+    line-height:13px; border-top:1px solid #eee; vertical-align:top;
+    padding: 5px 0 5px 0 ;
+    font-size:11px;
+    display: inline;
+	float: left;
+}
+.col_txt,
+.col_lbl {
+    font-size:12px;
+    font-weight:bold;
+	width: 140px;
+}
+.col_lbl {
+    padding-top: 10px;
+}
+.col_inp {
+	width: 420px;
+}
+</style> {% endblock %}
 {% block extrahead %}
 <script type="text/javascript">
 function setvervolg() {
@@ -20,45 +59,44 @@ function check() {
 <form action="/{{root}}/{% if actie %}{{actie.id}}{% else %}nieuw{% endif %}/update/"
     method="post" onsubmit="return check()">
     <input type="hidden" name="nummer" value="{% if actie %}{{actie.nummer}}{% else %}{{nummer}}{% endif %}"/>
-    <table>
-    <tr>
-        <th>actie:</th>
-        <td>{% if actie %}{{actie.nummer}}{% else %}{{nummer}}{% endif %}</td></tr>
-    <tr>
-        <th>gemeld op:</th>
-        <td> {% if actie %}{{actie.start|date:"d-m-Y H:i:s"}}
-            {% else %}{{start|date:"d-m-Y H:i:s"}}{% endif %}
-            {% if actie %} door: {{actie.starter}}{% endif %}</td></tr>
-    <tr>
-        <th><label for = "about">betreft: </label></th>
-        <td><input type="text" {% if actie.arch %}readonly="readonly"{% endif %}
-            name="about" id="about" value="{{actie.about}}" /></td></tr>
-    <tr>
-        <th><label for = "title">omschrijving:</label></th>
-        <td><input  type="text" {% if actie.arch %}readonly="readonly"{% endif %}
-            name="title" id="title" value="{{actie.title}}" size="60"/></td></tr>
-    <tr>
-        <th><label for = "soort">soort:</label></th>
-        <td><select name="soort" {% if actie.arch %}readonly="readonly"{% endif %}>
-             {% for soort in soorten %}<option value="{{soort.value}}"
-                {% ifequal soort actie.soort %}selected="selected"{% endifequal %}>
-                {{soort.title}}</option>{% endfor %}</select></td></tr>
-    <tr>
-        <th><label for = "status">status:</label></th>
-        <td><select name="status" {% if actie.arch %}readonly="readonly"{% endif %}>
-            {% for stat in stats %}<option value="{{stat.value}}"
-            {% ifequal stat actie.status %}selected="selected"{% endifequal %}>
-            {{stat.title}}</option>{% endfor %}</select></td></tr>
-    <tr>
-        <th><label for="user">In behandeling bij:</label></th>
-        <td><select name="user" {% if actie.arch %}readonly="readonly"{% endif %}>
-            {% for user in users %}<option value="{{user.id}}"
-            {% if nieuw %} {% ifequal user nieuw %}selected="selected"{% endifequal %}
-            {%else %}{% ifequal user actie.behandelaar %}selected="selected"{% endifequal %}
-            {%endif%}>{{user}}</option>{% endfor %}</select></td></tr>
-{% if actie %}<tr><td colspan="2">Laatst gewijzigd op: {{actie.gewijzigd|date:"d-m-Y H:i:s"}}
-     door: {{actie.lasteditor}}</td></tr>{% endif %}
-</table>
+    <div class="col_txt">actie:</div>
+    <div class="col_inp">{% if actie %}{{actie.nummer}}{% else %}{{nummer}}{% endif %}</div>
+    <div class="clear">&nbsp;</div>
+    <div class="col_txt">gemeld op:</div>
+    <div class="col_inp"> {% if actie %}{{actie.start|date:"d-m-Y H:i:s"}}
+        {% else %}{{start|date:"d-m-Y H:i:s"}}{% endif %}
+        {% if actie %} door: {{actie.starter}}{% endif %}</div>
+    <div class="clear">&nbsp;</div>
+    <div class="col_lbl"><label for = "about">betreft: </label></div>
+    <div class="col_inp"><input type="text" {% if actie.arch %}readonly="readonly"{% endif %}
+        name="about" id="about" value="{{actie.about}}" /></div>
+    <div class="clear">&nbsp;</div>
+    <div class="col_lbl"><label for = "title">omschrijving:</label></div>
+    <div class="col_inp"><input  type="text" {% if actie.arch %}readonly="readonly"{% endif %}
+        name="title" id="title" value="{{actie.title}}" size="60"/></div>
+    <div class="clear">&nbsp;</div>
+    <div class="col_lbl"><label for = "soort">soort:</label></div>
+    <div class="col_inp"><select name="soort" {% if actie.arch %}readonly="readonly"{% endif %}>
+         {% for soort in soorten %}<option value="{{soort.value}}"
+            {% ifequal soort actie.soort %}selected="selected"{% endifequal %}>
+            {{soort.title}}</option>{% endfor %}</select></div>
+    <div class="clear">&nbsp;</div>
+    <div class="col_lbl"><label for = "status">status:</label></div>
+    <div class="col_inp"><select name="status" {% if actie.arch %}readonly="readonly"{% endif %}>
+        {% for stat in stats %}<option value="{{stat.value}}"
+        {% ifequal stat actie.status %}selected="selected"{% endifequal %}>
+        {{stat.title}}</option>{% endfor %}</select></div>
+    <div class="clear">&nbsp;</div>
+    <div class="col_lbl"><label for="user">In behandeling bij:</label></div>
+    <div class="col_inp"><select name="user" {% if actie.arch %}readonly="readonly"{% endif %}>
+        {% for user in users %}<option value="{{user.id}}"
+        {% if nieuw %} {% ifequal user nieuw %}selected="selected"{% endifequal %}
+        {%else %}{% ifequal user actie.behandelaar %}selected="selected"{% endifequal %}
+        {%endif%}>{{user}}</option>{% endfor %}</select></div>
+    <div class="clear">&nbsp;</div>
+{% if actie %}<div style="border-top:1px solid #eee; padding-top: 5px">Laatst gewijzigd op: {{actie.gewijzigd|date:"d-m-Y H:i:s"}}
+     door: {{actie.lasteditor}}</div>{% endif %}
+    <div class="clear">&nbsp;</div>
 <input type="hidden" name="vervolg" id="vervolg" value=""/>
 <div>{% if actie.arch %}Deze actie is gearchiveerd {% endif %}{% if not readonly %}
     <a href="/{{root}}/{{actie.id}}/{% if actie.arch %}herl{%else%}arch{%endif%}/">

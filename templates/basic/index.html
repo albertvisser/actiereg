@@ -1,29 +1,78 @@
 {% extends "probreg/base_site.html" %}
 {% load extratags %}
++{% block extrastyle %}<style>
++div.clear,
++span.clear {
++	background: none;
++	border: 0;
++	clear: both;
++	display: block;
++	float: none;
++	font-size: 0;
++	margin: 0;
++	padding: 0;
++	overflow: hidden;
++	visibility: hidden;
++	width: 0;
++	height: 0;
++}
++.col_nr,
++.col_srt,
++.col_stat,
++.col_who,
++.col_when,
++.col_oms {
++    font-family:"Lucida Grande", Verdana, Arial, sans-serif;
++    line-height:13px; border-top:1px solid #eee; vertical-align:top;
++    padding: 5px 0 5px 0 ;
++    font-size:11px;
++    display: inline;
++	float: left;
++}
++.head {
++    font-size:12px;
++    font-weight:bold;
++}
++.col_nr {
++	width: 70px;
++}
++.col_srt {
++	width: 80px;
++}
++.col_stat {
++	width: 140px;
++}
++.col_who {
++	width: 80px;
++}
++.col_when {
++	width: 170px;
++}
++.col_oms {
++	width: 420px;
++}
++</style> {% endblock %}
 {% block branding %}<h1>{{name|capfirst}} | actielijst</h1>{% endblock %}
 {% block content-data %}
 {% if acties %}
 <div style="max-height: 300px; overflow: auto">
-<table>
-<tr>
-  <th>nummer</th>
-  <th>soort</th>
-  <th>status</th>
-  <th>uitgezet bij</th>
-  <th>ltst. wijz.</th>
-  <th>omschrijving</th>
-</tr>
+  <div class="col_nr head">nummer</div>
+  <div class="col_srt head">soort</div>
+  <div class="col_stat head">status</div>
+  <div class="col_who head">uitgezet bij</div>
+  <div class="col_when head">ltst. wijz.</div>
+  <div class="col_oms head">omschrijving</div>
+  <div class="clear">&nbsp;</div>
++<div style="max-height: 500px; overflow: auto">
 {% for actie in acties %}
-<tr>
-  <td><a href="/{{root}}/{{actie.id}}/"> {{actie.nummer}} </a></td>
-  <td> {{actie.soort.title}} </td>
-  <td> {{actie.status.title|default:"onbekend"}} </td>
-  <td> {{actie.behandelaar}} </td>
-  <td> {{actie.gewijzigd|date:"d-m-Y H:i:s"}} {{actie.lasteditor}} {% if actie.arch %} (A){%endif %} </td>
-  <td> {{actie.about}}: {{actie.title|trimat:50}} </td>
-</tr>
-{% endfor %}
-</table>
+  <div class="col_nr"><a href="/{{root}}/{{actie.id}}/"> {{actie.nummer}} </a></div>
+  <div class="col_srt"> {{actie.soort.title}} </div>
+  <div class="col_stat"> {{actie.status.title|default:"onbekend"}} </div>
+  <div class="col_who"> {{actie.behandelaar}} </div>
+  <div class="col_when"> {{actie.gewijzigd|date:"d-m-Y H:i:s"}} {{actie.lasteditor}} {% if actie.arch %} (A){%endif %} </div>
+  <div class="col_oms"> {{actie.about}}: {{actie.title|trimat:50}} </div>
+  <div class="clear">&nbsp;</div>
+% endfor %}
 </div>
 {% else %}
 <div>{{geen_items}}</div>

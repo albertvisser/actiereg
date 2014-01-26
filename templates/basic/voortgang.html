@@ -1,13 +1,50 @@
 {% extends "probreg/base_site.html" %}
 {% load extratags %}
+{% block extrastyle %}<style>
+div.clear,
+span.clear {
+	background: none;
+	border: 0;
+	clear: both;
+	display: block;
+	float: none;
+	font-size: 0;
+	margin: 0;
+	padding: 0;
+	overflow: hidden;
+	visibility: hidden;
+	width: 0;
+	height: 0;
+}
+.col_when,
+.col_oms {
+    font-family:"Lucida Grande", Verdana, Arial, sans-serif;
+    line-height:13px; border-bottom:1px solid #eee; vertical-align:top;
+    padding: 5px 0 5px 0 ;
+    font-size:11px;
+    display: inline;
+	float: left;
+}
+.head {
+    font-size:12px;
+    font-weight:bold;
+}
+.col_when {
+	width: 170px;
+}
+.col_oms {
+	width: 420px;
+}
+</style> {% endblock %}
 {% block branding %}<h1>{{name|capfirst}} | {{actie.nummer}} - voortgang</h1>{% endblock %}
 {% block content-data %}
-<div style="max-height: 250px; overflow: auto">
-    {% if nieuw %}<div>-- nieuw voortgangsmoment --</div>{% endif %}
-    {%for ev in events%}<div>
-        <a href="/{{root}}/{{actie.id}}/voortg/{{ev.id}}/">
-        {{ev.start|date:"d-m-Y H:i:s"}} {{ev.starter}}: {{ev.text|trimat:60}}</a>
-        </div>{%endfor%}</div>
+<div style="max-height: 240px; width: 660px; overflow: auto">
+    {% if nieuw %}<div class="col_when">-- nieuw voortgangsmoment --</div>
+        <div class="col_oms">&nbsp;</div><div class="clear">&nbsp;</div>{% endif %}
+    {%for ev in events%}<a href="/{{root}}/{{actie.id}}/voortg/{{ev.id}}/">
+        <div class="col_when">{{ev.start|date:"d-m-Y H:i:s"}} {{ev.starter}}:</div>
+        <div class="col_oms">{{ev.text|trimat:60}}</div></a><div class="clear">&nbsp;</div>
+        {%endfor%}</div>
 <div>
     {% if not readonly  %}{% if not actie.arch and not nieuw %}
         <a href="/{{root}}/{{actie.id}}/voortg/nieuw/">{% endif %}
@@ -18,10 +55,10 @@
         <input type="button" value="afbreken" /></a>{%endif%}{% endif %}</div>
 <hr/>
 {% if curr_ev %}
-<div>{{curr_ev.start|date:"d-m-Y H:i:s"}}</div>
+<div class="head">{{curr_ev.start|date:"d-m-Y H:i:s"}}</div>
 <form action="/{{root}}/{{actie.id}}/voortg/{{curr_ev.id}}/update/" method="post">
 <div><textarea  name="data"{% if readonly or actie.arch %} readonly="readonly"{% endif %}
-    cols="80" rows="20">{{curr_ev.text}}</textarea></div>
+    cols="106" rows="20">{{curr_ev.text}}</textarea></div>
 <div>{% if not actie.arch and not readonly %}
     {% if nieuw %}<input type="submit" value="Opvoeren" />{% else %}
     {% ifequal curr_ev.starter user %}<input type="submit" value="Wijzigen" />

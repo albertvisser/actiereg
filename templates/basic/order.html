@@ -1,29 +1,74 @@
 {% extends "probreg/base_site.html" %}
+{% block extrastyle %}<style>
+div.clear,
+span.clear {
+	background: none;
+	border: 0;
+	clear: both;
+	display: block;
+	float: none;
+	font-size: 0;
+	margin: 0;
+	padding: 0;
+	overflow: hidden;
+	visibility: hidden;
+	width: 0;
+	height: 0;
+}
+.col_ord,
+.col_ordh,
+.col_fld,
+.col_dir {
+    font-family:"Lucida Grande", Verdana, Arial, sans-serif;
+    line-height:13px; border-top:1px solid #eee; vertical-align:top;
+    padding: 5px 0 5px 0 ;
+    font-size:11px;
+    display: inline;
+	float: left;
+}
+.head {
+    font-size:12px;
+    font-weight:bold;
+}
+.col_ordh,
+.col_ord {
+	width: 70px;
+}
+.col_ord {
+    padding-top: 10px;
+}
+.col_fld {
+	width: 120px;
+}
+.col_dir {
+	width: 180px;
+}
+</style> {% endblock %}
 {% block branding %}<h1>{{name|capfirst}} | actielijst - sorteren</h1>{% endblock %}
 {% block content-data %}
-<form action="/{{root}}/setorder/" method="post">
-<table>
-<tr><th>volgorde</th><th>veld</th><th>richting</th></tr>
-{% for sorter in sorters %}<tr>
-<td>{{forloop.counter|rjust:"2"}}.</td>
-<td><select name="field{{forloop.counter}}">
+<div class="head col_ordh">volgorde</div>
+<div class="head col_fld">veld</div>
+<div class="head col_dir">richting</div>
+<div class="clear"></div>
+{% for sorter in sorters %}
+<div class="col_ord">{{forloop.counter|rjust:"2"}}.</div>
+<div class="col_fld"><select name="field{{forloop.counter}}">
     <option value="">(geen)</option>
     {% for field,name in fields %}
         <option {% ifequal field sorter.veldnm %}selected="selected"{% endifequal %} >{{name}}
         </option>{% endfor %}
-    </select></td>
-<td>
-    <input name="order{{forloop.counter}}" type="radio" value="asc"
+    </select></div>
+<div class="col_dir"><input name="order{{forloop.counter}}" type="radio" value="asc"
         {% if sorter %}{% ifequal sorter.richting "asc" %}checked="checked"{% endifequal %}
             {%else %}checked="checked"{% endif %}>
         Oplopend</input>
     <input name="order{{forloop.counter}}" type="radio" value="desc"
         {% if sorter %}{% ifequal sorter.richting "desc" %}checked="checked"{% endifequal %}
             {% endif %}>
-        Aflopend</input></td>
-</tr>{% endfor %}
-<tr><td colspan="3" align="center"><input type="submit" value="OK"/>
-    <a href="/{{root}}/"><input type="button" value="Cancel"/></a></td></tr>
-</table>
+        Aflopend</input></div>
+<div class="clear"></div>
+{% endfor %}
+<div style="text-align: center; width: 660px"><input type="submit" value="OK"/>
+    <a href="/{{root}}/"><input type="button" value="Cancel"/></a><div>
 </form>
 {% endblock %}
