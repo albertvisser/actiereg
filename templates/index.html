@@ -18,6 +18,13 @@
 </div>
 <hr/>
 <a href="/new/" title="nieuw"><h6>Vraag een nieuw project aan</h6></a>
+{% if new %}
+<div><h5>aangevraagde projecten:</h5>
+{% for app in new %}
+<div><a href="/{{app.root}}/" title="{{app.name}}">{{app.name|capfirst}}: {{app.desc}}</a></div>
+{% endfor %}
+</div>
+{% endif %}
 <h5>TODO: </h5>
 <ul>
     <li>meldingen komen nog niet op het detailscherm</li>
