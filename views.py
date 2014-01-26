@@ -50,6 +50,23 @@ def new(request):
             ',  <a href="/">hier</a> om terug te gaan naar het begin.')
     return render_to_response('nieuw.html',{})
 
+def notify_admin():
+    # email versturen aan site admin voor opvoeren nieuw project
+    pass
+
+def add_from_doctool(request):
+    "project opvoeren en terug naar DocTool"
+    data = request.GET
+    doc = data.get("from","")
+    name = data.get("name","")
+    desc = data.get("desc","")
+    ## return HttpResponse("{0} {1} {2}".format(doc,name,desc))
+    with open(appsfile,"a") as _out:
+        _out.write(";".join(("_",name,name,desc))+ "\n")
+    notify_admin()
+    return HttpResponseRedirect(
+        '{0}?msg=De aanvraag voor het project "{1}" is verstuurd'.format(doc, name))
+
 @login_required
 def add(request):
     "project opvoeren en naar het startscherm ervan"
@@ -59,7 +76,7 @@ def add(request):
     desc = data.get("desc","")
     with open(appsfile,"a") as _out:
         _out.write(";".join(("_",name,name,desc))+ "\n")
-    # email versturen aan site admin voor opvoeren nieuw project
+    notify_admin()
     return HttpResponseRedirect('/?msg=De aanvraag voor het project "{0}" is verstuurd'.format(name))
 
 def login(request):
