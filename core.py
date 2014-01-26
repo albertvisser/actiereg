@@ -107,7 +107,7 @@ def index(root,name,my,request):
             msg += 'Klik <a href="/logout/'
             inuit = 'uit'
         else:
-            msg = 'U bent niet ingelogd. Klik <a href="accounts/login/'
+            msg = 'U bent niet ingelogd. Klik <a href="/accounts/login/'
             inuit = 'in'
         msg += '?next=/{0}/">hier</a> om {1} te loggen. '.format(root,inuit)
         if inuit == "uit":
@@ -338,7 +338,7 @@ def select(root,name,my,request):
     else:
         return HttpResponse('U moet ingelogd zijn om de selectie voor dit scherm ' +
             'te mogen wijzigen. <br/><br/>' +
-            'Klik <a href="accounts/login/?next=/{0}/select/">'.format(root) +
+            'Klik <a href="/accounts/login/?next=/{0}/select/">'.format(root) +
             'hier</a> om in te loggen, <a href="/{0}/">hier</a>'.format(root) +
             ' om terug te gaan.')
     page_data = {
@@ -456,7 +456,7 @@ def order(root,name,my,request):
     else:
         return HttpResponse('U moet ingelogd zijn om de sortering voor dit scherm ' +
             'te mogen wijzigen. <br/><br/>' +
-            'Klik <a href="accounts/login/?next=/{0}/select/">'.format(root) +
+            'Klik <a href="/accounts/login/?next=/{0}/select/">'.format(root) +
             'hier</a> om in te loggen, <a href="/{0}/">hier</a>'.format(root) +
             ' om terug te gaan.')
     page_data = {
@@ -522,7 +522,7 @@ def detail(root,name,my,request,actie=""):
             msg += 'Klik <a href="/logout/'
             inuit = 'uit'
         else:
-            msg = 'U bent niet ingelogd. Klik <a href="accounts/login/'
+            msg = 'U bent niet ingelogd. Klik <a href="/accounts/login/'
             inuit = 'in'
         msg += '?next=/{0}/{1}/">hier</a> om {2} te loggen. '.format(root,actie,inuit)
         if inuit == "uit":
@@ -655,7 +655,7 @@ def tekst(root,name,my,request,actie="",page=""):
             msg += 'Klik <a href="/logout/'
             inuit = 'uit'
         else:
-            msg = 'U bent niet ingelogd. Klik <a href="accounts/login/'
+            msg = 'U bent niet ingelogd. Klik <a href="/accounts/login/'
             inuit = 'in'
         msg += '?next=/{0}/{1}/{2}/">hier</a> om {3} te loggen'.format(root,actie,page,inuit)
     page_data = {
@@ -754,7 +754,7 @@ def events(root,name,my,request,actie="",event=""):
             msg += 'Klik <a href="/logout/'
             inuit = 'uit'
         else:
-            msg = 'U bent niet ingelogd. Klik <a href="accounts/login/'
+            msg = 'U bent niet ingelogd. Klik <a href="/accounts/login/'
             inuit = 'in'
         msg += '?next=/{0}/{1}/voortg/">hier</a> om {2} te loggen.'.format(root,actie,inuit)
     msg += " Klik op een voortgangsregel om de tekst nader te bekijken."
