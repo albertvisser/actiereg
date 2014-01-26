@@ -99,7 +99,7 @@ function herbepaal(o,p)
 <hr/>
 <a name="usr"></a>
 <div><h3>Gebruikers</h3></div>
-<form action="/{{root}}/wijzigusers/" method="post">
+<form action="/{{root}}/wijzigusers/" method="post">{% csrf_token %}
 <div>
     <div class="col sel_left bold">Bekende gebruikers:</div>
     <div class="col sel_mid">&nbsp;</div>
@@ -128,7 +128,7 @@ function herbepaal(o,p)
 <hr/>
 <a name="tab"></a>
 <div><h3>Tab headers</h3></div>
-<form action="/{{root}}/wijzigtabs/" method="post">
+<form action="/{{root}}/wijzigtabs/" method="post">{% csrf_token %}
     <div>{% for page in pages %}
         <div class="col tab"><input type="text" name="page{{forloop.counter}}"
             value="{{page.title}}" size="13"/></div>{% endfor %}
@@ -140,7 +140,7 @@ function herbepaal(o,p)
 <hr/>
 <a name="srt"></a>
 <div><h3>Soorten acties</h3></div>
-<form action="/{{root}}/wijzigtypes/" method="post">
+<form action="/{{root}}/wijzigtypes/" method="post">{% csrf_token %}
 <div>
     <div class="col set_ord bold">volgorde</div>
     <div class="col set_nam bold">titel</div>
@@ -171,7 +171,7 @@ function herbepaal(o,p)
 <hr/>
 <a name="stat"></a>
 <div><h3>Mogelijke statussen</h3></div>
-<form action="/{{root}}/wijzigstats/" method="post">
+<form action="/{{root}}/wijzigstats/" method="post">{% csrf_token %}
 <div>
     <div class="col set_ord bold">volgorde</div>
     <div class="col set_nam bold">titel</div>

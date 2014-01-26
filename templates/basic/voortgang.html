@@ -31,10 +31,10 @@ span.clear {
     font-weight:bold;
 }
 .col_when {
-	width: 170px;
+	width: 200px;
 }
 .col_oms {
-	width: 420px;
+	width: 390px;
 }
 .col_nw {
 	width: 590px;
@@ -61,12 +61,13 @@ span.clear {
 {% if curr_ev %}
 <div class="head">{{curr_ev.start|date:"d-m-Y H:i:s"}}</div>
 <form action="/{{root}}/{{actie.id}}/voortg/{{curr_ev.id}}/update/" method="post">
+{% csrf_token %}
 <div><textarea  name="data"{% if readonly or actie.arch %} readonly="readonly"{% endif %}
     cols="106" rows="20">{{curr_ev.text}}</textarea></div>
 <div>{% if not actie.arch and not readonly %}
     {% if nieuw %}<input type="submit" value="Opvoeren" />{% else %}
-    {% ifequal curr_ev.starter user %}<input type="submit" value="Wijzigen" />
-    <input type="reset" value="Terugzetten"/>{% endifequal %}{% endif %}{% endif %}
+    {% if curr_ev.starter == user %}<input type="submit" value="Wijzigen" />
+    <input type="reset" value="Terugzetten"/>{% endif %}{% endif %}{% endif %}
     </div>
 </form>
 {% endif %}

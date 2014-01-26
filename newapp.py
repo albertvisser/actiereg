@@ -133,7 +133,7 @@ def newproj(*args):
                     else:
                         newfile.write(line)
         # toevoegen aan urls.py (urlpatterns)
-        print("updating urlpatterns...")
+        print("updating urlconfs...")
         old,new = backup("urls.py")
         schrijf = False
         with open(old) as oldfile:
@@ -156,9 +156,9 @@ def newproj(*args):
             import settings
             from django.contrib.auth.models import Group, Permission
             print("modifying database...")
-            os.system("manage.py syncdb")
+            os.system("python manage.py syncdb")
             print("loading inital data...")
-            os.system("manage.py loaddata {0}/initial_data.json".format(root))
+            os.system("python manage.py loaddata {0}/initial_data.json".format(root))
             print("setting up authorisation groups...")
             grp = Group.objects.create(name='{0}_admin'.format(root))
             for perm in Permission.objects.filter(
@@ -167,20 +167,20 @@ def newproj(*args):
             grp = Group.objects.create(name='{0}_user'.format(root))
             for perm in Permission.objects.filter(
                 content_type__app_label="{0}".format(root)).filter(
-                    content_type__model__in=['actie','event','sortorder','selection']):
+                    content_type__model__in=['actie', 'event', 'sortorder', 'selection']):
                         grp.permissions.add(perm)
 
         print("updating apps registration...")
         old,new = backup(appsfile)
         with open(old) as _in:
-            with open(new,"w") as _out:
+            with open(new, "w") as _out:
                 for app in _in:
-                    ok,test_root,test_name,desc = app.split(";")
+                    ok, test_root, test_name, desc = app.split(";")
                     if test_root == root:
                         if action == "undo":
-                            _out.write(app.replace("X;","_;"))
+                            _out.write(app.replace("X;", "_;"))
                         else:
-                            _out.write(app.replace("_;","X;"))
+                            _out.write(app.replace("_;", "X;"))
                     else:
                         _out.write(app)
     if action == "loaddata":
@@ -193,7 +193,7 @@ def newproj(*args):
         ld.loadsett(load_from)
         print "ready."
         print "loading data...",
-        ld.loaddata(load_from)
+        ld.loaddata(load_from, root)
     print("ready.")
     print "\nRestart the server to activate the new app."
 

@@ -3,7 +3,7 @@
 {% block branding %}<h1>ActieRegistratie | Nieuw project opvoeren</h1>{% endblock %}
 
 {% block content %}
-<form action="/add/" method="post">
+<form action="/add/" method="post">{% csrf_token %}
 <table>
 <tr><th>project naam: </th>
     <td><input type="text" name="name" value=""/></td></tr>
@@ -16,7 +16,9 @@
 </table>
 <div>
 "Opvoeren" betekent dat er een signaal naar de admin van deze site gaat om een nieuw project
-op te voeren volgens de ingevulde gegevens.
+op te voeren volgens de ingevulde gegevens.<br/>
+Hoe lang het duurt voor het daadwerkelijk is opgevoerd is een ander verhaal. De web server moet
+hiervoor namelijk gestopt en geherstart worden.
 {% comment %}
 Voor het aanmaken van een nieuw project moet helaas nog een en ander met de hand gebeuren.
     <ol>

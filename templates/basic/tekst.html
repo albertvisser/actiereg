@@ -14,7 +14,7 @@ function setvervolg() {
 <div>omschrijving: {{actie.about}}: {{actie.title}} </div>
 <hr/><div style="text-align: center"><h2>{{page_titel}}</h2></div>
 <hr/> -->
-<form id="textform" action="/{{root}}/{{actie.id}}/{{page}}/update/" method="post">
+<form id="textform" action="/{{root}}/{{actie.id}}/{{page}}/update/" method="post">{% csrf_token %}
 <div><textarea name="data" cols="106" rows="38"
     {% if actie.arch or readonly %}readonly="readonly"{% endif %}>{{page_text}}</textarea>
     </div>

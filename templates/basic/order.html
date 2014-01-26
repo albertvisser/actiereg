@@ -46,6 +46,7 @@ span.clear {
 </style> {% endblock %}
 {% block branding %}<h1>{{name|capfirst}} | actielijst - sorteren</h1>{% endblock %}
 {% block content-data %}
+<form action="/{{root}}/setorder/" method="post">{% csrf_token %}
 <div class="head col_ordh">volgorde</div>
 <div class="head col_fld">veld</div>
 <div class="head col_dir">richting</div>
@@ -55,15 +56,15 @@ span.clear {
 <div class="col_fld"><select name="field{{forloop.counter}}">
     <option value="">(geen)</option>
     {% for field,name in fields %}
-        <option {% ifequal field sorter.veldnm %}selected="selected"{% endifequal %} >{{name}}
+        <option {% if field == sorter.veldnm %}selected="selected"{% endif %} >{{name}}
         </option>{% endfor %}
     </select></div>
 <div class="col_dir"><input name="order{{forloop.counter}}" type="radio" value="asc"
-        {% if sorter %}{% ifequal sorter.richting "asc" %}checked="checked"{% endifequal %}
+        {% if sorter %}{% if sorter.richting == "asc" %}checked="checked"{% endif %}
             {%else %}checked="checked"{% endif %}>
         Oplopend</input>
     <input name="order{{forloop.counter}}" type="radio" value="desc"
-        {% if sorter %}{% ifequal sorter.richting "desc" %}checked="checked"{% endifequal %}
+        {% if sorter %}{% if sorter.richting == "desc" %}checked="checked"{% endif %}
             {% endif %}>
         Aflopend</input></div>
 <div class="clear"></div>

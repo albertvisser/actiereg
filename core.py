@@ -7,11 +7,13 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 import django.contrib.auth.models as aut
+from django.template import RequestContext
+from django.views.decorators.csrf import csrf_exempt
 import datetime as dt
 
 UIT_DOCTOOL = "Actie opgevoerd vanuit Doctool"
 
-def is_user(root,user):
+def is_user(root, user):
     """geeft indicatie terug of de betreffende gebruiker acties mag wijzigen"""
     test = root + "_user"
     ## if root == "basic":
@@ -21,7 +23,7 @@ def is_user(root,user):
             return True
     return False
 
-def is_admin(root,user):
+def is_admin(root, user):
     """geeft indicatie terug of de betreffende gebruiker acties en settings mag wijzigen"""
     test = root + "_admin"
     ## if root == "basic":
@@ -31,30 +33,31 @@ def is_admin(root,user):
             return True
     return False
 
-def store_event(my,msg,actie,user):
-    my.Event.objects.create(actie=actie,starter=user,text=msg)
+def store_event(my, msg, actie, user):
+    my.Event.objects.create(actie=actie, starter=user, text=msg)
 
-def store_gewijzigd(my,msg,txt,mld,actie,user):
-    store_event(my,'{0} gewijzigd in "{1}"'.format(msg,txt),actie,user)
+def store_gewijzigd(my, msg, txt, mld, actie, user):
+    store_event(my,'{0} gewijzigd in "{1}"'.format(msg, txt), actie, user)
     mld.append(msg)
     return mld
 
+@csrf_exempt
 def koppel(root,my,request):
     """doorkoppeling vanuit doctool:
     actie opvoeren en terugkeren"""
     data = request.POST
-    vervolg = data.get("hFrom","")
-    usernaam = data.get("hUser","")
+    vervolg = data.get("hFrom", "")
+    usernaam = data.get("hUser", "")
     volgnr = 0
     aant = my.Actie.objects.count()
     nw_date = dt.datetime.now()
     if aant:
         last = my.Actie.objects.all()[aant - 1]
-        jaar,volgnr = last.nummer.split("-")
+        jaar, volgnr = last.nummer.split("-")
         volgnr = int(volgnr) if int(jaar ) == nw_date.year else 0
     volgnr += 1
     actie = my.Actie()
-    actie.nummer = "{0}-{1:04}".format(nw_date.year,volgnr)
+    actie.nummer = "{0}-{1:04}".format(nw_date.year, volgnr)
     actie.start = nw_date
     actie.starter = aut.User.objects.get(pk=1)
     behandelaar = actie.starter
@@ -65,7 +68,7 @@ def koppel(root,my,request):
             pass
     actie.behandelaar = behandelaar
     actie.about = "testbevinding" if "bevinding" in vervolg else ""
-    actie.title = data.get("hMeld","")
+    actie.title = data.get("hMeld", "")
     if "userwijz" in vervolg:
         soort = "W"
     elif "userprob" in vervolg:
@@ -75,24 +78,25 @@ def koppel(root,my,request):
     actie.soort = my.Soort.objects.get(value=soort)
     actie.status = my.Status.objects.get(value='0')
     actie.lasteditor = actie.behandelaar
-    actie.melding = data.get("hOpm","")
+    actie.melding = data.get("hOpm", "")
     actie.save()
-    store_event(my,"{0} {1}".format(UIT_DOCTOOL,vervolg.split('koppel')[0]),
+    store_event(my,"{0} {1}".format(UIT_DOCTOOL, vervolg.split('koppel')[0]),
         actie, actie.starter)
-    store_event(my,'titel: "{0}"'.format(actie.title),actie,actie.starter)
-    store_event(my,'categorie: "{0}"'.format(str(actie.soort)),actie,actie.starter)
-    store_event(my,'status: "{0}"'.format(str(actie.status)),actie,actie.starter)
+    store_event(my,'titel: "{0}"'.format(actie.title), actie, actie.starter)
+    store_event(my,'categorie: "{0}"'.format(str(actie.soort)), actie, actie.starter)
+    store_event(my,'status: "{0}"'.format(str(actie.status)), actie, actie.starter)
 
     if vervolg:
         ## return HttpResponse("""\
         ## vervolg: {0}<br/>
         ## adres: {1}""".format(vervolg,vervolg.format(actie.id,actie.nummer)))
-        return HttpResponseRedirect(vervolg.format(actie.id,actie.nummer))
+        return HttpResponseRedirect(vervolg.format(actie.id, actie.nummer))
     else:
         meld = "Opgevoerd vanuit DocTool zonder terugkeeradres"
-        return HttpResponseRedirect("/{0}/{1}/meld/?msg={2}".format(root,actie.id,msg))
+        return HttpResponseRedirect("/{0}/{1}/meld/?msg={2}".format(root,
+            actie.id, msg))
 
-def index(root,name,my,request):
+def index(root, name, my, request, msg=''):
     """
     samenstellen van de lijst met acties:
     - selecteer en sorteer de acties volgens de voor de user vastgelegde regels
@@ -100,7 +104,7 @@ def index(root,name,my,request):
     - de soort user wordt meegegeven aan het scherm om indien nodig diverse knoppen
         te verbergen
     """
-    msg = request.GET.get("msg","")
+    ## msg = request.GET.get("msg", "")
     if not msg:
         if request.user.is_authenticated():
             msg = 'U bent ingelogd als <i>{0}</i>. '.format(request.user.username)
@@ -109,7 +113,7 @@ def index(root,name,my,request):
         else:
             msg = 'U bent niet ingelogd. Klik <a href="/accounts/login/'
             inuit = 'in'
-        msg += '?next=/{0}/">hier</a> om {1} te loggen. '.format(root,inuit)
+        msg += '?next=/{0}/">hier</a> om {1} te loggen. '.format(root, inuit)
         if inuit == "uit":
             msg += "Klik op een actienummer om de details te bekijken."
     page_data = {
@@ -117,14 +121,14 @@ def index(root,name,my,request):
         "name": name,
         "root": root,
         "pages": my.Page.objects.all().order_by('order'),
-        "admin": is_admin(root,request.user),
+        "admin": is_admin(root, request.user),
         "msg": msg,
         }
-    if is_user(root,request.user) or is_admin(root,request.user):
+    if is_user(root, request.user) or is_admin(root, request.user):
         page_data["readonly"] = False
     else:
         page_data["readonly"] = True
-    page_data["readonly"] = True if not is_user(root,request.user) and not is_admin(root,request.user) else False
+    page_data["readonly"] = True
     data = my.Actie.objects.all()
     if data:
         seltest = my.Selection.objects.filter(user=request.user.id)
@@ -137,7 +141,7 @@ def index(root,name,my,request):
                     filter += " & "
                 elif f.extra == "OF":
                     filter += " | "
-                filter += 'Q(nummer__{0}="{1}")'.format(f.operator.lower(),f.value)
+                filter += 'Q(nummer__{0}="{1}")'.format(f.operator.lower(), f.value)
             ## return HttpResponse(filter)
             exec('data = data.filter({0})'.format(filter))
 
@@ -182,9 +186,9 @@ def index(root,name,my,request):
         for sorter in sorters:
             if sorter.veldnm == "title":
                 if sorter.richting == "asc":
-                    order.extend(("about","title"))
+                    order.extend(("about", "title"))
                 else:
-                    order.extend(("-about","-title"))
+                    order.extend(("-about", "-title"))
             elif sorter.veldnm == "behandelaar":
                 ordr = sorter.veldnm + "__username"
                 ordr = ordr if sorter.richting == "asc" else "-" + ordr
@@ -207,9 +211,9 @@ def index(root,name,my,request):
     page_data["geen_items"] = page_data["geen_items"].join(("<p>","</p>"))
     return render_to_response(root + '/index.html',page_data)
 
-def settings(root,name,my,request):
+def settings(root, name, my, request):
     """settings scherm opbouwen"""
-    if not is_admin(root,request.user):
+    if not is_admin(root, request.user):
         return HttpResponse("U bent niet geautoriseerd om instellingen te wijzigen"
         '<br>Klik <a href="/{0}/">hier</a> om door te gaan'.format(root))
     proj_users = my.Worker.objects.all().order_by('assigned__username')
@@ -225,11 +229,11 @@ def settings(root,name,my,request):
         "all_users": all_users,
         "proj_users": proj_users, # .order_by('username')
         }
-    return render_to_response(root + '/settings.html',page_data)
+    return render_to_response(root + '/settings.html', page_data)
 
-def setusers(root,my,request):
+def setusers(root, my, request):
     """users aan project koppelen"""
-    if not is_admin(root,request.user):
+    if not is_admin(root, request.user):
         return HttpResponse("U bent niet geautoriseerd om instellingen te wijzigen"
         '<br>Klik <a href="/{0}/">hier</a> om door te gaan'.format(root))
     data = request.POST
@@ -246,9 +250,9 @@ def setusers(root,my,request):
             ok = my.Worker.objects.get(assigned=user).delete()
     return HttpResponseRedirect("/{0}/settings/".format(root))
 
-def settabs(root,my,request):
+def settabs(root, my, request):
     """tab titels aanpassen en terug naar settings scherm"""
-    if not is_admin(root,request.user):
+    if not is_admin(root, request.user):
         return HttpResponse("U bent niet geautoriseerd om instellingen te wijzigen"
         '<br>Klik <a href="/{0}/">hier</a> om door te gaan'.format(root))
     data = request.POST
@@ -260,9 +264,9 @@ def settabs(root,my,request):
             item.save()
     return HttpResponseRedirect("/{0}/settings/".format(root))
 
-def settypes(root,my,request):
+def settypes(root, my, request):
     """soort-gegevens aanpassen en terug naar settings scherm"""
-    if not is_admin(root,request.user):
+    if not is_admin(root, request.user):
         return HttpResponse("U bent niet geautoriseerd om instellingen te wijzigen"
         '<br>Klik <a href="/{0}/">hier</a> om door te gaan'.format(root))
     data = request.POST
@@ -294,7 +298,7 @@ def settypes(root,my,request):
             )
     return HttpResponseRedirect("/{0}/settings/".format(root))
 
-def setstats(root,my,request):
+def setstats(root, my, request):
     """status-gegevens aanpassen en terug naar settings scherm"""
     if not is_admin(root,request.user):
         return HttpResponse("U bent niet geautoriseerd om instellingen te wijzigen"
@@ -328,7 +332,7 @@ def setstats(root,my,request):
             )
     return HttpResponseRedirect("/{0}/settings/".format(root))
 
-def select(root,name,my,request):
+def select(root, name, my, request):
     """
     bouw het scherm op aan de hand van de huidige selectiegegevens bij de gebruiker
     """
@@ -381,9 +385,10 @@ def select(root,name,my,request):
             return HttpResponse("Unknown search argument: " + self.veldnm)
         ## testdata += str(page_data["selected"][sel.veldnm]) + "<br/>"
     ## return HttpResponse(testdata) # "<br>".join([str(x) for x in page_data["selected"].items()]))
-    return render_to_response(root + '/select.html',page_data)
++    return render_to_response(root + '/select.html', page_data,
++        context_instance=RequestContext(request))
 
-def setsel(root,my,request):
+def setsel(root, my, request):
     """
     verwerk de aanpassingen en koppel door naar tonen van de lijst met acties
     de huidige selectiegegevens voor de user worden verwijderd
@@ -391,16 +396,16 @@ def setsel(root,my,request):
     """
     data = request.POST
     selact = data.getlist("select") # aangekruiste selecties: "act" "srt" "stat" "txt" of "arch"
-    txtgt = data.get("txtgt","")
-    gt_lt = data.get("enof","")    # "en" of "of"
-    txtlt = data.get("txtlt","")
+    txtgt = data.get("txtgt", "")
+    gt_lt = data.get("enof", "")    # "en" of "of"
+    txtlt = data.get("txtlt", "")
     srtval = data.getlist("srtval") # aangekruiste soorten
     statval = data.getlist("statval") # aangekruiste statussen
     userval = data.getlist("userval") # geselcteerde medewerkers
-    txtabout = data.get("txtabout","")
-    gt_lt2 = data.get("enof2","")    # "en" of "of"
-    txttitle = data.get("txttitle","")
-    archall = data.get("archall","") # "arch" of "all"
+    txtabout = data.get("txtabout", "")
+    gt_lt2 = data.get("enof2", "")    # "en" of "of"
+    txttitle = data.get("txttitle", "")
+    archall = data.get("archall", "") # "arch" of "all"
     page_data = {}
     my.Selection.objects.filter(user=request.user.id).delete()
     extra = "  "
@@ -416,19 +421,19 @@ def setsel(root,my,request):
     if "srt" in selact:
         for srt in srtval:
             ok = my.Selection.objects.create(user=request.user.id,
-                veldnm="soort", operator="EQ", extra=extra,value=srt)
+                veldnm="soort", operator="EQ", extra=extra, value=srt)
             extra = "OR"
         extra = "  "
     if "stat" in selact:
         for stat in statval:
             ok = my.Selection.objects.create(user=request.user.id,
-                veldnm="status", operator="EQ", extra=extra,value=stat)
+                veldnm="status", operator="EQ", extra=extra, value=stat)
             extra = "OR"
         extra = "  "
     if "user" in selact:
         for user in userval:
             ok = my.Selection.objects.create(user=request.user.id,
-                veldnm="user", operator="EQ", extra=extra,value=user)
+                veldnm="user", operator="EQ", extra=extra, value=user)
             extra = "OR"
         extra = "  "
     if "txt" in selact:
@@ -445,8 +450,9 @@ def setsel(root,my,request):
         if "all" in archall:
             ok = my.Selection.objects.create(user=request.user.id,
                 veldnm="arch", operator="EQ", extra=extra, value=True)
-    return HttpResponseRedirect("/{0}/?msg=De selectie is gewijzigd.".format(root))
-def order(root,name,my,request):
+    return HttpResponseRedirect("/{0}/meld/De selectie is gewijzigd./".format(root))
+
+def order(root, name, my, request):
     """
     bouw het scherm op aan de hand van de huidige sorteringsgegevens bij de gebruiker
     """
@@ -479,9 +485,10 @@ def order(root,name,my,request):
     while len(page_data["sorters"]) < len(page_data["fields"]):
         page_data["sorters"].append(None)
     ## return HttpResponse("<br>".join([str(page_data[x]) for x in page_data]))
-    return render_to_response(root + '/order.html',page_data)
+    return render_to_response(root + '/order.html', page_data,
+        context_instance=RequestContext(request))
 
-def setorder(root,my,request):
+def setorder(root, my, request):
     """
     verwerk de aanpassingen en koppel door naar tonen van de lijst met acties
     de huidige sorteringsgegevens voor de user worden verwijderd
@@ -502,20 +509,21 @@ def setorder(root,my,request):
     while True:
         if "field" + str(ix) in data:
           if data["field" + str(ix)]:
-            my.SortOrder.objects.create(user=request.user.id,volgnr=ix,
-                veldnm=fields[data["field" + str(ix)]],richting=data["order" + str(ix)])
+            my.SortOrder.objects.create(user=request.user.id, volgnr=ix,
+                veldnm=fields[data["field" + str(ix)]],
+                richting=data["order" + str(ix)])
         else:
             break
         ix += 1
-    return HttpResponseRedirect("/{0}/?msg=De sortering is gewijzigd.".format(root))
+    return HttpResponseRedirect("/{0}/meld/De sortering is gewijzigd./".format(root))
 
-def detail(root,name,my,request,actie=""):
+def detail(root, name, my, request, actie="", msg=""):
     """
     bouw het scherm met actiegegevens op.
     de soort user wordt meegegeven aan het scherm om indien nodig wijzigen onmogelijk te
         maken en diverse knoppen te verbergen.
     """
-    msg = request.GET.get("msg","")
+    ## msg = request.GET.get("msg", "")
     if not msg:
         if request.user.is_authenticated():
             msg = 'U bent ingelogd als <i>{0}</i>. '.format(request.user.username)
@@ -524,7 +532,7 @@ def detail(root,name,my,request,actie=""):
         else:
             msg = 'U bent niet ingelogd. Klik <a href="/accounts/login/'
             inuit = 'in'
-        msg += '?next=/{0}/{1}/">hier</a> om {2} te loggen. '.format(root,actie,inuit)
+        msg += '?next=/{0}/{1}/">hier</a> om {2} te loggen. '.format(root, actie, inuit)
         if inuit == "uit":
             msg += "Klik op een van onderstaande termen om meer te zien."
     page_data = {
@@ -536,7 +544,10 @@ def detail(root,name,my,request,actie=""):
         "users": [x.assigned for x in my.Worker.objects.all()],
         "msg": msg,
         }
-    page_data["readonly"] = False if is_user(root,request.user) or is_admin(root,request.user) else True
+    if is_user(root,request.user) or is_admin(root,request.user):
+        page_data["readonly"] = False
+    else:
+        page_data["readonly"] = True
     if actie == "nieuw":
         titel = "Nieuwe actie"
         volgnr = 0
@@ -547,7 +558,7 @@ def detail(root,name,my,request,actie=""):
             jaar,volgnr = last.nummer.split("-")
             volgnr = int(volgnr) if int(jaar ) == nw_date.year else 0
         volgnr += 1
-        page_data["nummer"] = "{0}-{1:04}".format(nw_date.year,volgnr)
+        page_data["nummer"] = "{0}-{1:04}".format(nw_date.year, volgnr)
         ## page_data["start"] = nw_date
         page_data["nieuw"] = request.user
     else:
@@ -555,11 +566,12 @@ def detail(root,name,my,request,actie=""):
         page_data["actie"] = actie
         titel = "Actie {0} - titel/status".format(actie.nummer)
     page_data["title"] = titel
-    return render_to_response(root + '/actie.html',page_data)
+    return render_to_response(root + '/actie.html', page_data,
+        context_instance=RequestContext(request))
 
-def wijzig(root,my,request,actie="",doe=""):
+def wijzig(root, my, request, actie="", doe=""):
     """verwerk de aanpassingen en koppel door naar tonen van het scherm"""
-    if not is_user(root,request.user) and not is_admin(root,request.user):
+    if not is_user(root, request.user) and not is_admin(root, request.user):
         if actie == "nieuw":
             text = "op te voeren"
         else:
@@ -567,13 +579,14 @@ def wijzig(root,my,request,actie="",doe=""):
         return HttpResponse("U bent niet geautoriseerd om acties {0}"
         '<br>Klik <a href="/{1}/">hier</a> om door te gaan'.format(text,root))
     data = request.POST
-    nummer = data.get("nummer","")
-    about = data.get("about","")
-    title = data.get("title","")
-    actor = int(data.get("user","0"))
-    soort = data.get("soort"," ")
-    status = int(data.get("status","1"))
-    vervolg = data.get("vervolg","")
+    nummer = data.get("nummer", "")
+    about = data.get("about", "")
+    title = data.get("title", "")
+    actor = int(data.get("user", "0"))
+    soort = data.get("soort", " ")
+    status = int(data.get("status", "1"))
+    vervolg = data.get("vervolg", "")
+    arch = True if arch == "True" else False
     if actie == "nieuw":
         actie = my.Actie()
         actie.nummer = nummer
@@ -581,49 +594,48 @@ def wijzig(root,my,request,actie="",doe=""):
         actie.behandelaar = request.user
         ## actie.start = start
         doe = "nieuw"
-        srt,stat = my.Soort.objects.get(value=" "), my.Status.objects.get(value="0")
+        srt, stat = my.Soort.objects.get(value=" "), my.Status.objects.get(value="0")
     else:
-        actie = get_object_or_404(my.Actie,pk=actie)
+        actie = get_object_or_404(my.Actie, pk=actie)
         over, wat, wie = actie.about, actie.title, actie.behandelaar
         srt, stat = actie.soort, actie.status
         arch = actie.arch
-    if doe in ("arch","herl"):
-        actie.arch = not arch
-    else:
-        actie.about = about
-        actie.title = title
-        actie.behandelaar = aut.User.objects.get(pk=actor)
-        actie.soort = my.Soort.objects.get(value=soort)
-        actie.status = my.Status.objects.get(value=status)
+    actie.about = about
+    actie.title = title
+    oldarch = actie.arch
+    actie.arch = arch
+    actie.behandelaar = aut.User.objects.get(pk=actor)
+    actie.soort = my.Soort.objects.get(value=soort)
+    actie.status = my.Status.objects.get(value=status)
     actie.lasteditor = request.user
     actie.save()
     msg = ''
     mld = []
     if doe == "nieuw":
         msg = "Actie opgevoerd"
-        store_event(my,msg, actie, request.user)
-    elif doe == "arch":
-        msg = "Actie gearchiveerd"
-        store_event(my,msg, actie, request.user)
-    elif doe == "herl":
-        msg = "Actie herleefd"
-        store_event(my,msg, actie, request.user)
+        store_event(my, msg, actie, request.user)
     else:
+        if actie.arch != oldarch and not actie.arch:
+            msg = "Actie herleefd"
+            store_event(my, msg, actie, request.user)
         if actie.about != over:
-            mld = store_gewijzigd(my,'onderwerp', str(actie.about),
+            mld = store_gewijzigd(my, 'onderwerp', str(actie.about),
                 mld, actie, request.user)
         if actie.title != wat:
-            mld = store_gewijzigd(my,'titel', str(actie.title),
+            mld = store_gewijzigd(my, 'titel', str(actie.title),
                 mld, actie, request.user)
         if actie.behandelaar != wie:
-            mld = store_gewijzigd(my,'behandelaar', str(actie.behandelaar),
+            mld = store_gewijzigd(my, 'behandelaar', str(actie.behandelaar),
                 mld, actie, request.user)
     if actie.soort != srt:
-        mld = store_gewijzigd(my,'categorie', str(actie.soort),
+        mld = store_gewijzigd(my, 'categorie', str(actie.soort),
             mld, actie, request.user)
     if actie.status != stat:
-        mld = store_gewijzigd(my,'status',str(actie.status),
+        mld = store_gewijzigd(my, 'status', str(actie.status),
             mld, actie, request.user)
+    if actie.arch != oldarch and actie.arch:
+        msg = "Actie gearchiveerd"
+        store_event(my, msg, actie, request.user)
     if mld and not msg:
         if len(mld) == 1:
             msg = mld[0] + " gewijzigd"
@@ -632,23 +644,25 @@ def wijzig(root,my,request,actie="",doe=""):
         msg = msg.capitalize()
     ## return HttpResponse("*{0}* *{1}*".format(mld,msg))
     if vervolg:
-        doc = "/{0}/{1}/meld/?msg={2}".format(root,actie.id,msg)
+        doc = "/{}/{}/{}/meld/{}/".format(root, actie.id, vervolg, msg)
     else:
-        doc = "/{0}/{1}/?msg={2}".format(root,actie.id,msg)
-    if doe in ("arch","herl"):
+        doc = "/{}/{}/mld/{}/".format(root, actie.id, msg)
+    if actie.arch != oldarch:
         # indien nodig eerst naar doctool om de actie af te melden of te herleven
+        doe = "arch" if actie.arch else "herl"
         follow = my.Event.objects.filter(actie=actie.id).order_by('id')[0].text
         if follow.startswith(UIT_DOCTOOL):
-            doc = "{0}meld/?status={1}&from={2}".format(follow.split()[-1].strip(),doe,doc)
+            doc = "{}meld/{}/{}/{}/".format(follow.split()[-1].strip(), doe, root,
+                actie.id)
     return HttpResponseRedirect(doc)
 
-def tekst(root,name,my,request,actie="",page=""):
+def tekst(root, name, my, request, actie="", page="", msg=''):
     """
     toon een van de uitgebreide tekstrubrieken.
     de soort user wordt meegegeven aan het scherm om indien nodig wijzigen onmogelijk te
         maken en diverse knoppen te verbergen.
     """
-    msg = request.GET.get("msg","")
+    ## msg = request.GET.get("msg", "")
     if not msg:
         if request.user.is_authenticated():
             msg = 'U bent ingelogd als <i>{0}</i>. '.format(request.user.username)
@@ -657,14 +671,16 @@ def tekst(root,name,my,request,actie="",page=""):
         else:
             msg = 'U bent niet ingelogd. Klik <a href="/accounts/login/'
             inuit = 'in'
-        msg += '?next=/{0}/{1}/{2}/">hier</a> om {3} te loggen'.format(root,actie,page,inuit)
+        msg += '?next=/{0}/{1}/{2}/">hier</a> om {3} te loggen'.format(
+            root, actie, page, inuit)
     page_data = {
         "root": root,
         "name": name,
         "pages": my.Page.objects.all().order_by('order'),
         "msg": msg,
         }
-    page_data["readonly"] = False if is_user(root,request.user) or is_admin(root,request.user) else True
+    page_data["readonly"] = False if is_user(root, request.user) or is_admin(root,
+        request.user) else True
     actie = get_object_or_404(my.Actie,pk=actie)
     tab = my.Page.objects.get(link=page)
     page_titel = tab.title
@@ -687,17 +703,18 @@ def tekst(root,name,my,request,actie="",page=""):
     page_data["page_titel"] = page_titel
     page_data["page_text"] = page_text
     page_data["actie"] = actie
-    return render_to_response(root + '/tekst.html',page_data)
+    return render_to_response(root + '/tekst.html', page_data,
+        context_instance=RequestContext(request))
 
-def wijzigtekst(root,my,request,actie="",page=""):
+def wijzigtekst(root, my, request, actie="", page=""):
     """verwerk de aanpassingen en koppel door naar tonen van het scherm"""
-    if not is_user(root,request.user) and not is_admin(root,request.user):
+    if not is_user(root, request.user) and not is_admin(root, request.user):
         return HttpResponse("U bent niet geautoriseerd om acties  te wijzigen"
         '<br>Klik <a href="/{0}/">hier</a> om door te gaan'.format(root))
     data = request.POST
-    tekst = data.get("data","")
-    vervolg = data.get("vervolg","")
-    actie = get_object_or_404(my.Actie,pk=actie)
+    tekst = data.get("data", "")
+    vervolg = data.get("vervolg", "")
+    actie = get_object_or_404(my.Actie, pk=actie)
     if page == "meld":
         orig = actie.melding
         actie.melding = tekst
@@ -722,24 +739,24 @@ def wijzigtekst(root,my,request,actie="",page=""):
     if page == "meld":
         if actie.melding != orig:
             msg = "Meldingtekst aangepast"
-            store_event(my,msg, actie, request.user)
+            store_event(my, msg, actie, request.user)
     elif page == "oorz":
         if actie.oorzaak != orig:
             msg = "Beschrijving oorzaak aangepast"
-            store_event(my,msg, actie, request.user)
+            store_event(my, msg, actie, request.user)
     elif page == "opl":
         if actie.oplossing != orig:
             msg = "Beschrijving oplossing aangepast"
-            store_event(my,msg, actie, request.user)
+            store_event(my, msg, actie, request.user)
     elif page == "verv":
         if actie.vervolg != orig:
             msg = "Beschrijving vervolgactie aangepast"
-            store_event(my,msg, actie, request.user)
+            store_event(my, msg, actie, request.user)
     page = vervolg if vervolg else page
     return HttpResponseRedirect(
-        "/{0}/{1}/{2}/?msg={3}".format(root,actie.id,page,msg))
+        "/{0}/{1}/{2}/meld/{3}".format(root, actie.id, page, msg))
 
-def events(root,name,my,request,actie="",event=""):
+def events(root, name, my, request, actie="", event="", msg=''):
     """
     bouw de lijst op met actiehistorie (momenten).
     indien er een moment geselecteerd is, deze apart doorgeven voor in het onderste
@@ -747,7 +764,7 @@ def events(root,name,my,request,actie="",event=""):
     de soort user wordt meegegeven aan het scherm om indien nodig wijzigen onmogelijk te
         maken en diverse knoppen te verbergen.
     """
-    msg = request.GET.get("msg","")
+    ## msg = request.GET.get("msg", "")
     if not msg:
         if request.user.is_authenticated():
             msg = 'U bent ingelogd als <i>{0}</i>. '.format(request.user.username)
@@ -756,8 +773,8 @@ def events(root,name,my,request,actie="",event=""):
         else:
             msg = 'U bent niet ingelogd. Klik <a href="/accounts/login/'
             inuit = 'in'
-        msg += '?next=/{0}/{1}/voortg/">hier</a> om {2} te loggen.'.format(root,actie,inuit)
-    msg += " Klik op een voortgangsregel om de tekst nader te bekijken."
+        msg += '?next=/{0}/{1}/voortg/">hier</a> om {2} te loggen.'.format(root,
+            actie, inuit)
     actie = my.Actie.objects.select_related().get(id=actie)
     page_data = {
         "name": name,
@@ -768,23 +785,25 @@ def events(root,name,my,request,actie="",event=""):
         "events": actie.events.order_by("-start").order_by("-id"),
         "user": request.user,
         }
-    page_data["readonly"] = False if is_user(root,request.user) or is_admin(root,request.user) else True
+    page_data["readonly"] = False if is_user(root, request.user) or is_admin(root,
+            request.user) else True
     if event == "nieuw":
         nw_date = dt.datetime.now()
         page_data["nieuw"] = True
-        page_data["curr_ev"] = {"id": "nieuw","start": nw_date}
+        page_data["curr_ev"] = {"id": "nieuw", "start": nw_date}
     elif event:
         page_data["curr_ev"] = my.Event.objects.get(pk=event)
-    return render_to_response(root + '/voortgang.html',page_data)
+    return render_to_response(root + '/voortgang.html', page_data,
+        context_instance=RequestContext(request))
 
-def wijzigevents(root,my,request,actie="",event=""):
+def wijzigevents(root, my, request, actie="", event=""):
     """verwerk de aanpassingen en koppel door naar tonen van het scherm"""
     if not is_user(root,request.user) and not is_admin(root,request.user):
         return HttpResponse("U bent niet geautoriseerd om acties  te wijzigen"
         '<br>Klik <a href="/{0}/">hier</a> om door te gaan'.format(root))
     data = request.POST
-    tekst = data.get("data","")
-    actie = get_object_or_404(my.Actie,pk=actie)
+    tekst = data.get("data", "")
+    actie = get_object_or_404(my.Actie, pk=actie)
     if event == "nieuw":
         event = my.Event()
         event.actie = actie
@@ -792,10 +811,10 @@ def wijzigevents(root,my,request,actie="",event=""):
         ## actie.nummer = nummer
         ## event.start = dt.datetime.now()
     elif event:
-        event = get_object_or_404(my.Event,pk=event)
+        event = get_object_or_404(my.Event, pk=event)
     else:
-        return HttpResponse("{0} {1}".format(actie,event))
+        return HttpResponse("{0} {1}".format(actie, event))
     event.text = tekst
     event.save()
     return HttpResponseRedirect(
-        "/{0}/{1}/voortg/?msg=De gebeurtenis is bijgewerkt.".format(root,actie.id))
+        "/{0}/{1}/voortg/meld/De gebeurtenis is bijgewerkt./".format(root, actie.id))

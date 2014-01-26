@@ -58,8 +58,7 @@ function tick_two(field1, field2,box) {
 {% endblock %}
 {% block branding %}<h1>{{name|capfirst}} | actielijst - selecteren</h1>{% endblock %}
 {% block content-data %}
-<form action="/{{root}}/setsel/" method="post">
-<table>
+<form action="/{{root}}/setsel/" method="post">{% csrf_token %}
 <div class="col_all">Uitvinken van de linker checkbox is voldoende om de deelselectie ongedaan te maken.</div>
 <div class="clear">&nbsp;</div>
 
@@ -71,9 +70,9 @@ function tick_two(field1, field2,box) {
     <div>groter dan: <input type="text" name="txtgt" value="{{selected.gt}}"
             onkeyup="tick_two(this,txtlt,selact)" /></div>
     <div><input name="enof" type="radio" value="en"
-            {%ifequal selected.enof1 "en"%} checked="checked"{%endifequal%}>en</input>
+            {%if selected.enof1 == "en"%} checked="checked"{%endif%}>en</input>
             <input name="enof" type="radio" value="of"
-            {%ifequal selected.enof1 "of"%} checked="checked"{%endifequal%}>of</input>
+            {%if selected.enof1 == "of"%} checked="checked"{%endif%}>of</input>
     </div>
     <div>kleiner dan: <input type="text" name="txtlt" value="{{selected.lt}}"
             onkeyup="tick_two(this,txtgt,selact)"/></div>
@@ -87,7 +86,7 @@ function tick_two(field1, field2,box) {
 <div class="col_right">{% for srt in soorten %}
     <input type="checkbox" name="srtval" value="{{srt.value}}" onclick="tick_tick(this,selsrt)"
         {% for  s in selected.soort %}
-        {% ifequal srt.value s %}checked ="checked"{% endifequal %}
+        {% if srt.value == s %}checked ="checked"{% endif %}
         {% endfor %}>{{srt.title}}</input><br/>
     {% endfor %}</div>
 <div class="clear">&nbsp;</div>
@@ -99,7 +98,7 @@ function tick_two(field1, field2,box) {
 <div class="col_right">{% for stat in stats %}
     <input type="checkbox" name="statval" value="{{stat.value}}" onclick="tick_tick(this,selstat)"
         {% for  s in selected.status %}
-        {% ifequal stat.value s %}checked="checked"{% endifequal %}
+        {% if stat.value == s %}checked="checked"{% endif %}
         {% endfor %}>{{stat.title}}</input><br/>
     {% endfor %}</div>
 <div class="clear">&nbsp;</div>
@@ -111,7 +110,7 @@ function tick_two(field1, field2,box) {
 <div class="col_right">
     <select name="userval" multiple="multiple" onchange="tick_multi(this,seluser)">
         {% for user in users %}<option value="{{user.id}}"{% for  s in selected.user %}
-        {% ifequal user.id s %}selected="selected"{% endifequal %}{% endfor %}>
+        {% if user.id == s %}selected="selected"{% endif %}{% endfor %}>
         {{user.username}}</option>{% endfor %}</select></div>
 <div class="clear">&nbsp;</div>
 
@@ -122,9 +121,9 @@ function tick_two(field1, field2,box) {
     <div>'betreft': <input type="text" name="txtabout" value="{{selected.about}}"
         onkeyup="tick_two(this,txttitle,seltxt)" /></div>
     <div><input name="enof2" type="radio" value="en"
-        {%ifequal selected.enof2 "en"%} checked="checked"{%endifequal%}>en</input>
+        {%if selected.enof2 == "en"%} checked="checked"{%endif%}>en</input>
         <input name="enof2" type="radio" value="of"
-        {%ifequal selected.enof2 "of"%} checked="checked"{%endifequal%}>of</input>
+        {%if selected.enof2 == "of"%} checked="checked"{%endif%}>of</input>
     </div>
     <div>'omschrijving': <input type="text" name="txttitle" value="{{selected.title}}"
         onkeyup="tick_two(this,txtabout,seltxt)" /></div>
@@ -136,15 +135,15 @@ function tick_two(field1, field2,box) {
 </div>
 <div class="col_right">
     <input name="archall" type="radio" value="arch"  onclick="tick_tick(this,selarch)"
-        {% ifequal selected.arch 1 %}checked="checked"{% endifequal %}>
+        {% if selected.arch == 1 %}checked="checked"{% endif %}>
         alleen gearchiveerd</input>
     <input name="archall" type="radio" value="all"  onclick="tick_tick(this,selarch)"
-        {% ifequal selected.arch 2 %}checked="checked"{% endifequal %}>
+        {% if selected.arch == 2 %}checked="checked"{% endif %}>
         gearchiveerd en lopend</input>
 </div>
 <div class="clear">&nbsp;</div>
 
-<div class="col_left">>&nbsp;</div>
+<div class="col_left">&nbsp;</div>
 <div class="col_right"><input type="submit" value="OK"/>
     <a href="/{{root}}/"><input type="button" value="Cancel"/></a></div>
 <div class="clear">&nbsp;</div>

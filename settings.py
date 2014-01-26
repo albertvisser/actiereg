@@ -1,4 +1,4 @@
-# Django settings for probreg project.
+# Django settings for actiereg project.
 
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
@@ -10,7 +10,7 @@ ADMINS = (
 MANAGERS = ADMINS
 
 DATABASE_ENGINE = 'sqlite3'           # 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
-DATABASE_NAME = 'q:/www/django/actiereg/probreg.db'             # Or path to database file if using sqlite3.
+DATABASE_NAME = '/home/albert/www/django/actiereg/actiereg.db'             # Or path to database file if using sqlite3.
 DATABASE_USER = ''             # Not used with sqlite3.
 DATABASE_PASSWORD = ''         # Not used with sqlite3.
 DATABASE_HOST = ''             # Set to empty string for localhost. Not used with sqlite3.
@@ -45,7 +45,7 @@ MEDIA_URL = ''
 # URL prefix for admin media -- CSS, JavaScript and images. Make sure to use a
 # trailing slash.
 # Examples: "http://foo.com/media/", "/media/".
-ADMIN_MEDIA_PREFIX = '/media/'
+ADMIN_MEDIA_PREFIX = '/media/admin/'
 
 # Make this unique, and don't share it with anybody.
 SECRET_KEY = '8s@j9md4y@9_m1bocwr^k&k(11mbaa-8ilni961e%%j4#s2o9*'
@@ -60,6 +60,7 @@ TEMPLATE_LOADERS = (
 MIDDLEWARE_CLASSES = (
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.middleware.doc.XViewMiddleware',
 )
@@ -70,7 +71,7 @@ TEMPLATE_DIRS = (
     # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
     # Always use forward slashes, even on Windows.
     # Don't forget to use absolute paths, not relative paths.
-    'q:/www/django/actiereg/templates/'
+    '/home/albert/www/django/actiereg/templates/'
 )
 
 INSTALLED_APPS = (
@@ -82,3 +83,10 @@ INSTALLED_APPS = (
     'django.contrib.sites',
     'actiereg._basic',
 )
+
+SITES = {
+        "doctool": "http://myprojects.lemoncurry.nl",
+        "probreg": "http://actiereg.lemoncurry.nl",
+        }
+
+CSRF_COOKIE_DOMAIN = '.lemoncurry.nl'
