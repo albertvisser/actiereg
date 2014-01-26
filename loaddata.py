@@ -28,14 +28,12 @@ def loadsett(fnaam):
     for value,title in data.kop.items():
         order = int(value)
         link = ['index','detail','meld','oorz','opl','verv','voortg'][order]
-        print "from input",order, link, title
         my.Page.objects.create(order=order,link=link,title=title)
     while order < 6:
         order += 1
         link = ['index','detail','meld','oorz','opl','verv','voortg'][order]
         title = ["Lijst", "Titel/Status", "Probleem/Wens", "Oorzaak/Analyse",
                  "Oplossing", "Vervolgactie", "Voortgang"][order]
-        print "created",order, link, title
         try:
             my.Page.objects.create(order=order,link=link,title=title)
         except sql.IntegrityError: # duplicate "order" - mag genegeerd worden
