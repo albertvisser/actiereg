@@ -4,11 +4,11 @@ import sys
 import os
 sys.path.append("/home/visser/django")
 os.environ["DJANGO_SETTINGS_MODULE"] = 'probreg.settings'
-from sqlite3 import IntegrityError
+import sqlite3 as sql
 import settings
 import probreg._basic.models as my
 from django.contrib.auth.models import User, Group
-import dml
+from probreg import dml
 
 def loadsett(fnaam):
     data = dml.Settings(fnaam)
@@ -30,7 +30,7 @@ def loadsett(fnaam):
         link = ['index','detail','meld','oorz','opl','verv','voortg'][order]
         print "from input",order, link, title
         my.Page.objects.create(order=order,link=link,title=title)
-    while order < 7:
+    while order < 6:
         order += 1
         link = ['index','detail','meld','oorz','opl','verv','voortg'][order]
         title = ["Lijst", "Titel/Status", "Probleem/Wens", "Oorzaak/Analyse",
@@ -38,10 +38,11 @@ def loadsett(fnaam):
         print "created",order, link, title
         try:
             my.Page.objects.create(order=order,link=link,title=title)
-        except IntegrityError: # duplicate "order" - mag genegeerd worden
+        except sql.IntegrityError: # duplicate "order" - mag genegeerd worden
             pass
 
 def loaddata(fnaam):
+    con = sql.connect(settings.DATABASE_NAME)
     data = [actie[0] for actie in dml.Acties(fnaam,arch="alles").lijst]
     for item in data:
         actie = dml.Actie(fnaam,item)
@@ -64,10 +65,20 @@ def loaddata(fnaam):
             oplossing = actie.oplossing,
             vervolg = actie.vervolg,
             )
+        # datums goed zetten
+        cmd = "update {0}_actie set start = ?, gewijzigd = ? where id = ?".format(fnaam)
+        con.execute(cmd,(actie.datum, actie.updated, nieuw.id))
+        con.commit()
         for start,text in actie.events:
+            if not text:
+                text = ""
             ok= my.Event.objects.create(
                 actie = nieuw,
                 start = start,
                 starter = User.objects.get(pk=1),
                 text = text,
                 )
+            # datums goed zetten
+            cmd = "update {0}_event set start = ? where id = ?".format(fnaam)
+            con.execute(cmd,(start, ok.id))
+            con.commit()

@@ -149,6 +149,12 @@ def index(request):
         page_data["geen_items"] = "Geen acties die aan deze criteria voldoen"
     else:
         page_data["geen_items"] = "Nog geen acties opgevoerd voor dit project"
+        if not [x.assigned for x in my.Worker.objects.all()]:
+            page_data["readonly"] = True
+            page_data["geen_items"] += "<br/><br/>" + " ".join(("\nLet op:",
+                "aan dit project moeten eerst nog medewerkers",
+                "en bevoegdheden voor die medewerkers worden toegevoegd"))
+    page_data["geen_items"] = page_data["geen_items"].join(("<p>","</p>"))
     return render_to_response(ROOT + '/index.html',page_data)
 
 @login_required
@@ -525,7 +531,7 @@ def wijzig(request,actie="",doe=""):
     nummer = data.get("nummer","")
     about = data.get("about","")
     title = data.get("title","")
-    actor = int(data.get("user",""))
+    actor = int(data.get("user","1"))
     soort = data.get("soort"," ")
     status = int(data.get("status","1"))
     vervolg = data.get("vervolg","")
@@ -718,7 +724,7 @@ def events(request,actie="",event=""):
         "msg": msg,
         "pages": my.Page.objects.all().order_by('order'),
         "actie": actie,
-        "events": actie.events.order_by("-start"),
+        "events": actie.events.order_by("-start").order_by("-id"),
         "user": request.user,
         }
     page_data["readonly"] = False if is_user(request.user) or is_admin(request.user) else True

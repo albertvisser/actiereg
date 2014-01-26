@@ -5,6 +5,9 @@ gebruik: python newapp.py <name> [copy|activate|loaddata|undo] [xml-file]
 zonder tweede argument maakt dit een platte kopie van de basisapplicatie
     (m.a.w. de opties copy + activate uit het onderstaande)
 
+met een * als eerste argument voert dit het bovengenoemde uit voor alle
+    nog niet geactiveerde applicaties in apps.dat
+
 om een aangepaste kopie te maken kun je als tweede argument opgeven:
 'copy':     kopieer programmatuur en templates (om aan te passen voorafgaand
             aan "activate")
@@ -20,9 +23,8 @@ om een aangepaste kopie te maken kun je als tweede argument opgeven:
 import os
 import sys
 import shutil
-sys.path.append("/home/visser/django")
-
-basepath = "/home/visser/django/probreg"
+basepath = os.path.dirname(__file__)
+sys.path.append(os.path.dirname(basepath))
 appsfile = os.path.join(basepath,"apps.dat")
 USAGE = __doc__
 
@@ -33,13 +35,27 @@ def copyover(root,name,appname):
     with open(os.path.join(copyfrom,name)) as oldfile:
         with open(os.path.join(copyto,name),"w") as newfile:
             for line in oldfile:
-                newfile.write(line.replace("_basic",root).replace('"basic"','"{0}"'.format(root)).replace('"demo"','"{0}"'.format(appname)))
+               if "basic" in line:
+                    if name == "models.py":
+                        line = line.replace("basic",root)
+                    else:
+                        line = line.replace("_basic",root)
+                if line == 'ROOT = "basic"\n':
+                    newfile.write('ROOT = "{0}"\n'.format(root))
+                elif line == 'NAME = "demo"\n':
+                    newfile.write('NAME = "{0}"\n'.format(appname))
+                else:
+                    newfile.write(line)
 
 def backup(fn):
     if os.path.split(fn)[0] == "":
         fn = os.path.join(basepath,fn)
     new = fn + "~"
-    os.rename(fn,new)
+    try:
+        os.rename(fn,new)
+    except WindowsError:
+        os.remove(new)
+        os.rename(fn,new)
     return new,fn
 
 def newproj(*args):
@@ -128,13 +144,14 @@ def newproj(*args):
                         newfile.write(line)
         # database aanpassen en initiele settings data opvoeren
         if action != "undo":
+            sys.path.append(basepath)
             os.environ["DJANGO_SETTINGS_MODULE"] = 'probreg.settings'
             import settings
             from django.contrib.auth.models import Group, Permission
             print("modifying database...")
-            os.system("python /home/visser/django/probreg/manage.py syncdb")
+            os.system("manage.py syncdb")
             print("loading inital data...")
-            os.system("python manage.py loaddata {0}/initial_data.json".format(root))
+            os.system("manage.py loaddata {0}/initial_data.json".format(root))
             print("setting up authorisation groups...")
             grp = Group.objects.create(name='{0}_admin'.format(root))
             for perm in Permission.objects.filter(
@@ -170,13 +187,25 @@ def newproj(*args):
         print "ready."
         print "loading data...",
         ld.loaddata(load_from)
-        print "ready."
     print("ready.")
+    print "\nRestart the server to activate the new app."
+
+def allnew():
+    ret = ''
+    with open(appsfile) as oldfile:
+        newapps = [line.split(";")[1] for line in oldfile if line.startswith('_')]
+    for app in newapps:
+        ret = newproj(app)
+        if ret:
+            break
+    return ret
 
 if __name__ == "__main__":
     if len(sys.argv) == 1:
-        print USAGE
+        ret = USAGE
+    elif sys.argv[1] == "*":
+        ret = allnew()
     else:
         ret = newproj(*sys.argv[1:])
-        if ret:
-            print ret
+    if ret:
+        print ret

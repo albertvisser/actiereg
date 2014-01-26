@@ -81,8 +81,4 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.sites',
     'probreg._basic',
-    'probreg.probreg_pc',
-    'probreg.jvsdoe',
-    'probreg.leesJCL',
-    'probreg.jvs',
 )
