@@ -17,7 +17,8 @@ span.clear {
 	height: 0;
 }
 .col_when,
-.col_oms {
+.col_oms,
+.col_nw {
     font-family:"Lucida Grande", Verdana, Arial, sans-serif;
     line-height:13px; border-bottom:1px solid #eee; vertical-align:top;
     padding: 5px 0 5px 0 ;
@@ -35,12 +36,15 @@ span.clear {
 .col_oms {
 	width: 420px;
 }
+.col_nw {
+	width: 590px;
+}
 </style> {% endblock %}
 {% block branding %}<h1>{{name|capfirst}} | {{actie.nummer}} - voortgang</h1>{% endblock %}
 {% block content-data %}
 <div style="max-height: 240px; width: 660px; overflow: auto">
-    {% if nieuw %}<div class="col_when">-- nieuw voortgangsmoment --</div>
-        <div class="col_oms">&nbsp;</div><div class="clear">&nbsp;</div>{% endif %}
+    {% if nieuw %}<div class="col_nw">-- nieuw voortgangsmoment --</div>
+        <div class="clear">&nbsp;</div>{% endif %}
     {%for ev in events%}<a href="/{{root}}/{{actie.id}}/voortg/{{ev.id}}/">
         <div class="col_when">{{ev.start|date:"d-m-Y H:i:s"}} {{ev.starter}}:</div>
         <div class="col_oms">{{ev.text|trimat:60}}</div></a><div class="clear">&nbsp;</div>
