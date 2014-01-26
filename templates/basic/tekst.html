@@ -1,0 +1,28 @@
+{% extends "probreg/base_site.html" %}
+{% block extrahead %}
+<script type="text/javascript">
+function setvervolg() {
+    document.getElementById('vervolg').value = "{{next}}";
+    document.getElementById('textform').submit();
+}
+</script>
+{%endblock%}
+{% block branding %}<h1>{{name|capfirst}} | Actie {{actie.nummer}} - {{page_titel}}</h1>
+    {% endblock %}
+{% block content-data %}
+<!-- <div>actie: {{actie.nummer}}</div>
+<div>omschrijving: {{actie.about}}: {{actie.title}} </div>
+<hr/><div style="text-align: center"><h2>{{page_titel}}</h2></div>
+<hr/> -->
+<form id="textform" action="/{{root}}/{{actie.id}}/{{page}}/update/" method="post">
+<div><textarea name="data" cols="80" rows="28"
+    {% if actie.arch or readonly %}readonly="readonly"{% endif %}>{{page_text}}</textarea>
+    </div>
+<div>{% if not actie.arch and not readonly %}
+<input type="submit" value="Wijzigen" />
+<input type="hidden" name="vervolg" id="vervolg" value=""/>
+<input type="button" value="Wijzigen en volgende scherm" onclick="setvervolg()"/>
+<input type="reset" value="Terugzetten"/>{% endif %}
+</div>
+</form>
+{% endblock %}

@@ -1,0 +1,29 @@
+{% extends "base_site.html" %}
+
+{% block branding %}<h1>ActieRegistratie | Nieuw project opvoeren</h1>{% endblock %}
+
+{% block content %}
+<form action="/add/" method="post">
+<table>
+<tr><th>project naam: </th>
+    <td><input type="text" name="name" value=""/></td></tr>
+<tr><th>korte beschrijving: </th>
+    <td><input type="text" name="desc" value="" size="60"/></td></tr>
+<tr><td colspan="2">
+    <input type="submit" value="opvoeren"/>
+    <a href="/" title="back"><input type="button" value="terug"/></a>
+</td></tr>
+</table>
+<div>
+"Opvoeren" betekent dat er een signaal naar de admin van deze site gaat om een nieuw project
+op te voeren volgens de ingevulde gegevens.
+{% comment %}
+Voor het aanmaken van een nieuw project moet helaas nog een en ander met de hand gebeuren.
+    <ol>
+    <li>Stop de server.</li>
+    <li>Draai het script "./probreg" met als parameter de zojuist opgegeven root naam.</li>
+    <li>Herstart de server.</li>
+    </ol>
+{% endcomment %}
+</div>
+{% endblock %}

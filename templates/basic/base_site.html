@@ -1,0 +1,35 @@
+{% extends "base_site.html" %}
+{% load i18n %}
+{% load extratags %}
+{% block style %} <link rel="stylesheet" type="text/css" href="/media/css/base.css" /> {% endblock %}
+{% block extrahead %}{% endblock %}
+{% block title %} ProbReg| {{ title|escape }} {% endblock %}
+{% block branding %}<h1 id="site-name">{{branding|escape}}{% trans 'ProbReg ' %} | {{ title|escape }}</h1>{% endblock %}
+{% block nav-global %}{{menu}} {% endblock %}
+{% block breadcrumbs %}
+{% for x in crumbs %}
+&rsaquo; <a href="{{x.0}}" title="{{x.2}}">{{x.1}}</a>
+{% endfor %}
+{% endblock %}
+{% block content_title %}{% endblock %}
+{% block content %}
+<div>
+<table>
+    <tr><td colspan="{{pages|length|add:"3"}}">
+        {%if message %}<p style="color: red"> {{ message }}</p>{% else %}{{msg|safe}}
+        {% endif %}</td></tr>
+    <tr><td><a href="/">Home</a></td>
+        {% for page in pages %}<td>{% if forloop.first or actie %}
+        <a href="/{{root}}/{% if actie and not forloop.first%}{{actie.id}}/{%endif%}{{page.link}}/">
+        {%endif%}{{page.title}}{% if forloop.first or actie %}</a>{%endif%}</td>
+        {% endfor%}<td>&nbsp;</td></tr>
+{% if actie %}
+    <tr><td colspan="{{pages|length|add:"3"}}">{{actie.about}}: {{actie.title|trimat:80}} </td>
+        <td>&nbsp;</td></tr>
+{% endif %}
+</table>
+</div>
+  <hr/>
+  {% block content-data %} {{ content }} {% endblock %}
+  <hr/>
+{% endblock %}

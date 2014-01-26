@@ -1,0 +1,29 @@
+{% extends "probreg/base_site.html" %}
+{% block branding %}<h1>{{name|capfirst}} | actielijst - sorteren</h1>{% endblock %}
+{% block content-data %}
+<form action="/{{root}}/setorder/" method="post">
+<table>
+<tr><th>volgorde</th><th>veld</th><th>richting</th></tr>
+{% for sorter in sorters %}<tr>
+<td>{{forloop.counter|rjust:"2"}}.</td>
+<td><select name="field{{forloop.counter}}">
+    <option value="">(geen)</option>
+    {% for field,name in fields %}
+        <option {% ifequal field sorter.veldnm %}selected="selected"{% endifequal %} >{{name}}
+        </option>{% endfor %}
+    </select></td>
+<td>
+    <input name="order{{forloop.counter}}" type="radio" value="asc"
+        {% if sorter %}{% ifequal sorter.richting "asc" %}checked="checked"{% endifequal %}
+            {%else %}checked="checked"{% endif %}>
+        Oplopend</input>
+    <input name="order{{forloop.counter}}" type="radio" value="desc"
+        {% if sorter %}{% ifequal sorter.richting "desc" %}checked="checked"{% endifequal %}
+            {% endif %}>
+        Aflopend</input></td>
+</tr>{% endfor %}
+<tr><td colspan="3" align="center"><input type="submit" value="OK"/>
+    <a href="/{{root}}/"><input type="button" value="Cancel"/></a></td></tr>
+</table>
+</form>
+{% endblock %}

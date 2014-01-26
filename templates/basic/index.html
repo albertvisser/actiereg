@@ -1,0 +1,36 @@
+{% extends "probreg/base_site.html" %}
+{% load extratags %}
+{% block branding %}<h1>{{name|capfirst}} | actielijst</h1>{% endblock %}
+{% block content-data %}
+{% if acties %}
+<div style="max-height: 300px; overflow: auto">
+<table>
+<tr>
+  <th>nummer</th>
+  <th>soort</th>
+  <th>status</th>
+  <th>uitgezet bij</th>
+  <th>ltst. wijz.</th>
+  <th>omschrijving</th>
+</tr>
+{% for actie in acties %}
+<tr>
+  <td><a href="/{{root}}/{{actie.id}}/"> {{actie.nummer}} </a></td>
+  <td> {{actie.soort.title}} </td>
+  <td> {{actie.status.title|default:"onbekend"}} </td>
+  <td> {{actie.behandelaar}} </td>
+  <td> {{actie.gewijzigd|date:"d-m-Y H:i:s"}} {{actie.lasteditor}} {% if actie.arch %} (A){%endif %} </td>
+  <td> {{actie.about}}: {{actie.title|trimat:50}} </td>
+</tr>
+{% endfor %}
+</table>
+</div>
+{% else %}
+<div>{{geen_items}}</div>
+{% endif %}
+<a href="/{{root}}/order/"><input type="button" value="sorteren"/></a>
+<a href="/{{root}}/select/"><input type="button" value="selecteren"/></a>
+{% if not readonly %}<a href="/{{root}}/nieuw/">
+    <input type="button" value="Nieuwe actie opvoeren"/></a>{% endif %}
+{% if admin %}<a href="/{{root}}/settings/"><input type="button" value="settings"/></a>{% endif%}
+{% endblock %}

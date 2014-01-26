@@ -1,0 +1,117 @@
+{% extends "base_site.html" %}
+{% block branding %}<h1>{{name|capfirst}} | Instellingen</h1>{% endblock %}
+{% block extrahead %}
+<script type="text/javascript">
+function move_item(from, to)
+{
+  var f;
+  var SI; /* selected Index */
+  if(from.options.length>0)
+  {
+    for(i=0;i<from.length;i++)
+    {
+      if(from.options[i].selected)
+      {
+        SI=from.selectedIndex;
+        f=from.options[SI].index;
+        to.options[to.length]=new Option(from.options[SI].text,from.options[SI].value);
+        from.options[f]=null;
+        i--; /* make the loop go through them all */
+      }
+    }
+  }
+}
+function herbepaal(o,p)
+{
+  var s = o.options[0].value;
+  for (i=1;i<o.length;i++)
+    s += ("$#$" + o.options[i].value)
+  p.value = s;
+}
+</script>
+{% endblock %}
+{% block content %}
+<a href="#usr">Gebruikers voor dit project</a><br/>
+<a href="#tab">Tab headers</a><br/>
+<a href="#srt">Soorten acties</a><br/>
+<a href="#stat">Mogelijke statussen voor actie</a><br/>
+<a href="/{{root}}/" title="back">Terug naar de actielijst</a>
+<hr/>
+<a name="usr"></a>
+<div><h3>Gebruikers</h3></div>
+<form action="/{{root}}/wijzigusers/" method="post"><table><tr>
+    <td>Bekende gebruikers:<br/>
+        <select name="AllUsers" multiple="multiple" size="6">{% for usr in all_users %}
+            <option value="{{ usr.id }}">{{ usr }}</option>{% endfor %}</select></td>
+    <td valign="middle"><br/>  <br/>
+        <input type="button" name="pbAdd" value="toevoegen ->"
+            onclick="move_item(AllUsers, ProjUsers)"><br/>
+        <input type="button" name="pbDel" value="<- weghalen"
+            onclick="move_item(ProjUsers,AllUsers)"/><br/></td>
+    <td>Gebruikers voor dit project:<br/>
+        <select name="ProjUsers" multiple="multiple" size="6">{% for usr in proj_users %}
+            <option value="{{ usr.assigned.id }}">{{ usr.assigned }}</option>{% endfor %}
+            </select></td></tr></table>
+    <input type="hidden" name="result" />
+    <input type="submit" value="aanpassen"  onclick="herbepaal(ProjUsers,result)"/>
+    <a href="/{{root}}/" title="back"><input type="button" value="terug naar actielijst"/></a>
+    <a href="#top">terug naar het begin van de pagina</a>
+    </form>
+<hr/>
+<a name="tab"></a>
+<div><h3>Tab headers</h3></div>
+<form action="/{{root}}/wijzigtabs/" method="post"><table><tr>
+    {% for page in pages %}<td><input type="text" name="page{{forloop.counter}}"
+        value="{{page.title}}" size="13"/></td>{% endfor %}</tr></table>
+    <input type="submit" value="aanpassen"/>
+    <a href="/{{root}}/" title="back"><input type="button" value="terug naar actielijst"/></a>
+    <a href="#top">terug naar het begin van de pagina</a>
+    </form>
+<hr/>
+<a name="srt"></a>
+<div><h3>Soorten acties</h3></div>
+<form action="/{{root}}/wijzigtypes/" method="post"><table>
+    <tr><th>volgorde</th><th>titel</th><th>waarde</th></tr>
+    {% for soort in soorten %}
+<tr>
+<td><input type="text" name="order{{forloop.counter}}" value="{{soort.order}}" size="2"/></td>
+<td><input type="text" name="title{{forloop.counter}}" value="{{soort.title}}"/></td>
+<td><input type="text" name="value{{forloop.counter}}" value="{{soort.value}}" size="2"/></td>
+<td><input type="checkbox" name="del{{forloop.counter}}" value="X">verwijderen</input></td>
+</tr>
+{% endfor %}
+<tr>
+<td><input type="text" name="order0" value="" size="2"/></td>
+<td><input type="text" name="title0" value=""/></td>
+<td><input type="text" name="value0" value="" size="2"/></td>
+</tr>
+</table>
+<input type="submit" value="aanpassen"/> (vul de onderste regel in om toe te voegen)
+<a href="/{{root}}/" title="back"><input type="button" value="terug naar actielijst"/></a>
+        <a href="#top">terug naar het begin van de pagina</a>
+</form>
+<hr/>
+<a name="stat"></a>
+<div><h3>Mogelijke statussen</h3></div>
+<form action="/{{root}}/wijzigstats/" method="post">
+<table>
+<tr><th>volgorde</th><th>titel</th><th>waarde</th></tr>
+{% for stat in stats %}
+<tr>
+<td><input type="text" name="order{{forloop.counter}}" value="{{stat.order}}" size="2"/></td>
+<td><input type="text" name="title{{forloop.counter}}" value="{{stat.title}}"/></td>
+<td><input type="text" name="value{{forloop.counter}}" value="{{stat.value}}" size="2"/></td>
+<td><input type="checkbox" name="del{{forloop.counter}}" value="X">verwijderen</input></td>
+</tr>
+{% endfor %}
+<tr>
+<td><input type="text" name="order0" value="" size="2"/></td>
+<td><input type="text" name="title0" value=""/></td>
+<td><input type="text" name="value0" value="" size="2"/></td>
+</tr>
+</table>
+<input type="submit" value="aanpassen"/> (vul de onderste regel in om toe te voegen)
+<a href="/{{root}}/" title="back"><input type="button" value="terug naar actielijst"/></a>
+        <a href="#top">terug naar het begin van de pagina</a>
+</form>
+{% endblock %}

@@ -1,0 +1,85 @@
+{% extends "probreg/base_site.html" %}
+{% block extrahead %}
+<script type="text/javascript">
+function tick_tick(field,box) {
+    if (field.checked == true)
+        box.checked = true;
+}
+function tick_multi(field,box) {
+    if (field.selectedindex != -1)
+        box.checked = true;
+    else
+        box.checked = false;
+}
+function tick_two(field1, field2,box) {
+    if (field1.value != "" | field2.value != "")
+        box.checked = true;
+    else
+        box.checked = false;
+}
+</script>
+{% endblock %}
+{% block branding %}<h1>{{name|capfirst}} | actielijst - selecteren</h1>{% endblock %}
+{% block content-data %}
+<form action="/{{root}}/setsel/" method="post">
+<table>
+<tr><td colspan="3">Uitvinken van de linker checkbox is voldoende om de deelselectie ongedaan te maken.</td></tr>
+<tr><td><input type="checkbox" name="select" value="act" id="selact"
+        {% if selected.nummer %}checked="checked"{% endif %}>actienummer:</input></td>
+    <td><div>groter dan: <input type="text" name="txtgt" value="{{selected.gt}}"
+            onkeyup="tick_two(this,txtlt,selact)" /></div>
+        <div><input name="enof" type="radio" value="en"
+            {%ifequal selected.enof1 "en"%} checked="checked"{%endifequal%}>en</input>
+                    <input name="enof" type="radio" value="of"
+            {%ifequal selected.enof1 "of"%} checked="checked"{%endifequal%}>of</input></div>
+        <div>kleiner dan: <input type="text" name="txtlt" value="{{selected.lt}}"
+            onkeyup="tick_two(this,txtgt,selact)"/></div></td></tr>
+<tr><td><input type="checkbox" name="select" value="srt" id="selsrt"
+        {% if selected.soort %}checked="checked"{% endif %}>soort -</input>
+        selecteer een of meer:</td>
+    <td>{% for srt in soorten %}
+        <input type="checkbox" name="srtval" value="{{srt.value}}" onclick="tick_tick(this,selsrt)"
+            {% for  s in selected.soort %}
+            {% ifequal srt.value s %}checked ="checked"{% endifequal %}
+            {% endfor %}>{{srt.title}}</input>
+        <br/>{% endfor %}</td></tr>
+<tr><td><input type="checkbox" name="select" value="stat" id="selstat"
+        {% if selected.status %}checked="checked"{% endif %}>status -</input>
+        selecteer een of meer:</td>
+    <td>{% for stat in stats %}
+        <input type="checkbox" name="statval" value="{{stat.value}}" onclick="tick_tick(this,selstat)"
+            {% for  s in selected.status %}
+            {% ifequal stat.value s %}checked="checked"{% endifequal %}
+            {% endfor %}>{{stat.title}}</input>
+        <br/>{% endfor %}</td></tr>
+<tr><td><input type="checkbox" name="select" value="user" id="seluser"
+        {% if selected.user %}checked="checked"{% endif %}>behandelaar -</input>
+        selecteer een of meer:</td>
+    <td><select name="userval" multiple="multiple" onchange="tick_multi(this,seluser)">
+        {% for user in users %}<option value="{{user.id}}"{% for  s in selected.user %}
+            {% ifequal user.id s %}selected="selected"{% endifequal %}{% endfor %}>
+            {{user.username}}</option>{% endfor %}</select></td></tr>
+<tr><td><input type="checkbox" name="select" value="txt" id="seltxt"
+        {% if selected.zoek %}checked="checked"{% endif %}>zoek op tekst(deel) in:</input></td>
+    <td><div>'betreft': <input type="text" name="txtabout" value="{{selected.about}}"
+            onkeyup="tick_two(this,txttitle,seltxt)" /></div>
+        <div><input name="enof2" type="radio" value="en"
+            {%ifequal selected.enof2 "en"%} checked="checked"{%endifequal%}>en</input>
+                    <input name="enof2" type="radio" value="of"
+            {%ifequal selected.enof2 "of"%} checked="checked"{%endifequal%}>of</input></div>
+        <div>'omschrijving': <input type="text" name="txttitle" value="{{selected.title}}"
+            onkeyup="tick_two(this,txtabout,seltxt)" /></div></td></tr>
+<tr><td><input type="checkbox" name="select" value="arch" id="selarch"
+        {% if selected.arch %}checked="checked"{% endif %}>archiefstatus:</input></td>
+    <td>
+        <input name="archall" type="radio" value="arch"  onclick="tick_tick(this,selarch)"
+            {% ifequal selected.arch 1 %}checked="checked"{% endifequal %}>
+            alleen gearchiveerd</input>
+        <input name="archall" type="radio" value="all"  onclick="tick_tick(this,selarch)"
+            {% ifequal selected.arch 2 %}checked="checked"{% endifequal %}>
+            gearchiveerd en lopend</input></td></tr>
+<tr><td>&nbsp;</td><td><input type="submit" value="OK"/>
+    <a href="/{{root}}/"><input type="button" value="Cancel"/></a></td></tr>
+</table>
+</form>
+{% endblock %}
