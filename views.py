@@ -12,15 +12,16 @@ import shutil
 appsfile = os.path.join(os.path.split(__file__)[0],"apps.dat")
 
 def index(request):
-    if request.user.is_authenticated():
-        msg = 'U bent ingelogd als <i>{0}</i>. '.format(request.user.username)
-        msg += 'Klik <a href="/logout/?next=/">hier</a> om uit te loggen'
-    else:
-        msg = 'U bent niet ingelogd. '
-        msg += 'Klik <a href="accounts/login/?next=/">hier</a> om in te loggen,'
-        msg += ' <a href="/">hier</a> om terug te gaan naar het begin.'
     msg = request.GET.get("msg","")
-    app_list = [{"name": ''},]
+    if not msg:
+        if request.user.is_authenticated():
+            msg = 'U bent ingelogd als <i>{0}</i>. '.format(request.user.username)
+            msg += 'Klik <a href="/logout/?next=/">hier</a> om uit te loggen'
+        else:
+            msg = 'U bent niet ingelogd. '
+            msg += 'Klik <a href="accounts/login/?next=/">hier</a> om in te loggen,'
+            msg += ' <a href="/">hier</a> om terug te gaan naar het begin.'
+   app_list = [{"name": ''},]
     new_apps = []
     with open(appsfile) as apps:
         for app in apps:
