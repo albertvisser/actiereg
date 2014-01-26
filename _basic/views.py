@@ -502,10 +502,11 @@ def detail(request,actie=""):
         titel = "Nieuwe actie"
         volgnr = 0
         aant = my.Actie.objects.count()
+        nw_date = dt.datetime.now()
         if aant:
             last = my.Actie.objects.all()[aant - 1]
-            volgnr = int(last.nummer.split("-")[1])
-        nw_date = dt.datetime.now()
+            jaar,volgnr = last.nummer.split("-")
+            volgnr = int(volgnr) if int(jaar ) == nw_date.year else 0
         volgnr += 1
         page_data["nummer"] = "{0}-{1:04}".format(nw_date.year,volgnr)
         ## page_data["start"] = nw_date
