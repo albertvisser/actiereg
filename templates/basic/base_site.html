@@ -1,7 +1,7 @@
 {% extends "base_site.html" %}
 {% load i18n %}
 {% load extratags %}
-{% block style %} <link rel="stylesheet" type="text/css" href="/media/admin/css/base.css" />
+{% block style %} <link rel="stylesheet" type="text/css" href="/static/admin/css/base.css" />
 <style>
 div.clear,
 span.clear {
@@ -19,6 +19,7 @@ span.clear {
 	height: 0;
 }
 .col_all,
+.col_itall,
 .col_item {
     font-family:"Lucida Grande", Verdana, Arial, sans-serif;
     line-height:13px; border-top:1px solid #eee; vertical-align:top;
@@ -29,6 +30,10 @@ span.clear {
 }
 .col_all {
     width: 660px;
+}
+.col_itall {
+    margin-left: 15px;
+/*    width: 960px; */
 }
 </style>
 {% endblock %}
@@ -45,14 +50,16 @@ span.clear {
 {% block content %}
 <div class="col_all">
     {%if message %}<span style="color: red"> {{ message }}</span>{% else %}{{msg|safe}}
-    {% endif %}</div><div class="clear">&nbsp;</div>
+    {% endif %}</div><div class="clear">&nbsp;</div></div>
 <div class="col_item"><a href="/">Home</a></div>
 {% for page in pages %}<div class="col_item">{% if forloop.first or actie %}
     <a href="/{{root}}/{% if actie and not forloop.first%}{{actie.id}}/{%endif%}{{page.link}}/">
     {%endif%}{{page.title}}{% if forloop.first or actie %}</a>{%endif%}</div>
     {% endfor%}<div class="clear">&nbsp;</div>
 {% if actie %}
-    <div class="col_all">{{actie.about}}: {{actie.title|trimat:80}} </div>
+    <div class="col_itall">{{actie.about}}: {{actie.title|trimat:80}} </div>
     <div class="clear">&nbsp;</div>{% endif %}
-  {% block content-data %} {{ content }} {% endblock %}
+    <div class="col_itall">
+    {% block content-data %} {{ content }} {% endblock %}
+    </div>
 {% endblock %}

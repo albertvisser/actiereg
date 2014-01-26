@@ -24,7 +24,7 @@ span.clear {
 .col_oms {
     font-family:"Lucida Grande", Verdana, Arial, sans-serif;
     line-height:13px; border-top:1px solid #eee; vertical-align:top;
-    padding: 5px 0 5px 0 ;
+    padding: 5px 1px 5px 1px ;
     font-size:11px;
     display: inline;
 	float: left;
@@ -32,9 +32,11 @@ span.clear {
 .head {
     font-size:12px;
     font-weight:bold;
+    /* position: fixed; */
 }
 .col_nr {
 	width: 70px;
+    /* padding-left:15px; */
 }
 .col_srt {
 	width: 80px;
@@ -55,14 +57,15 @@ span.clear {
 {% block branding %}<h1>{{name|capfirst}} | actielijst</h1>{% endblock %}
 {% block content-data %}
 {% if acties %}
-<div style="max-height: 300px; overflow: auto">
+<div><!-- </div> style="max-height: 300px; overflow: auto; position: fixed"> -->
   <div class="col_nr head">nummer</div>
   <div class="col_srt head">soort</div>
   <div class="col_stat head">status</div>
   <div class="col_who head">uitgezet bij</div>
   <div class="col_when head">ltst. wijz.</div>
   <div class="col_oms head">omschrijving</div>
-  <div class="clear">&nbsp;</div>
+  <div class="clear head">&nbsp;</div>
+</div>
 <div style="max-height: 500px; overflow: auto">
 {% for actie in acties %}
   <div class="col_nr"><a href="/{{root}}/{{actie.id}}/"> {{actie.nummer}} </a></div>
