@@ -9,7 +9,7 @@ from django.shortcuts import render_to_response, get_object_or_404
 from django.db import connection
 from django.template import RequestContext
 from django.views.decorators.csrf import csrf_exempt
-from settings import MEDIA_ROOT, DATABASE_NAME, SITES
+from settings import MEDIA_ROOT, SITES # , DATABASES['default']['NAME']
 import os
 import shutil
 appsfile = os.path.join(os.path.split(__file__)[0],"apps.dat")

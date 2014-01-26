@@ -1,0 +1,11 @@
+syntax: glob
+
+apps.dat
+settings.py
+urls.py
+*.db
+*.json
+*.pyc
+*.bak
+*~
+*/*
