@@ -12,6 +12,7 @@ import actiereg._basic.models as my
 import datetime as dt
 ROOT = "basic"
 NAME = "demo"
+UIT_DOCTOOL = "Actie opgevoerd vanuit Doctool"
 
 def is_user(user):
     """geeft indicatie terug of de betreffende gebruiker acties mag wijzigen"""
@@ -40,6 +41,59 @@ def store_gewijzigd(mld,txt,hlp,actie,user):
     store_event('{0} gewijzigd in "{1}"'.format(mld,txt),actie,user)
     mld = hlp.append(mld)
     return mld
+
+def koppel(request):
+    """doorkoppeling vanuit doctool:
+    actie opvoeren en terugkeren"""
+    data = request.POST
+    vervolg = data.get("hFrom","")
+    usernaam = data.get("hUser","")
+    volgnr = 0
+    aant = my.Actie.objects.count()
+    nw_date = dt.datetime.now()
+    if aant:
+        last = my.Actie.objects.all()[aant - 1]
+        jaar,volgnr = last.nummer.split("-")
+        volgnr = int(volgnr) if int(jaar ) == nw_date.year else 0
+    volgnr += 1
+    actie = my.Actie()
+    actie.nummer = "{0}-{1:04}".format(nw_date.year,volgnr)
+    actie.start = nw_date
+    actie.starter = aut.User.objects.get(pk=1)
+    behandelaar = actie.starter
+    if usernaam:
+        try:
+            behandelaar = aut.User.objects.get(username=usernaam)
+        except ObjectDoesNotExist:
+            pass
+    actie.behandelaar = behandelaar
+    actie.about = "testbevinding" if "bevinding" in vervolg else ""
+    actie.title = data.get("hMeld","")
+    if "userwijz" in vervolg:
+        soort = "W"
+    elif "userprob" in vervolg:
+        soort = "P"
+    else:
+        soort = " "
+    actie.soort = my.Soort.objects.get(value=soort)
+    actie.status = my.Status.objects.get(value='0')
+    actie.lasteditor = actie.behandelaar
+    actie.melding = data.get("hOpm","")
+    actie.save()
+    store_event("{0} {1}".format(UIT_DOCTOOL,vervolg.split('koppel')[0]),
+        actie, actie.starter)
+    store_event('titel: "{0}"'.format(actie.title),actie,actie.starter)
+    store_event('categorie: "{0}"'.format(str(actie.soort)),actie,actie.starter)
+    store_event('status: "{0}"'.format(str(actie.status)),actie,actie.starter)
+
+    if vervolg:
+        ## return HttpResponse("""\
+        ## vervolg: {0}<br/>
+        ## adres: {1}""".format(vervolg,vervolg.format(actie.id,actie.nummer)))
+        return HttpResponseRedirect(vervolg.format(actie.id,actie.nummer))
+    else:
+        meld = "Opgevoerd vanuit DocTool zonder terugkeeradres"
+        return HttpResponseRedirect("/{0}/{1}/meld/?msg={2}".format(ROOT,actie.id,msg))
 
 @login_required
 def index(request):
@@ -532,7 +586,7 @@ def wijzig(request,actie="",doe=""):
     nummer = data.get("nummer","")
     about = data.get("about","")
     title = data.get("title","")
-    actor = int(data.get("user","1"))
+    actor = int(data.get("user","0"))
     soort = data.get("soort"," ")
     status = int(data.get("status","1"))
     vervolg = data.get("vervolg","")
@@ -594,10 +648,15 @@ def wijzig(request,actie="",doe=""):
         msg = msg.capitalize()
     ## return HttpResponse("*{0}* *{1}*".format(mld,msg))
     if vervolg:
-        return HttpResponseRedirect("/{0}/{1}/meld/?msg={2}".format(ROOT,actie.id,msg))
+        doc = "/{0}/{1}/meld/?msg={2}".format(ROOT,actie.id,msg)
     else:
-        return HttpResponseRedirect(
-            "/{0}/{1}/?msg={2}".format(ROOT,actie.id,msg))
+        doc = "/{0}/{1}/?msg={2}".format(ROOT,actie.id,msg)
+    if doe in ("arch","herl"):
+        # indien nodig eerst naar doctool om de actie af te melden of te herleven
+        follow = my.Event.objects.filter(actie=actie.id).order_by('id')[0].text
+        if follow.startswith(UIT_DOCTOOL):
+            doc = "{0}meld/?status={1}&from={2}".format(follow.split()[-1],doe,doc)
+    return HttpResponseRedirect(doc)
 
 @login_required
 def tekst(request,actie="",page=""):
