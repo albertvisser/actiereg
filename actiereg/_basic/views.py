@@ -13,7 +13,7 @@ def index(request, msg=''):
 
 @login_required
 def settings(request):
-    return core.settings(ROOT, NAME, my, request, msg)
+    return core.settings(ROOT, NAME, my, request)
 
 @login_required
 def setusers(request):
@@ -37,7 +37,7 @@ def select(request):
 
 @login_required
 def setsel(request):
-    return core.setsel(ROOT,my,request)
+    return core.setsel(ROOT, my,request)
 
 @login_required
 def order(request):

@@ -51,7 +51,7 @@ __init__.py
 admin.py
     registratie van models tbv admin site
 initial_data.json
-    bevat initiele data voor de status soort en tit-header tabellen
+    bevat initiele data voor de status soort en titel-header tabellen
 models.py
     data mappings
 sample_data.py
