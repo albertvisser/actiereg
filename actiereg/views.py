@@ -48,7 +48,7 @@ def index(request, msg=""):
                         break
                 if not inserted:
                     app_list.append({"root": root,"name": name,"desc": desc,
-                        "open": all_open, "active": all_active})
+                        "alle": all, "open": all_open, "active": all_active})
             else:
                 new_apps.append({"root": root,"name": name,"desc": desc})
     app_list.pop(0)
