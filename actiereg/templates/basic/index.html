@@ -39,7 +39,7 @@ span.clear {
     /* padding-left:15px; */
 }
 .col_srt {
-	width: 80px;
+	width: 90px;
 }
 .col_stat {
 	width: 140px;
@@ -48,7 +48,7 @@ span.clear {
 	width: 80px;
 }
 .col_when {
-	width: 210px;
+	width: 80px;
 }
 .col_oms {
 	width: 400px;
@@ -57,7 +57,7 @@ span.clear {
 {% block branding %}<h1>{{name|capfirst}} | actielijst</h1>{% endblock %}
 {% block content-data %}
 {% if acties %}
-<div><!-- </div> style="max-height: 300px; overflow: auto; position: fixed"> -->
+
   <div class="col_nr head">nummer</div>
   <div class="col_srt head">soort</div>
   <div class="col_stat head">status</div>
@@ -65,18 +65,17 @@ span.clear {
   <div class="col_when head">ltst. wijz.</div>
   <div class="col_oms head">omschrijving</div>
   <div class="clear head">&nbsp;</div>
-</div>
-<div style="max-height: 500px; overflow: auto">
+
 {% for actie in acties %}
   <div class="col_nr"><a href="/{{root}}/{{actie.id}}/"> {{actie.nummer}} </a></div>
   <div class="col_srt"> {{actie.soort.title}} </div>
   <div class="col_stat"> {{actie.status.title|default:"onbekend"}} </div>
   <div class="col_who"> {{actie.behandelaar}} </div>
-  <div class="col_when"> {{actie.gewijzigd|date:"d-m-Y H:i:s"}} {{actie.lasteditor}} {% if actie.arch %} (A){%endif %} </div>
-  <div class="col_oms"> {{actie.about}}: {{actie.title|trimat:50}} </div>
+  <div class="col_when"> {{actie.gewijzigd|date:"d-m-Y"}} </div>
+  <div class="col_oms"> {{actie.about}}: {{actie.title|trimat:50}} {% if actie.arch %}(A){%endif %}</div>
   <div class="clear">&nbsp;</div>
 {% endfor %}
-</div>
+
 {% else %}
 <div>{{geen_items|safe}}</div>
 {% endif %}
