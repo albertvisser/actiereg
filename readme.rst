@@ -10,7 +10,7 @@ For using it in the web browser, I added user support and changed the data stora
 to an SQL database in stead of XML files.
 
 There's also the possibility to communicate with another web app of mine, a `software
-project administration </avisser/myprojects/`_, to provide some context to the
+project administration </avisser/myprojects/>`_, to provide some context to the
 activity.
 
 Usage
