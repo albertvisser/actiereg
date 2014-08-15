@@ -8,7 +8,7 @@ class Status(models.Model):
     title = models.CharField(max_length=32)
     value = models.PositiveSmallIntegerField(unique=True)
     order = models.PositiveSmallIntegerField(unique=True)
-    def __unicode__(self):
+    def __str__(self):
         return self.title
 
 class Soort(models.Model):
@@ -17,7 +17,7 @@ class Soort(models.Model):
     title = models.CharField(max_length=32)
     value = models.CharField(max_length=1,unique=True)
     order = models.PositiveSmallIntegerField(unique=True)
-    def __unicode__(self):
+    def __str__(self):
         return self.title
 
 class Page(models.Model):
@@ -26,7 +26,7 @@ class Page(models.Model):
     title = models.CharField(max_length=32)
     link = models.CharField(max_length=8)
     order = models.PositiveSmallIntegerField(unique=True)
-    def __unicode__(self):
+    def __str__(self):
         return self.title
 
 class Actie(models.Model):
@@ -46,7 +46,7 @@ class Actie(models.Model):
     oorzaak = models.TextField(blank=True)
     oplossing = models.TextField(blank=True)
     vervolg = models.TextField(blank=True)
-    def __unicode__(self):
+    def __str__(self):
         return self.nummer # ": ".join((self.about,self.title))
 
 class Event(models.Model):
@@ -55,7 +55,7 @@ class Event(models.Model):
     start = models.DateTimeField(auto_now_add=True)
     starter = models.ForeignKey(User,related_name="ev_editor_basic")
     text = models.TextField(blank=True)
-    ## def __unicode__(self):
+    ## def __str__(self):
         ## return self.start
 
 class SortOrder(models.Model):
@@ -68,7 +68,7 @@ class SortOrder(models.Model):
     volgnr = models.PositiveSmallIntegerField()
     veldnm = models.CharField(max_length=16)
     richting = models.CharField(max_length=4, choices=CHOICES)
-    def __unicode__(self):
+    def __str__(self):
         return " ".join((str(self.nummer),self.veldnm,self.richting))
 
 class Selection(models.Model):
@@ -91,12 +91,12 @@ class Selection(models.Model):
     operator = models.CharField(max_length=4, choices=OP_CHOICES)
     extra = models.CharField(max_length=2, choices=CHOICES)
     value = models.CharField(max_length=40)
-    def __unicode__(self):
+    def __str__(self):
         return " ".join((self.veldnm,self.extra,self.operator,self.value))
 
 class Worker(models.Model):
     """medewerkers voor dit project
     bevat de mogelijke waarden voor de user-velden in de actie"""
     assigned = models.ForeignKey(User,related_name="worker_basic")
-    def __unicode__(self):
+    def __str__(self):
         return self.assigned.username
