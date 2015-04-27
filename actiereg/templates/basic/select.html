@@ -56,7 +56,7 @@ function tick_two(field1, field2,box) {
 }
 </script>
 {% endblock %}
-{% block branding %}<h1>{{name|capfirst}} | actielijst - selecteren</h1>{% endblock %}
+{% block branding %}<h1>{{name|capfirst}} | {{title}}</h1>{% endblock %}
 {% block content-data %}
 <form action="/{{root}}/setsel/" method="post">{% csrf_token %}
 <div class="col_all">Uitvinken van de linker checkbox is voldoende om de deelselectie ongedaan te maken.</div>

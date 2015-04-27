@@ -44,7 +44,7 @@ span.clear {
 	width: 180px;
 }
 </style> {% endblock %}
-{% block branding %}<h1>{{name|capfirst}} | actielijst - sorteren</h1>{% endblock %}
+{% block branding %}<h1>{{name|capfirst}} | {{title}}</h1>{% endblock %}
 {% block content-data %}
 <form action="/{{root}}/setorder/" method="post">{% csrf_token %}
 <div class="head col_ordh">volgorde</div>

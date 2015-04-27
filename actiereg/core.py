@@ -30,8 +30,8 @@ def is_admin(root, user):
         ## test = '_' + test
     for grp in user.groups.all():
         if grp.name == test:
-            return True
-    return False
+            return True, test, grp.name
+    return False, test, str(user.groups.all())
 
 def store_event(my, msg, actie, user):
     my.Event.objects.create(actie=actie, starter=user, text=msg)
@@ -148,15 +148,17 @@ def index(root, name, my, request, msg=''):
         msg += '?next=/{0}/">hier</a> om {1} te loggen. '.format(root, inuit)
         if inuit == "uit":
             msg += "Klik op een actienummer om de details te bekijken."
+    admin_, test_, data_ = is_admin(root, request.user)
+    msg += ' {} {}'.format(test_, data_)
     page_data = {
         "title" : "Actielijst",
         "name": name,
         "root": root,
         "pages": my.Page.objects.all().order_by('order'),
-        "admin": is_admin(root, request.user),
+        "admin": admin_, # is_admin(root, request.user),
         "msg": msg,
         }
-    if is_user(root, request.user) or is_admin(root, request.user):
+    if is_user(root, request.user) or admin_:
         page_data["readonly"] = False
     else:
         page_data["readonly"] = True
@@ -252,7 +254,7 @@ def settings(root, name, my, request):
     hlp = [x.assigned for x in proj_users]
     all_users = [x for x in aut.User.objects.all().order_by('username') if x not in hlp]
     page_data = {
-        ## "title" : "Instellingen",
+        "title" : "Instellingen",
         "name": name,
         "root": root,
         "pages": my.Page.objects.all().order_by('order'),
@@ -379,6 +381,7 @@ def select(root, name, my, request):
             'hier</a> om in te loggen, <a href="/{0}/">hier</a>'.format(root) +
             ' om terug te gaan.')
     page_data = {
+        "title": "Actielijst - selectie",
         "name": name,
         "root": root,
         "msg": msg,
@@ -499,6 +502,7 @@ def order(root, name, my, request):
             'hier</a> om in te loggen, <a href="/{0}/">hier</a>'.format(root) +
             ' om terug te gaan.')
     page_data = {
+        "title": "Actielijst: volgorde",
         "name": name,
         "root": root,
         "pages": my.Page.objects.all().order_by('order'),
@@ -738,6 +742,7 @@ def tekst(root, name, my, request, actie="", page="", msg=''):
         return HttpResponse('<p>Geen <i>page</i> opgegeven</p>')
     page_data["page"] = page
     page_data["next"] = next
+    page_data["title"] = "Actie {} - {}".format(actie.nummer, page_titel)
     page_data["page_titel"] = page_titel
     page_data["page_text"] = page_text
     page_data["actie"] = actie
@@ -816,6 +821,7 @@ def events(root, name, my, request, actie="", event="", msg=''):
     msg += " Klik op een voortgangsregel om de tekst nader te bekijken."
     actie = my.Actie.objects.select_related().get(id=actie)
     page_data = {
+        "title": "{} - voortgang".format(actie.nummer),
         "name": name,
         "root": root,
         "msg": msg,

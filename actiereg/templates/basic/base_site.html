@@ -38,7 +38,7 @@ span.clear {
 </style>
 {% endblock %}
 {% block extrahead %}{% endblock %}
-{% block title %} ActieReg | {{ title|escape }} {% endblock %}
+{% block title %} ActieReg | {{name|capfirst}}: {{ title|escape }} {% endblock %}
 {% block branding %}<h1 id="site-name">{{branding|escape}}{% trans 'ActieReg ' %} | {{ title|escape }}</h1>{% endblock %}
 {% block nav-global %}{{menu}} {% endblock %}
 {% block breadcrumbs %}
