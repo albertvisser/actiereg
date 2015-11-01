@@ -149,7 +149,7 @@ def index(root, name, my, request, msg=''):
         if inuit == "uit":
             msg += "Klik op een actienummer om de details te bekijken."
     admin_, test_, data_ = is_admin(root, request.user)
-    msg += ' {} {}'.format(test_, data_)
+    ## msg += ' {} {}'.format(test_, data_)
     page_data = {
         "title" : "Actielijst",
         "name": name,
