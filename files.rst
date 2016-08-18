@@ -119,5 +119,7 @@ login.html
 actiereg/static
 ...............
 
+static/ (not tracked)
+.......
 admin
-    symlink naar admin css
+    symlink to style stuff for the admin site (django/admin/static/admin)
