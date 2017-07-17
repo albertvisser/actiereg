@@ -1,4 +1,5 @@
-# Django settings for actiereg project.
+"""Django settings for actiereg project.
+"""
 import os
 
 HERE = os.path.abspath(os.path.dirname(__file__))
@@ -43,8 +44,8 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware', # nieuw in 1.6
-    'django.middleware.security.SecurityMiddleware',          # nieuw in 1.8
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',  # nieuw in 1.6
+    'django.middleware.security.SecurityMiddleware',           # nieuw in 1.8
 )
 
 ROOT_URLCONF = 'actiereg.urls'
@@ -53,8 +54,8 @@ TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [
-                os.path.join(HERE, 'templates'),
-            ],
+            os.path.join(HERE, 'templates'),
+        ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -65,8 +66,8 @@ TEMPLATES = [
             ],
             ## 'loaders': [
             ## #     'django.template.loaders.eggs.Loader',
-                ## 'django.template.loaders.filesystem.Loader',
-                ## 'django.template.loaders.app_directories.Loader',
+            ##     'django.template.loaders.filesystem.Loader',
+            ##     'django.template.loaders.app_directories.Loader',
             ## ],
         },
     },
@@ -82,8 +83,8 @@ MANAGERS = ADMINS
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',           # 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
-        'NAME': os.path.join(HERE, 'actiereg.db'),             # Or path to database file if using sqlite3.
+        'ENGINE': 'django.db.backends.sqlite3',     # 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
+        'NAME': os.path.join(HERE, 'actiereg.db'),  # Or path to database file if using sqlite3.
         'USER': '',             # Not used with sqlite3.
         'PASSWORD': '',         # Not used with sqlite3.
         'HOST': '',             # Set to empty string for localhost. Not used with sqlite3.
@@ -146,11 +147,11 @@ STATICFILES_DIRS = (
 STATICFILES_FINDERS = (
     'django.contrib.staticfiles.finders.FileSystemFinder',
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
-#    'django.contrib.staticfiles.finders.DefaultStorageFinder',
+    #    'django.contrib.staticfiles.finders.DefaultStorageFinder',
 )
 
 SITES = {
-        "doctool": "http://myprojects.lemoncurry.nl",
-        "probreg": "http://actiereg.lemoncurry.nl",
-        }
+    "doctool": "http://myprojects.lemoncurry.nl",
+    "probreg": "http://actiereg.lemoncurry.nl"}
+
 CSRF_COOKIE_DOMAIN = '.lemoncurry.nl'

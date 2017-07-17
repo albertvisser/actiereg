@@ -1,5 +1,7 @@
-import actiereg._basic.models as my
+"""register models to the admin site
+"""
 from django.contrib import admin
+import actiereg._basic.models as my
 
 admin.site.register(my.Status)
 admin.site.register(my.Soort)

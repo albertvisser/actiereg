@@ -25,23 +25,27 @@ import sys
 import shutil
 basepath = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(basepath))
-appsfile = os.path.join(basepath,"apps.dat")
+appsfile = os.path.join(basepath, "apps.dat")
 USAGE = __doc__
-ROOT_FILES = ('__init__','models','views','urls','admin','initial_data.json')
-TEMPLATE_FILES = ('index','actie','tekst','voortgang','select','order','settings')
+ROOT_FILES = ('__init__', 'models', 'views', 'urls', 'admin', 'initial_data.json')
+TEMPLATE_FILES = ('index', 'actie', 'tekst', 'voortgang', 'select', 'order',
+                  'settings')
 
-def copyover(root,name,appname):
+
+def copyover(root, name, appname):
+    """copy components for project
+    """
     name = name if "." in name else name + ".py"
-    copyfrom = os.path.join(basepath,"_basic")
-    copyto = os.path.join(basepath,root)
-    with open(os.path.join(copyfrom,name)) as oldfile:
-        with open(os.path.join(copyto,name),"w") as newfile:
+    copyfrom = os.path.join(basepath, "_basic")
+    copyto = os.path.join(basepath, root)
+    with open(os.path.join(copyfrom, name)) as oldfile:
+        with open(os.path.join(copyto, name), "w") as newfile:
             for line in oldfile:
                 if "basic" in line:
                     if name == "models.py":
-                        line = line.replace("basic",root)
+                        line = line.replace("basic", root)
                     else:
-                        line = line.replace("_basic",root)
+                        line = line.replace("_basic", root)
                 if line == 'ROOT = "basic"\n':
                     newfile.write('ROOT = "{0}"\n'.format(root))
                 elif line == 'NAME = "demo"\n':
@@ -49,16 +53,20 @@ def copyover(root,name,appname):
                 else:
                     newfile.write(line)
 
+
 def backup(fn):
+    """save backup of current file
+    """
     if os.path.split(fn)[0] == "":
-        fn = os.path.join(basepath,fn)
+        fn = os.path.join(basepath, fn)
     new = fn + "~"
     try:
-        os.rename(fn,new)
-    except WindowsError:
+        os.rename(fn, new)
+    except OSError:
         os.remove(new)
-        os.rename(fn,new)
-    return new,fn
+        os.rename(fn, new)
+    return new, fn
+
 
 def newproj(*args):
     "applicatiefiles kopieren en aanpassen"
@@ -77,12 +85,12 @@ def newproj(*args):
     msg = ""
     with open(appsfile) as oldfile:
         for line in oldfile:
-            if 'X;{0};'.format(root) in line:
-                found =  True
+            if 'X;{};'.format(root) in line:
+                found = True
                 if action not in ("loaddata", "undo"):
                     return "dit project is al geactiveerd"
-            if "_;{0};".format(root) in line:
-                found =  True
+            if "_;{};".format(root) in line:
+                found = True
                 if action == "undo":
                     return "dit project is nog niet geactiveerd"
             if found:
@@ -93,35 +101,36 @@ def newproj(*args):
     if rt != root:
         return "leek goed, maar toch klopt de projectnaam niet"
 
-    print('performing actions for project "{0}":'.format(root))
+    print('performing actions for project "{}":'.format(root))
     if action == "undo":
         print("removing app root...")
-        shutil.rmtree(os.path.join(basepath,root))
+        shutil.rmtree(os.path.join(basepath, root))
         if root != "actiereg":
             print("removing templates...")
-            shutil.rmtree(os.sep.join((basepath,"templates",root)))
+            shutil.rmtree(os.sep.join((basepath, "templates", root)))
     elif action in ("copy", "all"):
         print("creating and populating app root...")
-        os.mkdir(os.path.join(basepath,root))
+        os.mkdir(os.path.join(basepath, root))
         ## newfile = open(os.sep.join((basepath,root,"__init__.py")),"w")
         ## newfile.close()
         for name in ROOT_FILES:
-            copyover(root,name,app)
+            copyover(root, name, app)
         if root != "actiereg":
             print("creating templates...")
-            newdir = os.path.join(basepath,"templates",root)
+            newdir = os.path.join(basepath, "templates", root)
             os.mkdir(newdir)
             for name in TEMPLATE_FILES:
-                with open(os.path.join(newdir,"{0}.html".format(name)),"w") as f:
-                    f.write(' '.join(("{% extends",'"basic/{0}.html"'.format(name)," %}\n")))
+                with open(os.path.join(newdir, "{}.html".format(name)), "w") as f:
+                    f.write(' '.join(("{% extends", '"basic/{}.html"'.format(name),
+                                      " %}\n")))
     if action in ("activate", "all", "undo"):
         # toevoegen aan settings.py (INSTALLED_APPS)
         print("updating settings...")
-        old,new = backup("settings.py")
+        old, new = backup("settings.py")
         schrijf = False
         with open(old) as oldfile:
-            with open(new,"w") as newfile:
-                new_line = "    'actiereg.{0}',\n".format(root)
+            with open(new, "w") as newfile:
+                new_line = "    'actiereg.{}',\n".format(root)
                 for line in oldfile:
                     if line.strip() == "INSTALLED_APPS = (":
                         schrijf = True
@@ -134,10 +143,10 @@ def newproj(*args):
                         newfile.write(line)
         # toevoegen aan urls.py (urlpatterns)
         print("updating urlconfs...")
-        old,new = backup("urls.py")
+        old, new = backup("urls.py")
         schrijf = False
         with open(old) as oldfile:
-            with open(new,"w") as newfile:
+            with open(new, "w") as newfile:
                 new_line = "    (r'^{0}/', include('actiereg.{0}.urls')),\n".format(root)
                 for line in oldfile:
                     if line.strip().startswith('urlpatterns'):
@@ -158,20 +167,20 @@ def newproj(*args):
             print("modifying database...")
             os.system("python manage.py syncdb")
             print("loading inital data...")
-            os.system("python manage.py loaddata {0}/initial_data.json".format(root))
+            os.system("python manage.py loaddata {}/initial_data.json".format(root))
             print("setting up authorisation groups...")
-            grp = Group.objects.create(name='{0}_admin'.format(root))
+            grp = Group.objects.create(name='{}_admin'.format(root))
             for perm in Permission.objects.filter(
-                content_type__app_label="{0}".format(root)):
-                    grp.permissions.add(perm)
-            grp = Group.objects.create(name='{0}_user'.format(root))
+                    content_type__app_label="{}".format(root)):
+                grp.permissions.add(perm)
+            grp = Group.objects.create(name='{}_user'.format(root))
             for perm in Permission.objects.filter(
-                content_type__app_label="{0}".format(root)).filter(
+                    content_type__app_label="{}".format(root)).filter(
                     content_type__model__in=['actie', 'event', 'sortorder', 'selection']):
-                        grp.permissions.add(perm)
+                grp.permissions.add(perm)
 
         print("updating apps registration...")
-        old,new = backup(appsfile)
+        old, new = backup(appsfile)
         with open(old) as _in:
             with open(new, "w") as _out:
                 for app in _in:
@@ -185,19 +194,22 @@ def newproj(*args):
                         _out.write(app)
     if action == "loaddata":
         with open("loaddata.py") as oldfile:
-            with open("load_data.py","w") as newfile:
+            with open("load_data.py", "w") as newfile:
                 for line in oldfile:
-                    newfile.write(line.replace("_basic",root))
+                    newfile.write(line.replace("_basic", root))
         import load_data as ld
-        print "loading settings...",
+        print("loading settings...", end=', ')
         ld.loadsett(load_from)
-        print "ready."
-        print "loading data...",
+        print("ready.")
+        print("loading data...", end=', ')
         ld.loaddata(load_from, root)
     print("ready.")
-    print "\nRestart the server to activate the new app."
+    print("\nRestart the server to activate the new app.")
+
 
 def allnew():
+    """recreate all (?)
+    """
     ret = ''
     with open(appsfile) as oldfile:
         newapps = [line.split(";")[1] for line in oldfile if line.startswith('_')]
@@ -215,4 +227,4 @@ if __name__ == "__main__":
     else:
         ret = newproj(*sys.argv[1:])
     if ret:
-        print ret
+        print(ret)
