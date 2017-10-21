@@ -1,6 +1,6 @@
 """Url configuration
 """
-from django.conf.urls import patterns
+from django.conf.urls import patterns, url
 
 urlpatterns = patterns(
     'actiereg._basic.views',

@@ -7,21 +7,21 @@ admin.autodiscover()
 urlpatterns = patterns('',
     # Example:
     # (r'^actiereg/', include('actiereg.foo.urls')),
-    (r'^$','actiereg.views.index'),
-    (r'^msg/(?P<msg>.+)/$','actiereg.views.index'),
-    (r'^new/$','actiereg.views.new'),
-    (r'^add/$','actiereg.views.add'),
-    (r'^addext/$','actiereg.views.add_from_doctool'),
-    (r'^addext/(?P<proj>\d+)/(?P<name>\w+)/(?P<desc>.+)/$',
+    url(r'^$','actiereg.views.index'),
+    url(r'^msg/(?P<msg>.+)/$','actiereg.views.index'),
+    url(r'^new/$','actiereg.views.new'),
+    url(r'^add/$','actiereg.views.add'),
+    url(r'^addext/$','actiereg.views.add_from_doctool'),
+    url(r'^addext/(?P<proj>\d+)/(?P<name>\w+)/(?P<desc>.+)/$',
         'actiereg.views.add_from_doctool'),
-    (r'^accounts/login/$', 'django.contrib.auth.views.login'),
-    (r'^accounts/profile/$', 'actiereg.views.index'),
-    (r'^logout/$','actiereg.views.log_out'),
-    (r'^basic/', include('actiereg._basic.urls')),
+   url(r'^accounts/login/$', 'django.contrib.auth.views.login'),
+   url(r'^accounts/profile/$', 'actiereg.views.index'),
+   url(r'^logout/$','actiereg.views.log_out'),
+   url(r'^basic/', include('actiereg._basic.urls')),
 
     # Uncomment the admin/doc line below and add 'django.contrib.admindocs'
     # to INSTALLED_APPS to enable admin documentation:
-    (r'^admin/doc/', include('django.contrib.admindocs.urls')),
+    url(r'^admin/doc/', include('django.contrib.admindocs.urls')),
 
     # Uncomment the next line to enable the admin:
     url(r'^admin/', include(admin.site.urls)),
