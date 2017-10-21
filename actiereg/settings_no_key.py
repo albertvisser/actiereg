@@ -1,8 +1,8 @@
 """Django settings for actiereg project.
 """
-import os
+import pathlib
 
-HERE = os.path.abspath(os.path.dirname(__file__))
+HERE = pathlib.Path(__file__).parent.resolve()
 
 
 # Make this unique, and don't share it with anybody.
@@ -54,7 +54,7 @@ TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [
-            os.path.join(HERE, 'templates'),
+                str(HERE / 'templates'),
         ],
         'APP_DIRS': True,
         'OPTIONS': {
@@ -84,7 +84,7 @@ MANAGERS = ADMINS
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',     # 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
-        'NAME': os.path.join(HERE, 'actiereg.db'),  # Or path to database file if using sqlite3.
+        'NAME': str(HERE / 'actiereg.db'),       # Or path to database file if using sqlite3.
         'USER': '',             # Not used with sqlite3.
         'PASSWORD': '',         # Not used with sqlite3.
         'HOST': '',             # Set to empty string for localhost. Not used with sqlite3.

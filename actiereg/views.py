@@ -1,6 +1,7 @@
 """views for Django project pages
 """
-import os
+## import os
+import pathlib
 ## import shutil
 ## from django.template import Context, loader
 ## from django.http import HttpResponse
@@ -13,7 +14,8 @@ from django.db import connection
 from django.template import RequestContext
 ## from django.views.decorators.csrf import csrf_exempt
 from actiereg.settings import MEDIA_ROOT, SITES  # , DATABASES['default']['NAME']
-appsfile = os.path.join(os.path.split(__file__)[0], "apps.dat")
+## appsfile = os.path.join(os.path.split(__file__)[0], "apps.dat")
+appsfile = pathlib.Path(__file__).parent / "apps.dat"
 
 
 def index(request, msg=""):
@@ -31,7 +33,7 @@ def index(request, msg=""):
     app_list = [{"name": ''}]
     new_apps = []
     cursor = connection.cursor()
-    with open(appsfile) as apps:
+    with appsfile.open() as apps:
         for app in apps:
             ok, root, name, desc = app.split(";")
             if name == "Demo":
@@ -86,7 +88,7 @@ def add_from_doctool(request, proj='', name='', desc=''):
     ## name = data.get("name", "")
     ## desc = data.get("desc", "")
     ## return HttpResponse("{0} {1} {2}".format(doc, name, desc))
-    with open(appsfile, "a") as _out:
+    with appsfile.open("a") as _out:
         _out.write(";".join(("_", name, name, desc)) + "\n")
     notify_admin()
     return HttpResponseRedirect('{}/{}/meld/De aanvraag voor het project "{}"'
@@ -100,7 +102,7 @@ def add(request):
     data = request.POST
     name = data.get("name", "")
     desc = data.get("desc", "")
-    with open(appsfile, "a") as _out:
+    with appsfile.open("a") as _out:
         _out.write(";".join(("_", name, name, desc)) + "\n")
     notify_admin()
     return HttpResponseRedirect(
