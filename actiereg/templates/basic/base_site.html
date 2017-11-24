@@ -2,44 +2,13 @@
 {% load i18n %}
 {% load extratags %}
 {% block style %} <link rel="stylesheet" type="text/css" href="/static/admin/css/base.css" />
-<style>
-div.clear,
-span.clear {
-	background: none;
-	border: 0;
-	clear: both;
-	display: block;
-	float: none;
-	font-size: 0;
-	margin: 0;
-	padding: 0;
-	overflow: hidden;
-	visibility: hidden;
-	width: 0;
-	height: 0;
-}
-.col_all,
-.col_itall,
-.col_item {
-    font-family:"Lucida Grande", Verdana, Arial, sans-serif;
-    line-height:13px; border-top:1px solid #eee; vertical-align:top;
-    padding: 5px 15px 5px 0 ;
-    font-size:11px;
-    display: inline;
-	float: left;
-}
-.col_all {
-    width: 660px;
-}
-.col_itall {
-    margin-left: 15px;
-    width: 880px;
-}
-</style>
+<link rel="stylesheet" type="text/css" href="/static/actiereg.css" />
 {% endblock %}
 {% block extrahead %}{% endblock %}
-{% block title %} ActieReg | {{name|capfirst}}: {{ title|escape }} {% endblock %}
-{% block branding %}<h1 id="site-name">{{branding|escape}}{% trans 'ActieReg ' %} | {{ title|escape }}</h1>{% endblock %}
+{% block title %} ActieReg | {{name|capfirst}}: {{ title}}{{ page_titel }}{% endblock %}
+{% block branding %}
+<h1 id="site-name">{{branding|escape}}{% trans 'ActieReg ' %} | {{title}}{{page_titel}}</h1>
+{% endblock %}
 {% block nav-global %}{{menu}} {% endblock %}
 {% block breadcrumbs %}
 {% for x in crumbs %}
@@ -52,12 +21,18 @@ span.clear {
     {%if message %}<span style="color: red"> {{ message }}</span>{% else %}{{msg|safe}}
     {% endif %}</div><div class="clear">&nbsp;</div>
 <div class="col_item"><a href="/">Home</a></div>
-{% for page in pages %}<div class="col_item">{% if forloop.first or actie %}
-    <a href="/{{root}}/{% if actie and not forloop.first%}{{actie.id}}/{%endif%}{{page.link}}/">
-    {%endif%}{{page.title}}{% if forloop.first or actie %}</a>{%endif%}</div>
+{% for page in pages %}
+    <div class="col_item">
+        {% if forloop.first or actie %}
+            <a href="/{{root}}/{% if actie and not forloop.first%}{{actie.id}}/{%endif%}{{page.link}}/">
+        {%endif%}
+            {% if page.title|upper == page_titel|upper %}<div class="hl">{% endif %}
+                {{page.title}}
+            {% if page.title|upper == page_titel|upper %}</div>{% endif %}
+            {% if forloop.first or actie %}</a>{%endif%}</div>
     {% endfor%}<div class="clear">&nbsp;</div>
 {% if actie %}
-    <div class="col_itall">{{actie.about}}: {{actie.title|trimat:80}} </div>
+    <div class="col_itall ttl">{{actie.about|capfirst}}: {{actie.title|trimat:80}} </div>
     <div class="clear">&nbsp;</div>{% endif %}
     <div class="col_itall">
     {% block content-data %} {{ content }} {% endblock %}

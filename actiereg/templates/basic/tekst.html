@@ -1,4 +1,5 @@
 {% extends "basic/base_site.html" %}
+{% load extratags %}
 {% block extrahead %}
 <script type="text/javascript">
 function setvervolg() {
@@ -7,7 +8,7 @@ function setvervolg() {
 }
 </script>
 {%endblock%}
-{% block branding %}<h1>{{name|capfirst}} | {{title}}</h1>
+{% block branding %}<h1>{{name|capfirst}} | {{title}} {{ actie.title|trimat:80 }}</h1>
     {% endblock %}
 {% block content-data %}
 <!-- <div>actie: {{actie.nummer}}</div>

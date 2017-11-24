@@ -1,0 +1,38 @@
+div.clear,
+span.clear {
+	background: none;
+	border: 0;
+	clear: both;
+	display: block;
+	float: none;
+	font-size: 0;
+	margin: 0;
+	padding: 0;
+	overflow: hidden;
+	visibility: hidden;
+	width: 0;
+	height: 0;
+}
+.col_all,
+.col_itall,
+.col_item {
+    font-family:"Lucida Grande", Verdana, Arial, sans-serif;
+    line-height:13px; border-top:1px solid #eee; vertical-align:top;
+    padding: 5px 15px 5px 0 ;
+    font-size:11px;
+    display: inline;
+	float: left;
+}
+.col_all {
+    width: 660px;
+}
+.col_itall {
+    margin-left: 15px;
+    width: 880px;
+}
+.hl {
+	font-weight: bold;
+}
+.ttl {
+	font-size: 1.2em;
+}

@@ -166,6 +166,7 @@ def index(root, name, my, request, msg=''):
     admin_ = is_admin(root, request.user)[0]
     ## msg += ' {} {}'.format(test_, data_)
     page_data = {"title": "Actielijst",
+                 "page_titel": "lijst",
                  "name": name,
                  "root": root,
                  "pages": my.Page.objects.all().order_by('order'),
@@ -595,6 +596,7 @@ def detail(root, name, my, request, actie="", msg=""):
         page_data["readonly"] = True
     if actie == "nieuw":
         titel = "Nieuwe actie"
+        page_titel = ""
         volgnr = 0
         aant = my.Actie.objects.count()
         nw_date = dt.datetime.now()
@@ -609,8 +611,10 @@ def detail(root, name, my, request, actie="", msg=""):
     else:
         actie = my.Actie.objects.get(pk=actie)
         page_data["actie"] = actie
-        titel = "Actie {0} - titel/status".format(actie.nummer)
+        titel = "Actie {0} - ".format(actie.nummer)
+        page_titel = "Titel/Status"
     page_data["title"] = titel
+    page_data["page_titel"] = page_titel
     return render_to_response(root + '/actie.html', page_data,
                               context_instance=RequestContext(request))
 
@@ -751,7 +755,7 @@ def tekst(root, name, my, request, actie="", page="", msg=''):
         return HttpResponse('<p>Geen <i>page</i> opgegeven</p>')
     page_data["page"] = page
     page_data["next"] = next
-    page_data["title"] = "Actie {} - {}".format(actie.nummer, page_titel)
+    page_data["title"] = "Actie {} - ".format(actie.nummer)
     page_data["page_titel"] = page_titel
     page_data["page_text"] = page_text
     page_data["actie"] = actie
@@ -833,7 +837,8 @@ def events(root, name, my, request, actie="", event="", msg=''):
     msg += " Klik op een voortgangsregel om de tekst nader te bekijken."
     actie = my.Actie.objects.select_related().get(id=actie)
     page_data = {
-        "title": "{} - voortgang".format(actie.nummer),
+        "title": "{} - ".format(actie.nummer),
+        "page_titel": "Voortgang",
         "name": name,
         "root": root,
         "msg": msg,

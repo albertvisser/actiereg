@@ -1,4 +1,5 @@
 {% extends "basic/base_site.html" %}
+{% load extratags %}
 {% block extrastyle %}<style>
 div.clear,
 span.clear {
@@ -62,7 +63,7 @@ function setarch() {
 }
 </script>
 {%endblock%}
-{% block branding %}<h1>{{name|capfirst}} | {{title}}</h1>{% endblock %}
+{% block branding %}<h1>{{name|capfirst}} | {{title}} {{ actie.title|trimat:80 }}</h1>{% endblock %}
 {% block content-data %}
 <form action="/{{root}}/{% if actie %}{{actie.id}}{% else %}nieuw{% endif %}/update/"
     id="mainform" method="post" onsubmit="return check()">{% csrf_token %}
