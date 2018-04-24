@@ -47,12 +47,91 @@ def store_event(my, msg, actie, user):
     my.Event.objects.create(actie=actie, starter=user, text=msg)
 
 
+def store_event_with_date(my, msg, actie, date, user):
+    """Maak nieuw vrije tekst event en sla deze op in de lijst
+    """
+    my.Event.objects.create(actie=actie, start=date, starter=user, text=msg)
+
+
 def store_gewijzigd(my, msg, txt, mld, actie, user):
     """Maak nieuw standaard event (rubriek X is gewijzigd)
     """
     store_event(my, '{} gewijzigd in "{}"'.format(msg, txt), actie, user)
     mld.append(msg)
     return mld
+
+
+def get_acties(my, user):
+    data = my.Actie.objects.all()
+    if data:
+        seltest = my.Selection.objects.filter(user=user)
+
+        filtered = seltest.filter(veldnm="nummer")
+        if filtered:
+            filter = ""
+            for f in filtered:
+                if f.extra == "EN":
+                    filter += " & "
+                elif f.extra == "OF":
+                    filter += " | "
+                filter += 'Q(nummer__{}="{}")'.format(f.operator.lower(), f.value)
+            ## return HttpResponse(filter)
+            exec('data = data.filter({})'.format(filter))
+
+        filtered = seltest.filter(veldnm="soort")
+        sel = [my.Soort.objects.get(value=x.value).id for x in filtered]
+        if sel:
+            data = data.filter(soort__in=sel)
+        filtered = seltest.filter(veldnm="status")
+        sel = [my.Status.objects.get(value=int(x.value)).id for x in filtered]
+        if sel:
+            data = data.filter(status__in=sel)
+        filtered = seltest.filter(veldnm="user")
+        ## sel = [aut.User.objects.get(pk=int(x.value)).id for x in filtered]
+        sel = [int(x.value) for x in filtered]
+        if sel:
+            data = data.filter(behandelaar__in=sel)
+
+        filtered = seltest.filter(veldnm="about")
+        filter = ''
+        if filtered:
+            filter = 'Q(about__icontains="{}")'.format(filtered[0].value)
+        filtered = seltest.filter(veldnm="title")
+        if filtered:
+            if filter:
+                if filtered[0].extra == "EN":
+                    filter += " & "
+                elif filtered[0].extra == "OF":
+                    filter += " | "
+            filter += 'Q(title__icontains="{}")'.format(filtered[0].value)
+        if filter:
+            ## return HttpResponse(filter)
+            exec('data = data.filter({})'.format(filter))
+
+        filtered = seltest.filter(veldnm="arch")
+        if not filtered:
+            data = data.exclude(arch=True)
+        elif len(filtered) == 1:
+            data = data.filter(arch=True)
+
+        sorters = my.SortOrder.objects.filter(user=user).order_by("volgnr")
+        order = []
+        for sorter in sorters:
+            if sorter.veldnm == "title":
+                if sorter.richting == "asc":
+                    order.extend(("about", "title"))
+                else:
+                    order.extend(("-about", "-title"))
+            elif sorter.veldnm == "behandelaar":
+                ordr = sorter.veldnm + "__username"
+                ordr = ordr if sorter.richting == "asc" else "-" + ordr
+                order.append(ordr)
+            else:
+                ordr = sorter.veldnm if sorter.richting == "asc" else "-" + sorter.veldnm
+                order.append(ordr)
+        ## return HttpResponse(" ".join([x for x in order]))
+        data = data.order_by(*order)
+    return data
 
 
 @csrf_exempt
@@ -177,75 +256,8 @@ def index(root, name, my, request, msg=''):
     else:
         page_data["readonly"] = True
     page_data["readonly"] = True
-    data = my.Actie.objects.all()
+    data = get_acties(my, request.user.id)
     if data:
-        seltest = my.Selection.objects.filter(user=request.user.id)
-
-        filtered = seltest.filter(veldnm="nummer")
-        if filtered:
-            filter = ""
-            for f in filtered:
-                if f.extra == "EN":
-                    filter += " & "
-                elif f.extra == "OF":
-                    filter += " | "
-                filter += 'Q(nummer__{}="{}")'.format(f.operator.lower(), f.value)
-            ## return HttpResponse(filter)
-            exec('data = data.filter({})'.format(filter))
-
-        filtered = seltest.filter(veldnm="soort")
-        sel = [my.Soort.objects.get(value=x.value).id for x in filtered]
-        if sel:
-            data = data.filter(soort__in=sel)
-        filtered = seltest.filter(veldnm="status")
-        sel = [my.Status.objects.get(value=int(x.value)).id for x in filtered]
-        if sel:
-            data = data.filter(status__in=sel)
-        filtered = seltest.filter(veldnm="user")
-        ## sel = [aut.User.objects.get(pk=int(x.value)).id for x in filtered]
-        sel = [int(x.value) for x in filtered]
-        if sel:
-            data = data.filter(behandelaar__in=sel)
-
-        filtered = seltest.filter(veldnm="about")
-        filter = ''
-        if filtered:
-            filter = 'Q(about__icontains="{}")'.format(filtered[0].value)
-        filtered = seltest.filter(veldnm="title")
-        if filtered:
-            if filter:
-                if filtered[0].extra == "EN":
-                    filter += " & "
-                elif filtered[0].extra == "OF":
-                    filter += " | "
-            filter += 'Q(title__icontains="{}")'.format(filtered[0].value)
-        if filter:
-            ## return HttpResponse(filter)
-            exec('data = data.filter({})'.format(filter))
-
-        filtered = seltest.filter(veldnm="arch")
-        if not filtered:
-            data = data.exclude(arch=True)
-        elif len(filtered) == 1:
-            data = data.filter(arch=True)
-
-        sorters = my.SortOrder.objects.filter(user=request.user.id).order_by("volgnr")
-        order = []
-        for sorter in sorters:
-            if sorter.veldnm == "title":
-                if sorter.richting == "asc":
-                    order.extend(("about", "title"))
-                else:
-                    order.extend(("-about", "-title"))
-            elif sorter.veldnm == "behandelaar":
-                ordr = sorter.veldnm + "__username"
-                ordr = ordr if sorter.richting == "asc" else "-" + ordr
-                order.append(ordr)
-            else:
-                ordr = sorter.veldnm if sorter.richting == "asc" else "-" + sorter.veldnm
-                order.append(ordr)
-        ## return HttpResponse(" ".join([x for x in order]))
-        data = data.order_by(*order)
         page_data["order"] = order
         page_data["acties"] = data
         page_data["geen_items"] = "Geen acties die aan deze criteria voldoen"

@@ -3,6 +3,22 @@
 from django.db import models
 from django.contrib.auth.models import User
 
+ORIENTS = (('asc', 'oplopend'), ('desc', 'aflopend'))
+SORTFIELDS = [("nummer", "nummer"),
+              ("gewijzigd", "laatst gewijzigd"),
+              ("soort", "soort"),
+              ("status", "status"),
+              ("behandelaar", "behandelaar"),
+              ("title", "omschrijving")]
+CHOICES = (('  ', '  '),
+           ('EN', 'en'),
+           ('OF', 'of'))
+OP_CHOICES = (('LT', 'kleiner dan'),
+              ('GT', 'groter dan'),
+              ('EQ', 'gelijk aan'),
+              ('NE', 'ongelijk aan'),
+              ('INCL', 'bevat'),
+              ('EXCL', 'bevat niet'))
 
 class Status(models.Model):
     """gemeld, in behandeling, afgehandeld e.d.
@@ -69,12 +85,10 @@ class Event(models.Model):
 
 class SortOrder(models.Model):
     """per-user verzameling sorteersleutels t.b.v. actie-overzicht"""
-    CHOICES = (('asc', 'oplopend'),
-               ('desc', 'aflopend'))
     user = models.PositiveSmallIntegerField()
     volgnr = models.PositiveSmallIntegerField()
     veldnm = models.CharField(max_length=16)
-    richting = models.CharField(max_length=4, choices=CHOICES)
+    richting = models.CharField(max_length=4, choices=ORIENTS)
 
     def __str__(self):
         return " ".join((str(self.volgnr), self.veldnm, self.richting))
@@ -82,15 +96,6 @@ class SortOrder(models.Model):
 
 class Selection(models.Model):
     """per-user verzameling selectieargumenten t.b.v. actie-overzicht"""
-    CHOICES = (('  ', '  '),
-               ('EN', 'en'),
-               ('OF', 'of'))
-    OP_CHOICES = (('LT', 'kleiner dan'),
-                  ('GT', 'groter dan'),
-                  ('EQ', 'gelijk aan'),
-                  ('NE', 'ongelijk aan'),
-                  ('INCL', 'bevat'),
-                  ('EXCL', 'bevat niet'))
     user = models.PositiveSmallIntegerField()
     veldnm = models.CharField(max_length=16)
     operator = models.CharField(max_length=4, choices=OP_CHOICES)
