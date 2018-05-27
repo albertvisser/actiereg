@@ -20,6 +20,7 @@ OP_CHOICES = (('LT', 'kleiner dan'),
               ('INCL', 'bevat'),
               ('EXCL', 'bevat niet'))
 
+
 class Status(models.Model):
     """gemeld, in behandeling, afgehandeld e.d.
     intitiele set waarden, kan door projectadmin aangepast worden"""
@@ -33,7 +34,7 @@ class Status(models.Model):
 
 class Soort(models.Model):
     """probleem, wens e.d.
-    intitiele set waarden, kan door projectadmin aangepast worden"""
+    initiele set waarden, kan door projectadmin aangepast worden"""
     title = models.CharField(max_length=32)
     value = models.CharField(max_length=1, unique=True)
     order = models.PositiveSmallIntegerField(unique=True)

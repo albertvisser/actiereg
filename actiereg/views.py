@@ -6,7 +6,7 @@ import pathlib
 ## from django.template import Context, loader
 ## from django.http import HttpResponse
 ## from django.http import Http404
-from django.contrib.auth import login, logout  # , authenticate
+from django.contrib.auth import logout  # , login, authenticate
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render_to_response  # , get_object_or_404

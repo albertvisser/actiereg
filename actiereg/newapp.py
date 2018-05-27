@@ -68,13 +68,16 @@ def backup(fn):
     return new, fn
 
 
+def call_manage(command):
+    """call django command manager
+    """
+    subprocess.run(["python", "manage.py"] + command)
+
+
 class NewProj:
     """applicatiefiles kopieren en aanpassen
     """
     def __init__(self, *args):
-        """args: project name, action to be taken,
-        name of data file (only for loaddata)
-        """
         self.root = self.action = self.load_from = ''
         self.actiondict = {'copy': self.do_copy,
                            'activate': self.activate,
@@ -83,7 +86,14 @@ class NewProj:
         if args:
             self.msg = self.parse_args(*args)
 
+    def __str__(self):
+        name = str(self.__class__).split()[1][1:-2]
+        return "{}('{}', '{}', '{}')".format(
+            name, self.root, self.action, self.load_from)
+
     def do_stuff(self):
+        """perform actions
+        """
         if self.msg:
             print(self.msg)
             return
@@ -94,6 +104,9 @@ class NewProj:
             print("\nRestart the server to see the changes.")
 
     def parse_args(self, *args):
+        """parse arguments: project name, action to be taken, name of data file
+        (only for loaddata)
+        """
         self.root = args[0]
         self.action = args[1] if len(args) > 1 else "all"
         if self.action == "loaddata":
@@ -106,7 +119,6 @@ class NewProj:
         elif len(args) > 2:
             return "teveel argumenten*"
         found = False
-        msg = ""
         with APPS.open() as oldfile:
             for line in oldfile:
                 if 'X;{};'.format(self.root) in line:
@@ -119,22 +131,15 @@ class NewProj:
                         return "dit project is nog niet geactiveerd"
                 if found:
                     break
-        if not found:
-            return "project niet gevonden"
+            else:  # if not found:
+                return "project niet gevonden"
         ok, rt, self.app, oms = line.strip().split(";")
-        ## if rt != self.root:  # ? kan helemaal niet
-            ## return "leek goed, maar toch klopt de projectnaam niet"
-
-    def __str__(self):
-        name = str(self.__class__).split()[1][1:-2]
-        return "{}('{}', '{}', '{}')".format(
-            name, self.root, self.action, self.load_from)
 
     def do_copy(self):
+        """copy programs and templates
+        """
         print("creating and populating app root...")
         (BASE / self.root).mkdir()
-        ## newfile = open(os.sep.join((BASE,root,"__init__.py")),"w")
-        ## newfile.close()
         for name in ROOT_FILES:
             copyover(self.root, name, self.app)
         if self.root != "actiereg":                     # why?
@@ -146,12 +151,13 @@ class NewProj:
                 fname.write_text('{{% extends "basic/{}.html" %}}\n'.format(name))
 
     def activate(self):
+        """database aanpassen en initiele settings data opvoeren
+        """
         self.update_settings()
         self.update_urlconf()
-        # database aanpassen en initiele settings data opvoeren
         sys.path.append(BASE)
         os.environ["DJANGO_SETTINGS_MODULE"] = 'actiereg.settings'
-        import settings
+        ## import settings
         from django.contrib.auth.models import Group, Permission
         print("modifying database...")
         self.call_manage(["syncdb"])
@@ -165,44 +171,48 @@ class NewProj:
         group = Group.objects.create(name='{}_user'.format(self.root))
         for permit in Permission.objects.filter(
                 content_type__app_label="{}".format(self.root)).filter(
-                content_type__model__in=['actie', 'event', 'sortorder',
-                                         'selection']):
+                    content_type__model__in=['actie', 'event', 'sortorder',
+                                             'selection']):
             group.permissions.add(permit)
         self.update_appreg()
 
-    def call_manage(self, command):
-        subprocess.run(["python", "manage.py"] + command)
-
     def loaddata(self):
+        """load data from probreg (?)
+        """
         print("getting probreg data")
         with open("loaddata.py") as oldfile:
             with open("load_data.py", "w") as newfile:
                 for line in oldfile:
                     newfile.write(line.replace("_basic", self.root))
-        import load_data as ld
+        import loaddata as ld
         print("loading settings...", end=', ')
-        ld.loadsett(load_from)
+        ld.loadsett(self.load_from)
         print("ready.")
         print("loading data...", end=', ')
-        ld.loaddata(load_from, root)
+        ld.loaddata(self.load_from, self.root)
 
     def do_all(self):
+        """perform all-in-one
+        """
         self.do_copy()
         self.activate()
         self.loaddata()
 
     def undo(self):
+        """reverse updates
+        """
         print("removing app root...")
-        shutil.rmtree(str(BASE / root))
-        if root != "actiereg":
+        shutil.rmtree(str(BASE / self.root))
+        if self.root != "actiereg":
             print("removing templates...")
-            shutil.rmtree(str(BASE / "templates" / root))
+            shutil.rmtree(str(BASE / "templates" / self.root))
         self.update_settings()
         self.update_urlconf()
         self.update_appreg()
 
     def update_settings(self):
-        # toevoegen aan settings.py (INSTALLED_APPS)
+        """toevoegen aan settings.py (INSTALLED_APPS)
+        """
         print("updating settings...")
         old, new = backup(BASE / "settings.py")
         schrijf = False
@@ -221,7 +231,8 @@ class NewProj:
                         newfile.write(line)
 
     def update_urlconf(self):
-        # toevoegen aan urls.py (urlpatterns)
+        """toevoegen aan urls.py (urlpatterns)
+        """
         print("updating urlconfs...")
         old, new = backup(BASE / "urls.py")
         schrijf = False
@@ -241,6 +252,8 @@ class NewProj:
                         newfile.write(line)
 
     def update_appreg(self):
+        """update apps registration
+        """
         print("updating apps registration...")
         old, new = backup(APPS)
         with old.open() as _in:
@@ -255,6 +268,7 @@ class NewProj:
                     else:
                         _out.write(app)
 
+
 def allnew():
     """create all new projects
     """
@@ -262,20 +276,20 @@ def allnew():
     with open(APPS) as oldfile:
         newapps = [line.split(";")[1] for line in oldfile if line.startswith('_')]
     for app in newapps:
-        ret = NewProj(app)
-        if ret:
-            ret = ':'.join((app, ret))
+        result = NewProj(app)
+        if result:
+            result = ':'.join((app, result))
             break
-    return ret
+    return result
 
 if __name__ == "__main__":
     if len(sys.argv) == 1:
-        ret = 'insufficient arguments*'
+        result = 'insufficient arguments*'
     elif sys.argv[1] == "*":
-        ret = allnew()
+        result = allnew()
     else:
-        ret = NewProj(*sys.argv[1:])
-    if ret:
-        if ret.endswith('*'):
-            ret = '\n]n'.join((ret[:-1], USAGE))
-        print(ret)
+        result = NewProj(*sys.argv[1:])
+    if result:
+        if result.endswith('*'):
+            result = '\n]n'.join((result[:-1], USAGE))
+        print(result)

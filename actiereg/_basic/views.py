@@ -1,7 +1,7 @@
 """Views for the various pages
 
-Since these are copied for each project, these call routines reside in a
-separate module
+Since these are copied for each project, these call routines reside (and are
+documented) in a separate module
 """
 from django.contrib.auth.decorators import login_required
 import actiereg._basic.models as my

@@ -38,5 +38,5 @@ urlpatterns = patterns(
     url(r'^(?P<actie>\d+)/(?P<arch>(arch|herl))/$', 'detail'),
 
     # Uncomment this for admin:
-#     url(r'^admin/', include('django.contrib.admin.urls')),
+    #     url(r'^admin/', include('django.contrib.admin.urls')),
     )

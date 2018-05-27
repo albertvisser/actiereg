@@ -1,9 +1,6 @@
 """Copy actions from ProbReg project into ActieReg project
 """
 import dml
-## import pprint as pp
-## os.environ["DJANGO_SETTINGS_MODULE"] = 'actiereg.settings'
-import settings
 import _basic.models as my
 from django.contrib.auth.models import User
 
@@ -11,26 +8,6 @@ from django.contrib.auth.models import User
 def main(fnaam):
     """Main function
     """
-    test = my.Actie()
-    ## _out = open("_out".join(os.path.splitext(fnaam)),"w")
-    ## data = dml.Settings()
-    ## data.read()
-    ## pp.pprint(data.stat)
-    ## my.Status.objects.delete()
-    ## for stat,gegs in data.stat:
-    ##     title,order = gegs
-    ##     my.Status.objects,create(value=stat,title=title,order=order)
-    ## pp.pprint(data.cat)
-    ## my.Soort.objects.delete()
-    ## for srt,gegs in data.cat:
-    ##     title,order = gegs
-    ##     my.Soort.objects,create(value=cat,title=title,order=order)
-    ## pp.pprint(data.kop)
-    ## my.Page.objects.delete()
-    ## for value,title in data.stat:
-    ##     my.Page.objects,create(value=value,title=title)
-
-    ## laatste = dml.LaatsteActie().nieuwnummer - 1
     data = [actie[0] for actie in dml.Acties(fnaam, arch="alles").lijst]
     for item in data:
         actie = dml.Actie(fnaam, item)

@@ -3,6 +3,7 @@
 
 
 class Status(object):
+    """gemeld, in behandeling, afgehandeld e.d."""
     def __init__(self, **args):
         self.id = args.get("id", "0")
         self.title = args.get("title", "")
@@ -11,6 +12,7 @@ class Status(object):
 
 
 class Soort(object):
+    """probleem, wens e.d."""
     def __init__(self, **args):
         self.id = args.get("id", "0")
         self.title = args.get("title", "")
@@ -19,6 +21,7 @@ class Soort(object):
 
 
 class Page(object):
+    """titels voor de links/onderdelen"""
     def __init__(self, **args):
         self.id = args.get("id", "0")
         self.title = args.get("title", "")
@@ -27,6 +30,7 @@ class Page(object):
 
 
 class Actie(object):
+    """primaire gegevenstabel"""
     def __init__(self, **args):
         self.id = args.get("id", "0")
         self.nummer = args.get("nummer", "")
@@ -44,6 +48,7 @@ class Actie(object):
 
 
 class Event(object):
+    """historische gegevens over een actie"""
     def __init__(self, **args):
         self.id = args.get("id", "0")
         self.actie = args.get("actie", "1")
