@@ -8,7 +8,7 @@ from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render_to_response, get_object_or_404
 from django.core.exceptions import ObjectDoesNotExist
 ## from django.contrib.auth.decorators import login_required
-## from django.db.models import Q
+from django.db.models import Q
 import django.contrib.auth.models as aut
 from django.template import RequestContext
 from django.views.decorators.csrf import csrf_exempt
@@ -68,12 +68,12 @@ def get_acties(my, user):
         if filtered:
             filter = ""
             for f in filtered:
-                if f.extra == "EN":
+                if f.extra.upper() in ("EN", 'AND'):
                     filter += " & "
-                elif f.extra == "OF":
+                elif f.extra.upper() in ("OF", 'OR'):
                     filter += " | "
                 filter += 'Q(nummer__{}="{}")'.format(f.operator.lower(), f.value)
-            exec('data = data.filter({})'.format(filter))
+            data = eval('data.filter({})'.format(filter))
 
         filtered = seltest.filter(veldnm="soort")
         sel = [my.Soort.objects.get(value=x.value).id for x in filtered]
@@ -101,7 +101,7 @@ def get_acties(my, user):
                     filter += " | "
             filter += 'Q(title__icontains="{}")'.format(filtered[0].value)
         if filter:
-            exec('data = data.filter({})'.format(filter))
+            data = eval('data.filter({})'.format(filter))
 
         filtered = seltest.filter(veldnm="arch")
         if not filtered:
