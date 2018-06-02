@@ -428,7 +428,7 @@ def select(root, name, my, request):
             page_data["selected"]["nummer"] = True
             if sel.extra.strip():
                 page_data["selected"]["enof1"] = sel.extra.lower()
-            page_data["selected"][sel.operator] = sel.value
+            page_data["selected"][sel.operator.lower()] = sel.value
         elif sel.veldnm in ("about", "title"):
             page_data["selected"]["zoek"] = True
             if sel.extra.strip():
