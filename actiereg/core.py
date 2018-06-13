@@ -91,15 +91,19 @@ def get_acties(my, user):
         filtered = seltest.filter(veldnm="about")
         filter = ''
         if filtered:
-            filter = 'Q(about__icontains="{}")'.format(filtered[0].value)
+            test = filtered[0].value
+            if test:
+                filter = 'Q(about__icontains="{}")'.format(test)
         filtered = seltest.filter(veldnm="title")
         if filtered:
-            if filter:
-                if filtered[0].extra == "EN":
-                    filter += " & "
-                elif filtered[0].extra == "OF":
-                    filter += " | "
-            filter += 'Q(title__icontains="{}")'.format(filtered[0].value)
+            test = filtered[0].value
+            if test:
+                if filter:
+                    if filtered[0].extra.upper() in ("EN", "AND"):
+                        filter += " & "
+                    elif filtered[0].extra.upper() in ("OF", "OR"):
+                        filter += " | "
+                filter += 'Q(title__icontains="{}")'.format(test)
         if filter:
             data = eval('data.filter({})'.format(filter))
 
