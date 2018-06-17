@@ -33,8 +33,8 @@ def is_admin(root, user):
     test = root + "_admin"
     for grp in user.groups.all():
         if grp.name == test:
-            return True, test, grp.name
-    return False, test, str(user.groups.all())
+            return True     # , test, grp.name  -- why the rest?
+    return False    # , test, str(user.groups.all()) - why the rest?
 
 
 def store_event(my, msg, actie, user):
@@ -61,7 +61,7 @@ def get_acties(my, user):
     """return list of actions with selection and sort order applied
     """
     data = my.Actie.objects.all()
-    if data:
+    if data and user:
         seltest = my.Selection.objects.filter(user=user)
 
         filtered = seltest.filter(veldnm="nummer")
@@ -238,7 +238,7 @@ def index(root, name, my, request, msg=''):
         msg += '?next=/{}/">hier</a> om {} te loggen. '.format(root, inuit)
         if inuit == "uit":
             msg += "Klik op een actienummer om de details te bekijken."
-    admin_ = is_admin(root, request.user)[0]
+    admin_ = is_admin(root, request.user)   # [0]
     page_data = {"title": "Actielijst",
                  "page_titel": "lijst",
                  "name": name,
