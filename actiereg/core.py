@@ -257,7 +257,7 @@ def index(root, name, my, request, msg=''):
         page_data["acties"] = data
         page_data["geen_items"] = "Geen acties die aan deze criteria voldoen"
     else:
-        page_data["geen_items"] = "Nog geen acties opgevoerd voor dit project"
+        page_data["geen_items"] = "Geen acties voor de huidige selectie en user"
         if not [x.assigned for x in my.Worker.objects.all()]:
             page_data["readonly"] = True
             page_data["geen_items"] += (
