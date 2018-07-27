@@ -16,6 +16,20 @@ from django.views.decorators.csrf import csrf_exempt
 UIT_DOCTOOL = "Actie opgevoerd vanuit Doctool"
 
 
+def register(my):
+    """register models to the admin site (to be used from admin.py)
+    """
+    from django.contrib import admin
+    admin.site.register(my.Status)
+    admin.site.register(my.Soort)
+    admin.site.register(my.Page)
+    admin.site.register(my.Actie)
+    admin.site.register(my.Event)
+    admin.site.register(my.SortOrder)
+    admin.site.register(my.Selection)
+    admin.site.register(my.Worker)
+
+
 def is_user(root, user):
     """geeft indicatie terug of de betreffende gebruiker acties mag wijzigen
     """
@@ -57,12 +71,12 @@ def store_gewijzigd(my, msg, txt, mld, actie, user):
     return mld
 
 
-def get_acties(my, user):
+def get_acties(my, userid):
     """return list of actions with selection and sort order applied
     """
     data = my.Actie.objects.all()
-    if data and user:
-        seltest = my.Selection.objects.filter(user=user)
+    if data and userid:
+        seltest = my.Selection.objects.filter(user=userid)
 
         filtered = seltest.filter(veldnm="nummer")
         if filtered:
@@ -113,7 +127,7 @@ def get_acties(my, user):
         elif len(filtered) == 1:
             data = data.filter(arch=True)
 
-        sorters = my.SortOrder.objects.filter(user=user).order_by("volgnr")
+        sorters = my.SortOrder.objects.filter(user=userid).order_by("volgnr")
         order = []
         for sorter in sorters:
             if sorter.veldnm == "title":
