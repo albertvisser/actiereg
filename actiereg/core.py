@@ -87,7 +87,10 @@ def get_acties(my, userid):
                 elif f.extra.upper() in ("OF", 'OR'):
                     filter += " | "
                 filter += 'Q(nummer__{}="{}")'.format(f.operator.lower(), f.value)
-            data = eval('data.filter({})'.format(filter))
+            try:
+                data = eval('data.filter({})'.format(filter))
+            except SyntaxError:
+                pass
 
         filtered = seltest.filter(veldnm="soort")
         sel = [my.Soort.objects.get(value=x.value).id for x in filtered]
@@ -119,7 +122,10 @@ def get_acties(my, userid):
                         filter += " | "
                 filter += 'Q(title__icontains="{}")'.format(test)
         if filter:
-            data = eval('data.filter({})'.format(filter))
+            try:
+                data = eval('data.filter({})'.format(filter))
+            except SyntaxError:
+                pass
 
         filtered = seltest.filter(veldnm="arch")
         if not filtered:
@@ -429,10 +435,12 @@ def select(root, name, my, request):
                  "stats": my.Status.objects.all(),
                  "users": [x.assigned for x in my.Worker.objects.all()],
                  "selected": {"nummer": [],
+                              "enof1": 'of',
                               "gewijzigd": [],
                               "soort": [],
                               "status": [],
                               "user": [],
+                              "enof2": 'of',
                               "arch": 0}}
 
     for sel in my.Selection.objects.filter(user=request.user.id):
