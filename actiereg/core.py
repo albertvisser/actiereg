@@ -5,12 +5,11 @@ import datetime as dt
 ## from django.http import
 ## from django.http import Http404
 from django.http import HttpResponse, HttpResponseRedirect
-from django.shortcuts import render_to_response, get_object_or_404
+from django.shortcuts import render, get_object_or_404
 from django.core.exceptions import ObjectDoesNotExist
 ## from django.contrib.auth.decorators import login_required
 from django.db.models import Q
 import django.contrib.auth.models as aut
-from django.template import RequestContext
 from django.views.decorators.csrf import csrf_exempt
 
 UIT_DOCTOOL = "Actie opgevoerd vanuit Doctool"
@@ -284,7 +283,7 @@ def index(root, name, my, request, msg=''):
                 "<br/><br/> \nLet op: aan dit project moeten eerst nog medewerkers"
                 "en bevoegdheden voor die medewerkers worden toegevoegd")
     page_data["geen_items"] = page_data["geen_items"].join(("<p>", "</p>"))
-    return render_to_response(root + '/index.html', page_data)
+    return render(request, root + '/index.html', page_data)
 
 
 def settings(root, name, my, request):
@@ -304,8 +303,7 @@ def settings(root, name, my, request):
                  "stats": my.Status.objects.all().order_by('order'),
                  "all_users": all_users,
                  "proj_users": proj_users}  # .order_by('username')
-    return render_to_response(root + '/settings.html', page_data,
-                              context_instance=RequestContext(request))
+    return render(request, root + '/settings.html', page_data)
 
 
 def setusers(root, my, request):
@@ -463,8 +461,7 @@ def select(root, name, my, request):
         else:
             return HttpResponse("Unknown search argument: " + sel.veldnm)
 
-    return render_to_response(root + '/select.html', page_data,
-                              context_instance=RequestContext(request))
+    return render(request, root + '/select.html', page_data)
 
 
 def setsel(root, my, request):
@@ -560,8 +557,7 @@ def order(root, name, my, request):
         page_data["sorters"].append(sorter)
     while len(page_data["sorters"]) < len(page_data["fields"]):
         page_data["sorters"].append(None)
-    return render_to_response(root + '/order.html', page_data,
-                              context_instance=RequestContext(request))
+    return render(request, root + '/order.html', page_data)
 
 
 def setorder(root, my, request):
@@ -639,8 +635,7 @@ def detail(root, name, my, request, actie="", msg=""):
         page_titel = "Titel/Status"
     page_data["title"] = titel
     page_data["page_titel"] = page_titel
-    return render_to_response(root + '/actie.html', page_data,
-                              context_instance=RequestContext(request))
+    return render(request, root + '/actie.html', page_data)
 
 
 def wijzig(root, my, request, actie="", doe=""):
@@ -789,8 +784,7 @@ def tekst(root, name, my, request, actie="", page="", msg=''):
     page_data["page_titel"] = page_titel
     page_data["page_text"] = page_text
     page_data["actie"] = actie
-    return render_to_response(root + '/tekst.html', page_data,
-                              context_instance=RequestContext(request))
+    return render(request, root + '/tekst.html', page_data)
 
 
 def wijzigtekst(root, my, request, actie="", page=""):
@@ -884,8 +878,7 @@ def events(root, name, my, request, actie="", event="", msg=''):
         page_data["curr_ev"] = {"id": "nieuw", "start": nw_date}
     elif event:
         page_data["curr_ev"] = my.Event.objects.get(pk=event)
-    return render_to_response(root + '/voortgang.html', page_data,
-                              context_instance=RequestContext(request))
+    return render(request, root + '/voortgang.html', page_data)
 
 
 def wijzigevents(root, my, request, actie="", event=""):
