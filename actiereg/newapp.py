@@ -30,6 +30,7 @@ APPS = BASE / "apps.dat"
 USAGE = __doc__
 ROOT_FILES = ('__init__.py', 'models.py', 'views.py', 'urls.py', 'admin.py',
               'initial_data.json')
+SYMLINK = (ROOT_FILES[1], ROOT_FILES[3])
 TEMPLATE_FILES = ('index', 'actie', 'tekst', 'voortgang', 'select', 'order',
                   'settings')
 
@@ -41,15 +42,15 @@ def copyover(root, name, appname):
     """
     copyfrom = BASE / "_basic" / name
     copyto = BASE / root / name
+    if name in SYMLINK:  # make symlink instead of real copy
+        copyto.symlink_to(copyfrom)
+        return
     with copyfrom.open() as oldfile:
         with copyto.open("w") as newfile:
             for line in oldfile:
                 if "basic" in line:
-                    if name == "models.py":
-                        line = line.replace("basic", root)
-                    else:
-                        line = line.replace("_basic", root)
-                if line == 'ROOT = "basic"\n':
+                    line = line.replace("_basic", root)
+                if line == 'ROOT = "basic"\n':  # TODO: moet dit niet `elif` zijn?
                     newfile.write('ROOT = "{}"\n'.format(root))
                 elif line == 'NAME = "demo"\n':
                     newfile.write('NAME = "{}"\n'.format(str(appname)))
