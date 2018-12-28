@@ -58,14 +58,14 @@ class Actie(models.Model):
     """primaire gegevenstabel"""
     nummer = models.CharField(max_length=32)
     start = models.DateTimeField(auto_now_add=True)
-    starter = models.ForeignKey(User, related_name="actiehouder_basic")
+    starter = models.ForeignKey(User, related_name="actiehouder")
     about = models.CharField(max_length=32, blank=True)
     title = models.CharField(max_length=80, blank=True)
     gewijzigd = models.DateTimeField(auto_now=True)
-    lasteditor = models.ForeignKey(User, related_name="editor_basic")
+    lasteditor = models.ForeignKey(User, related_name="editor")
     soort = models.ForeignKey('Soort')
     status = models.ForeignKey('Status')
-    behandelaar = models.ForeignKey(User, related_name="actienemer_basic")
+    behandelaar = models.ForeignKey(User, related_name="actienemer")
     arch = models.BooleanField(default=False)
     melding = models.TextField(blank=True)
     oorzaak = models.TextField(blank=True)
@@ -80,7 +80,7 @@ class Event(models.Model):
     """historische gegevens over een actie"""
     actie = models.ForeignKey('Actie', related_name="events")
     start = models.DateTimeField(auto_now_add=True)
-    starter = models.ForeignKey(User, related_name="ev_editor_basic")
+    starter = models.ForeignKey(User, related_name="ev_editor")
     text = models.TextField(blank=True)
 
 
@@ -110,7 +110,7 @@ class Selection(models.Model):
 class Worker(models.Model):
     """medewerkers voor dit project
     bevat de mogelijke waarden voor de user-velden in de actie"""
-    assigned = models.ForeignKey(User, related_name="worker_basic")
+    assigned = models.ForeignKey(User, related_name="worker")
 
     def __str__(self):
         return self.assigned.username
