@@ -13,6 +13,7 @@ from django.shortcuts import render  # , get_object_or_404
 from django.db import connection
 ## from django.views.decorators.csrf import csrf_exempt
 from actiereg.settings import MEDIA_ROOT, SITES  # , DATABASES['default']['NAME']
+from actiereg.core import is_admin
 ## appsfile = os.path.join(os.path.split(__file__)[0], "apps.dat")
 appsfile = pathlib.Path(__file__).parent / "apps.dat"
 

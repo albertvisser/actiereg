@@ -62,7 +62,10 @@ span.clear {
 {% if new %}
 <div><h5>aangevraagde projecten:</h5>
 {% for app in new %}
-<div><a href="/{{app.root}}/" title="{{app.name}}">{{app.name|capfirst}}: {{app.desc}}</a></div>
+<div>{% if user.is_staff %}<a href="/{{app.root}}/" title="{{app.name}}">{% endif %}
+		{{app.name|capfirst}}: {{app.desc}}
+     {% if user.is_staff %}</a>{% endif %}
+</div>
 {% endfor %}
 </div>
 {% endif %}
