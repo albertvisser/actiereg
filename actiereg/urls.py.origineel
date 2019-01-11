@@ -1,4 +1,7 @@
-from django.conf.urls.defaults import *
+from django.conf.urls import include, url
+## from django.views.generic.simple import redirect_to
+from django.contrib.auth.views import login
+from . import views
 
 # Uncomment the next two lines to enable the admin:
 from django.contrib import admin
@@ -7,16 +10,18 @@ admin.autodiscover()
 urlpatterns = patterns('',
     # Example:
     # (r'^actiereg/', include('actiereg.foo.urls')),
-    url(r'^$','actiereg.views.index'),
-    url(r'^msg/(?P<msg>.+)/$','actiereg.views.index'),
-    url(r'^new/$','actiereg.views.new'),
-    url(r'^add/$','actiereg.views.add'),
-    url(r'^addext/$','actiereg.views.add_from_doctool'),
+    # (r'^favicon\.ico$', 'django.views.generic.simple.redirect_to',
+    #      {'url': '/home/albert/www/django/actiereg/static/favicon.ico'}),
+    url(r'^$',views.index),
+    url(r'^msg/(?P<msg>.+)/$',views.index),
+    url(r'^new/$',views.new),
+    url(r'^add/$',views.add),
+    url(r'^addext/$',views.add_from_doctool),
     url(r'^addext/(?P<proj>\d+)/(?P<name>\w+)/(?P<desc>.+)/$',
-        'actiereg.views.add_from_doctool'),
-   url(r'^accounts/login/$', 'django.contrib.auth.views.login'),
-   url(r'^accounts/profile/$', 'actiereg.views.index'),
-   url(r'^logout/$','actiereg.views.log_out'),
+        views.add_from_doctool),
+   url(r'^accounts/login/$', login),
+   url(r'^accounts/profile/$', views.index),
+   url(r'^logout/$',views.log_out),
    url(r'^basic/', include('actiereg._basic.urls')),
 
     # Uncomment the admin/doc line below and add 'django.contrib.admindocs'
