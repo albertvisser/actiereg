@@ -3,8 +3,7 @@
 ## import os
 import pathlib
 ## import shutil
-## from django.template import Context, loader
-## from django.http import HttpResponse
+import subprocess
 ## from django.http import Http404
 from django.contrib.auth import logout  # , login, authenticate
 from django.contrib.auth.decorators import login_required
@@ -14,6 +13,7 @@ from django.db import connection
 ## from django.views.decorators.csrf import csrf_exempt
 from actiereg.settings import MEDIA_ROOT, SITES  # , DATABASES['default']['NAME']
 from actiereg.core import is_admin
+from actiereg.newapp import allnew, NewProj
 ## appsfile = os.path.join(os.path.split(__file__)[0], "apps.dat")
 appsfile = pathlib.Path(__file__).parent / "apps.dat"
 
@@ -73,22 +73,33 @@ def new(request):
     return render(request, 'nieuw.html', {})
 
 
-def notify_admin():
-    """email versturen aan site admin voor opvoeren nieuw project
+def notify_admin(name):
+    """admin informeren voor opvoeren nieuw project
+
+    kan aangestuurd worden vanuit MyProjects of door link op admin scherm
     """
-    pass
+
+
+def add_from_actiereg(request, name=''):
+    "project opvoeren en activeren vanaf admin link"
+    if not name:
+        return HttpResponseRedirect('/msg/Geen projectnaam opgegeven om te activeren')
+    if name == 'all':
+        allnew()
+    else:
+        test = NewProj(name, 'all')
+        if test.msg:
+            return HttpResponseRedirect('/msg/{}'.format(test.msg))
+    subprocess.run(['binfab', 'restart_server:actiereg'])
+    # return HttpResponseRedirect('/msg/De wsgi-server wordt gerestart. Ververs de pagina s.v.p.')
+    return HttpResponseRedirect('/')
 
 
 def add_from_doctool(request, proj='', name='', desc=''):
     "project opvoeren en terug naar DocTool"
-    ## data = request.GET
-    ## doc = data.get("from", "")
-    ## name = data.get("name", "")
-    ## desc = data.get("desc", "")
-    ## return HttpResponse("{0} {1} {2}".format(doc, name, desc))
     with appsfile.open("a") as _out:
         _out.write(";".join(("_", name, name, desc)) + "\n")
-    notify_admin()
+    notify_admin(name)
     return HttpResponseRedirect('{}/{}/meld/De aanvraag voor het project "{}"'
                                 ' is verstuurd/'.format(SITES['doctool'], proj, name))
 
@@ -102,7 +113,7 @@ def add(request):
     desc = data.get("desc", "")
     with appsfile.open("a") as _out:
         _out.write(";".join(("_", name, name, desc)) + "\n")
-    notify_admin()
+    notify_admin(name)
     return HttpResponseRedirect(
         '/msg/De aanvraag voor het project "{}" is verstuurd/'.format(name))
 

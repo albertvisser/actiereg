@@ -62,13 +62,16 @@ span.clear {
 {% if new %}
 <div><h5>aangevraagde projecten:</h5>
 {% for app in new %}
-<div>{% if user.is_staff %}<a href="/{{app.root}}/" title="{{app.name}}">{% endif %}
-		{{app.name|capfirst}}: {{app.desc}}
+<div>{% if user.is_staff %}<a href="/addint/{{app.root}}/" title="voer project {{app.name}} op">
+     {% endif %} {{app.name|capfirst}}: {{app.desc}}
      {% if user.is_staff %}</a>{% endif %}
 </div>
 {% endfor %}
-</div>
-{% endif %}
+{% if user.is_staff %}<div><br>Klik op een link om een project toe te voegen
+	of klik <a href="/addint/all/" title="voer alle projecten op">hier</a>
+	om alles tegelijk op te voeren<br>
+	N.B. na afloop wordt de verbinding verbroken omdat de WSGI server gerestart wordt</div>
+{% endif %}</div>{% endif %}
 <h5>TODO: </h5>
 <ul>
     <li>systeem events kunnen nog gewijzigd worden</li>

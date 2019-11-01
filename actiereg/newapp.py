@@ -134,7 +134,8 @@ class NewProj:
                     break
             else:  # if not found:
                 return "project niet gevonden"
-        ok, rt, self.app, oms = line.strip().split(";")
+        # ok, rt, self.app, oms = line.strip().split(";")
+        self.app = line.strip().split(';')[2]
 
     def do_copy(self):
         """copy programs and templates
@@ -155,7 +156,7 @@ class NewProj:
         """database aanpassen en initiele settings data opvoeren
         """
         self.update_settings()
-        self.update_urlconf()
+        # self.update_urlconf()
         sys.path.append(BASE)
         os.environ["DJANGO_SETTINGS_MODULE"] = 'actiereg.settings'
         ## import settings
@@ -178,7 +179,7 @@ class NewProj:
         self.update_appreg()
 
     def loaddata(self):
-        """load data from probreg (?)
+        """load data from probreg (if present)
         """
         print("getting probreg data")
         with open("loaddata.py") as oldfile:
@@ -197,7 +198,8 @@ class NewProj:
         """
         self.do_copy()
         self.activate()
-        self.loaddata()
+        if self.load_from:
+            self.loaddata()
 
     def undo(self):
         """reverse updates
@@ -208,7 +210,7 @@ class NewProj:
             print("removing templates...")
             shutil.rmtree(str(BASE / "templates" / self.root))
         self.update_settings()
-        self.update_urlconf()
+        # self.update_urlconf()
         self.update_appreg()
 
     def update_settings(self):
