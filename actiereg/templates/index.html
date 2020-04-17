@@ -45,41 +45,39 @@ span.clear {
 <h4>Kies een project:</h4>
 <!-- <a href="/basic/" title="basis model">Basic</a> -->
 <div style="max-height: 600px; overflow: auto">
-<div><div class="col_link">&nbsp;</div>
+  <div>
+    <div class="col_link">&nbsp;</div>
     <div class="col_stats">alle / open acties / in behandeling</div>
     <div class="clear">&nbsp;</div>
+  </div>
+  {% for app in apps %}
+    <div>
+      <div class="col_link">
+        <a href="/{{app.root}}/" title="{{app.name}}">{{app.name|capfirst}}: {{app.desc}}</a></div>
+      <div class="col_stats">{{app.alle}} / {{app.open}} / {{app.active}} </div>
+      <div class="clear">&nbsp;</div>
     </div>
-{% for app in apps %}
-<div><div class="col_link">
-    <a href="/{{app.root}}/" title="{{app.name}}">{{app.name|capfirst}}: {{app.desc}}</a></div>
-    <div class="col_stats">{{app.alle}} / {{app.open}} / {{app.active}} </div>
-    <div class="clear">&nbsp;</div>
-    </div>
-{% endfor %}
+  {% endfor %}
 </div>
 <hr/>
 <a href="/new/" title="nieuw"><h6>Vraag een nieuw project aan</h6></a>
 {% if new %}
-<div><h5>aangevraagde projecten:</h5>
-{% for app in new %}
-<div>{% if user.is_staff %}<a href="/addint/{{app.root}}/" title="voer project {{app.name}} op">
-     {% endif %} {{app.name|capfirst}}: {{app.desc}}
-     {% if user.is_staff %}</a>{% endif %}
-</div>
-{% endfor %}
-{% if user.is_staff %}<div><br>Klik op een link om een project toe te voegen
+  <div>
+    <h5>aangevraagde projecten:</h5>
+    {% for app in new %}
+      <div>
+        {% if user.is_staff %}
+          <a href="/addint/{{app.root}}/" title="voer project {{app.name}} op">
+        {% endif %} {{app.name|capfirst}}: {{app.desc}}
+        {% if user.is_staff %}</a>{% endif %}
+      </div>
+    {% endfor %}
+    {% if user.is_staff %}
+      <div><br>Klik op een link om een project toe te voegen
 	of klik <a href="/addint/all/" title="voer alle projecten op">hier</a>
 	om alles tegelijk op te voeren<br>
 	N.B. na afloop wordt de verbinding verbroken omdat de WSGI server gerestart wordt</div>
-{% endif %}</div>{% endif %}
-<h5>TODO: </h5>
-<ul>
-    <li>systeem events kunnen nog gewijzigd worden</li>
-    <li>weergave velden in lijst flexibel maken (net als sortering)?</li>
-</ul>
+    {% endif %}
+  </div>
+{% endif %}
 {% endblock %}
-{% comment %}
-<!-- eventueel per app testenof de user deze mag zien d.m.v.
-{% for grp in who.groups %}{% if app.name in grp %}toon naam{%endif%}{% endfor %}
--->
-{% endcomment %}
