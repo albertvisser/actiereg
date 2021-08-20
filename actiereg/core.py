@@ -247,7 +247,7 @@ def index(root, name, my, request, msg=''):
         te verbergen
     """
     if not msg:
-        if request.user.is_authenticated():
+        if request.user.is_authenticated:
             msg = 'U bent ingelogd als <i>{}</i>. '.format(request.user.username)
             msg += 'Klik <a href="/logout/'
             inuit = 'uit'
@@ -414,7 +414,7 @@ def select(root, name, my, request):
     """bouw het scherm op aan de hand van de huidige selectiegegevens
     bij de gebruiker
     """
-    if request.user.is_authenticated():
+    if request.user.is_authenticated:
         msg = 'U bent ingelogd als <i>{}</i>. '.format(request.user.username)
         msg += 'Klik <a href="/logout/?next=/{}/select/">hier</a> om uit te loggen.'.format(root)
     else:
@@ -531,7 +531,7 @@ def order(root, name, my, request):
     """bouw het scherm op aan de hand van de huidige sorteringsgegevens
     bij de gebruiker
     """
-    if request.user.is_authenticated():
+    if request.user.is_authenticated:
         msg = 'U bent ingelogd als <i>{}</i>. '.format(request.user.username)
         msg += 'Klik <a href="/logout/?next=/{}/order/">hier</a> om uit te loggen'.format(
             root)
@@ -593,7 +593,7 @@ def detail(root, name, my, request, actie="", msg=""):
     """
     ## msg = request.GET.get("msg", "")
     if not msg:
-        if request.user.is_authenticated():
+        if request.user.is_authenticated:
             msg = 'U bent ingelogd als <i>{}</i>. '.format(request.user.username)
             msg += 'Klik <a href="/logout/'
             inuit = 'uit'
@@ -742,7 +742,7 @@ def tekst(root, name, my, request, actie="", page="", msg=''):
         maken en diverse knoppen te verbergen.
     """
     if not msg:
-        if request.user.is_authenticated():
+        if request.user.is_authenticated:
             msg = 'U bent ingelogd als <i>{}</i>. Klik <a href="/logout/'.format(
                 request.user.username)
             inuit = 'uit'
@@ -846,7 +846,7 @@ def events(root, name, my, request, actie="", event="", msg=''):
         maken en diverse knoppen te verbergen.
     """
     if not msg:
-        if request.user.is_authenticated():
+        if request.user.is_authenticated:
             msg = 'U bent ingelogd als <i>{0}</i>. '.format(request.user.username)
             msg += 'Klik <a href="/logout/'
             inuit = 'uit'

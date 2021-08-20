@@ -21,9 +21,10 @@ appsfile = pathlib.Path(__file__).parent / "apps.dat"
 def index(request, msg=""):
     """Start pagina voor ActieReg
     """
-    ## msg = request.GET.get("msg", "")
+    msg = request.GET.get("msg", "")
+    user = request.GET.get("user", "")
     if not msg:
-        if request.user.is_authenticated():
+        if user and user.is_authenticated():
             msg = 'U bent ingelogd als <i>{}</i>. '.format(request.user.username)
             msg += 'Klik <a href="/logout/?next=/">hier</a> om uit te loggen'
         else:
@@ -61,7 +62,7 @@ def index(request, msg=""):
                 new_apps.append({"root": root, "name": name, "desc": desc})
     app_list.pop(0)
     return render(request, 'index.html', {"apps": app_list, "new": new_apps,
-                                          "msg": msg, "who": request.user})
+                                          "msg": msg, "who": user})
 
 
 def new(request):

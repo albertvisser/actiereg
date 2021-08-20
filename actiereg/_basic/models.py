@@ -58,14 +58,14 @@ class Actie(models.Model):
     """primaire gegevenstabel"""
     nummer = models.CharField(max_length=32)
     start = models.DateTimeField(auto_now_add=True)
-    starter = models.ForeignKey(User, related_name="actiehouder")
+    starter = models.ForeignKey(User, related_name="actiehouder", on_delete=models.CASCADE)
     about = models.CharField(max_length=32, blank=True)
     title = models.CharField(max_length=80, blank=True)
     gewijzigd = models.DateTimeField(auto_now=True)
-    lasteditor = models.ForeignKey(User, related_name="editor")
-    soort = models.ForeignKey('Soort')
-    status = models.ForeignKey('Status')
-    behandelaar = models.ForeignKey(User, related_name="actienemer")
+    lasteditor = models.ForeignKey(User, related_name="editor", on_delete=models.CASCADE)
+    soort = models.ForeignKey('Soort', on_delete=models.CASCADE)
+    status = models.ForeignKey('Status', on_delete=models.CASCADE)
+    behandelaar = models.ForeignKey(User, related_name="actienemer", on_delete=models.CASCADE)
     arch = models.BooleanField(default=False)
     melding = models.TextField(blank=True)
     oorzaak = models.TextField(blank=True)
@@ -78,9 +78,9 @@ class Actie(models.Model):
 
 class Event(models.Model):
     """historische gegevens over een actie"""
-    actie = models.ForeignKey('Actie', related_name="events")
+    actie = models.ForeignKey('Actie', related_name="events", on_delete=models.CASCADE)
     start = models.DateTimeField(auto_now_add=True)
-    starter = models.ForeignKey(User, related_name="ev_editor")
+    starter = models.ForeignKey(User, related_name="ev_editor", on_delete=models.CASCADE)
     text = models.TextField(blank=True)
 
 
@@ -110,7 +110,7 @@ class Selection(models.Model):
 class Worker(models.Model):
     """medewerkers voor dit project
     bevat de mogelijke waarden voor de user-velden in de actie"""
-    assigned = models.ForeignKey(User, related_name="worker")
+    assigned = models.ForeignKey(User, related_name="worker", on_delete=models.CASCADE)
 
     def __str__(self):
         return self.assigned.username
