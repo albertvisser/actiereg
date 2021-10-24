@@ -22,10 +22,10 @@ def index(request, msg=""):
     """Start pagina voor ActieReg
     """
     msg = request.GET.get("msg", "")
-    user = request.GET.get("user", "")
+    user = request.GET.get("user", "") or request.user
     if not msg:
-        if user and user.is_authenticated():
-            msg = 'U bent ingelogd als <i>{}</i>. '.format(request.user.username)
+        if user and user.is_authenticated:
+            msg = 'U bent ingelogd als <i>{}</i>. '.format(user.username)
             msg += 'Klik <a href="/logout/?next=/">hier</a> om uit te loggen'
         else:
             msg = ('U bent niet ingelogd. '
