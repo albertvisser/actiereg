@@ -1,10 +1,10 @@
 """unittests for newapp mdule
 """
-import unittest
 import os
 import shutil
 import pathlib
 import difflib
+import pytest
 import actiereg.newapp as newapp
 
 
@@ -13,177 +13,157 @@ def get_contents_for_compare(path):
     return [x + '\n' for x in path.read_text().split('\n')]
 
 
-class TestCopyOver(unittest.TestCase):
+class TestCopyOver:
     """test copyover varianten"""
-
-    def setUp(self):
-        self.where = newapp.BASE / 'test'
-        self.where.mkdir()
-
-    def test_using_none(self):
-        "using None as one of the three arguments"
-        with self.assertRaises(TypeError):
-            newapp.copyover(None, 'xxx', 'yyy')
-        with self.assertRaises(TypeError):
-            newapp.copyover('xxx', None, 'yyy')
-        with self.assertRaises(FileNotFoundError):
-            newapp.copyover('xxx', 'yyy', None)
-
-    def test_using_empty_string(self):
-        "using empty string as one of the three arguments"
-        with self.assertRaises(FileNotFoundError):
-            newapp.copyover('', 'xxx', 'yyy')
-        with self.assertRaises(IsADirectoryError):
-            newapp.copyover('xxx', '', 'yyy')
-        with self.assertRaises(FileNotFoundError):
-            newapp.copyover('xxx', 'yyy', '')
-
-    def test_wrong_filename(self):
-        "using filename not in list"
-        with self.assertRaises(FileNotFoundError):
-            newapp.copyover('test', 'snork', 'gargl')
 
     def test_project_filenames(self):
         "trying out all listed filenames"
+        where = newapp.BASE / 'test'
+        where.mkdir()
+        testobj = newapp.NewProj()
         for name in newapp.ROOT_FILES:
-            newapp.copyover('test', name, 'gargl')
-            path = self.where / name
+            testobj.copyover(name)
+            path = where / name
             oldpath = newapp.BASE / '_basic' / name
-            self.assertEqual(path.exists(), True, 'file not copied')
+            assert path.exists()  # file copied
             if name in newapp.SYMLINK:
                 # test of er een symlink gemaakt is
-                self.assertEqual(path.is_symlink(), True, 'path is not a symlink')
-                self.assertEqual(os.readlink(str(path)), str(oldpath),
-                                 'path points to the wrong file')
+                assert path.is_symlink()  # path is not a symlink
+                assert os.readlink(str(path)) == str(oldpath)  # path points to the right file
             else:
                 # test of file gekopieerd is inclusief correcte edits
                 data = path.read_text().replace('_basic', name)
                 data = data.replace('basic', name).replace('demo', 'gargl')
-                self.assertEqual(path.read_text(), data, 'contents not correctly copied')
-
-    def tearDown(self):
-        for path in self.where.iterdir():
+                assert path.read_text() == data   # contents correctly copied
+        for path in where.iterdir():
             path.unlink()
-        self.where.rmdir()
+        where.rmdir()
 
 
-class TestBackup(unittest.TestCase):
+class TestBackup:
     "test backup functie"
-
-    def setUp(self):
-        self.path = pathlib.Path('kloenk')
 
     def test_using_none(self):
         "test for filename is None"
-        with self.assertRaises(TypeError):
-            newapp.backup(pathlib.Path(None))
-        self.assertEqual(os.path.exists('None~'), False)
+        testobj = newapp.NewProj()
+        with pytest.raises(TypeError):
+            testobj.backup(pathlib.Path(None))
+        assert not os.path.exists('None~')
 
     def test_empty_filename(self):
         "test for empty filename"
-        with self.assertRaises(OSError):
-            newapp.backup(pathlib.Path(''))
-        self.assertEqual(os.path.exists('~'), False)
+        testobj = newapp.NewProj()
+        with pytest.raises(OSError):
+            testobj.backup(pathlib.Path(''))
+        assert not os.path.exists('~')
 
     def test_nonexistant_file(self):
         "test for nonexistant file"
-        if self.path.exists():
-            self.path.unlink()
-        with self.assertRaises(FileNotFoundError):
-            newapp.backup(self.path)
+        testobj = newapp.NewProj()
+        path = pathlib.Path('kloenk')
+        if path.exists():
+            path.unlink()
+        with pytest.raises(FileNotFoundError):
+            testobj.backup(path)
 
     def test_backup(self):
         "test for existing file"
-        if not self.path.exists():
-            self.path.touch()
-        newapp.backup(self.path)
-        self.assertEqual(os.path.exists('kloenk'), False)
-        self.assertEqual(os.path.exists('kloenk~'), True)
+        testobj = newapp.NewProj()
+        path = pathlib.Path('kloenk')
+        if not path.exists():
+            path.touch()
+        testobj.backup(path)
+        assert not os.path.exists('kloenk')  # huh?
+        assert os.path.exists('kloenk~')
 
 
-class TestNewProj(unittest.TestCase):
-    """test NewProj class"""
-    def setUp(self):
-        shutil.copyfile('apps.dat', 'apps.dat.o')
-        self.where_proj = pathlib.Path('testproj')
-        self.where_tpl = pathlib.Path('templates/testproj')
-
-    def test_str(self):
-        """test string representation of class instantiated using certain args"""
-        test = newapp.NewProj()
-        self.assertEqual(str(test), "newapp.NewProj('', '', '')")
-        test = newapp.NewProj('x', 'y', 'z')
-        self.assertEqual(str(test), "newapp.NewProj('x', 'y', '')")
-        test = newapp.NewProj('x', 'loaddata', 'z')
-        self.assertEqual(str(test), "newapp.NewProj('x', 'loaddata', 'z')")
-
-    def test_parse_args_messages(self):
+class TestParseArgs:
+    def test_messages(self):
         "test situations that produce error messages"
-        test = newapp.NewProj('whatever')
-        self.assertEqual(test.msg, 'project niet gevonden')
-        test = newapp.NewProj('whatever', "wrong-command")
-        self.assertEqual(test.msg, 'foutief tweede argument (actie)*')
-        test = newapp.NewProj('whatever', "undo")
-        self.assertEqual(test.msg, 'project niet gevonden')
-        test = newapp.NewProj('whatever', 'loaddata')
-        self.assertEqual(test.msg, 'foute argumenten voor loaddata*')
+        assert newapp.NewProj('whatever').msg == 'project niet gevonden'
+        assert newapp.NewProj('whatever', "wrong-command").msg == 'foutief tweede argument (actie)*'
+        assert newapp.NewProj('whatever', "undo").msg == 'project niet gevonden'
+        assert newapp.NewProj('whatever', 'loaddata').msg == 'foute argumenten voor loaddata*'
         load_from = 'testdata.xml'
-        test = newapp.NewProj('whatever', 'loaddata', load_from)
-        self.assertEqual(test.msg, 'project niet gevonden')
-        test = newapp.NewProj('whatever', 'loaddata', load_from, 'whatever')
-        self.assertEqual(test.msg, 'foute argumenten voor loaddata*')
-        test = newapp.NewProj('whatever', "copy", 'whatever')
-        self.assertEqual(test.msg, 'teveel argumenten*')
-        test = newapp.NewProj('whatever', "activate", 'whatever')
-        self.assertEqual(test.msg, 'teveel argumenten*')
-        test = newapp.NewProj('whatever', "undo", 'whatever')
-        self.assertEqual(test.msg, 'teveel argumenten*')
+        assert newapp.NewProj('whatever', 'loaddata', load_from).msg == 'project niet gevonden'
+        assert newapp.NewProj('whatever', 'loaddata', load_from, 'whatever').msg == (
+                'foute argumenten voor loaddata*')
+        assert newapp.NewProj('whatever', "copy", 'whatever').msg == 'teveel argumenten*'
+        assert newapp.NewProj('whatever', "activate", 'whatever').msg == 'teveel argumenten*'
+        assert newapp.NewProj('whatever', "undo", 'whatever').msg == 'teveel argumenten*'
 
-    def test_parse_args_activated_app(self):
+    def test_activated_app(self):
         "test situations that produce no error messages"
+        shutil.copyfile('apps.dat', 'apps.dat.o')
         with open('apps.dat', 'a') as f:
             f.write('X;apropos;apropos;bij de les blijf applicatie\n')
         test = newapp.NewProj('apropos', "all")
-        self.assertEqual(test.msg, 'dit project is al geactiveerd')
+        assert test.msg == 'dit project is al geactiveerd'
         test = newapp.NewProj('apropos', "loaddata", "apropos.xml")
-        self.assertIsNone(test.msg)
-        self.assertEqual((test.root, test.action, test.load_from, test.app),
-                         ('apropos', 'loaddata', 'apropos.xml', 'apropos'))
+        assert test.msg is None
+        assert (test.root, test.action, test.load_from, test.app) == ('apropos', 'loaddata',
+                                                                      'apropos.xml', 'apropos')
         test = newapp.NewProj('apropos', "undo")
-        self.assertIsNone(test.msg)
-        self.assertEqual((test.root, test.action, test.load_from, test.app),
-                         ('apropos', 'undo', '', 'apropos'))
+        assert test.msg is None
+        assert (test.root, test.action, test.load_from, test.app) == ('apropos', 'undo', '',
+                                                                      'apropos')
+        os.remove('apps.dat')
+        os.rename('apps.dat.o', 'apps.dat')
 
-    def test_parse_args_ok_activated_app(self):
+    def test_ok_activated_app(self):
         "test situations that produce no error messages"
+        shutil.copyfile('apps.dat', 'apps.dat.o')
         with open('apps.dat', 'a') as f:
             f.write('_;printdir;printdir;directory afdrukken\n')
         test = newapp.NewProj('printdir', "undo")
-        self.assertEqual(test.msg, 'dit project is nog niet geactiveerd')
+        assert test.msg == 'dit project is nog niet geactiveerd'
         test = newapp.NewProj('printdir')
-        self.assertIsNone(test.msg)
-        self.assertEqual((test.root, test.action, test.load_from, test.app),
-                         ('printdir', 'all', '', 'printdir'))
+        assert test.msg is None
+        assert (test.root, test.action, test.load_from, test.app) == ('printdir', 'all', '',
+                                                                      'printdir')
         test = newapp.NewProj('printdir', "all")
-        self.assertIsNone(test.msg)
-        self.assertEqual((test.root, test.action, test.load_from, test.app),
-                         ('printdir', 'all', '', 'printdir'))
+        assert test.msg is None
+        assert (test.root, test.action, test.load_from, test.app) == ('printdir', 'all', '',
+                                                                      'printdir')
         test = newapp.NewProj('printdir', "copy")
-        self.assertIsNone(test.msg)
-        self.assertEqual((test.root, test.action, test.load_from, test.app),
-                         ('printdir', 'copy', '', 'printdir'))
+        assert test.msg is None
+        assert (test.root, test.action, test.load_from, test.app) == ('printdir', 'copy', '',
+                                                                      'printdir')
         test = newapp.NewProj('printdir', "activate")
-        self.assertIsNone(test.msg)
-        self.assertEqual((test.root, test.action, test.load_from, test.app),
-                         ('printdir', 'activate', '', 'printdir'))
+        assert test.msg is None
+        assert (test.root, test.action, test.load_from, test.app) == ('printdir', 'activate', '',
+                                                                      'printdir')
         test = newapp.NewProj('printdir', "loaddata", 'printdir.xml')
-        self.assertIsNone(test.msg)
-        self.assertEqual((test.root, test.action, test.load_from, test.app),
-                         ('printdir', 'loaddata', 'printdir.xml', 'printdir'))
+        assert test.msg is None
+        assert (test.root, test.action, test.load_from, test.app) == ('printdir', 'loaddata',
+                                                                      'printdir.xml', 'printdir')
+        os.remove('apps.dat')
+        os.rename('apps.dat.o', 'apps.dat')
 
-    def test_do_copy(self):
+
+class TestNewProj:
+    """test NewProj class"""
+    def test_str(self):
+        """test string representation of class instantiated using certain args"""
+        test = newapp.NewProj()
+        assert str(test) == "newapp.NewProj('', '', '')"
+        test = newapp.NewProj('x', 'y', 'z')
+        assert str(test) == "newapp.NewProj('x', 'y', '')"
+        test = newapp.NewProj('x', 'loaddata', 'z')
+        assert str(test) == "newapp.NewProj('x', 'loaddata', 'z')"
+
+    def _test_do_stuff(self):
+        pass
+
+
+class TestNewProjFunctions:
+    where_proj = pathlib.Path('testproj')
+    where_tpl = pathlib.Path('templates/testproj')
+
+    def _test_do_copy(self):
         "test copy method of NewApp class"
         # setup
+        shutil.copyfile('apps.dat', 'apps.dat.o')
         with open('apps.dat', 'a') as f:
             f.write('_;testproj;TestProj;test project\n')
         # call and check
@@ -191,9 +171,8 @@ class TestNewProj(unittest.TestCase):
         test.do_copy()
         # verwacht resultaat: gekopieerde ROOT_FILES (inhoud is gecontroleerd in copyover test
         # class) en gekopieerde TEMPLATE_FILES
-        self.assertEqual(sorted([x.name for x in self.where_proj.iterdir()]),
-                         sorted(newapp.ROOT_FILES))
-        self.assertEqual(sorted([x.name for x in self.where_tpl.iterdir()]),
+        assert sorted([x.name for x in self.where_proj.iterdir()]) == sorted(newapp.ROOT_FILES)
+        assert sorted([x.name for x in self.where_tpl.iterdir()]) == (
                          sorted([x + '.html' for x in newapp.TEMPLATE_FILES]))
         # teardown
         for path in self.where_proj.iterdir():
@@ -202,80 +181,13 @@ class TestNewProj(unittest.TestCase):
         for path in self.where_tpl.iterdir():
             path.unlink()
         self.where_tpl.rmdir()
+        os.remove('apps.dat')
+        os.rename('apps.dat.o', 'apps.dat')
 
-    def test_update_settings(self):
-        """test update_settings (doet het bijwerken van settings.py in de root
-        """
-        # bestaande backup veiligstellen om straks terug te kunnen zetten
-        sett = newapp.BASE / "settings.py"
-        settcopy = newapp.BASE / "settings.py~"
-        settold = newapp.BASE / "settings.py~.backup"
-        if settcopy.exists():
-            settcopy.replace(settold)
-        for action, seq in (("activate", '0'), ("undo", '1')):
-            old = get_contents_for_compare(sett)
-            # de test
-            test = newapp.NewProj('testproj', action)
-            test.update_settings()
-            # de analyse
-            new = get_contents_for_compare(sett)
-            difflines = difflib.ndiff(old, new)
-            realdifflines = [x for x in difflines if x.startswith('-') or x.startswith('+')]
-            origoutfile = pathlib.Path('settings.py.diff.{}'.format(seq))
-            if origoutfile.exists():
-                origdifflines = origoutfile.read_text()
-            else:
-                origdifflines = realdifflines
-                origoutfile.write_text(''.join(origdifflines))
-            self.assertEqual(realdifflines, origdifflines)
-        # teardown
-        if settold.exists():
-            settold.replace(settcopy)
-        else:
-            settcopy.unlink()
-        for seq in ['0', '1']:
-            pathlib.Path('settings.py.diff.{}'.format(seq)).unlink()
-
-    def test_update_appreg(self):
-        """update_appreg doet het bijwerken van apps.dat
-        """
-        sett = newapp.BASE / "apps.dat"
-        settorig = newapp.BASE / "apps.dat.backup"
-        settcopy = newapp.BASE / "apps.dat~"
-        settold = newapp.BASE / "apps.dat~.backup"
-        settorig.write_text(sett.read_text())
-        if settcopy.exists():
-            settcopy.replace(settold)
-        with open('apps.dat', 'a') as f:
-            f.write('_;testproj;TestProj;test project\n')
-        for action, seq in (("activate", '0'), ("undo", '1')):
-            old = get_contents_for_compare(sett)
-            # de test
-            test = newapp.NewProj('testproj', action)
-            test.update_appreg()
-            # de analyse
-            new = get_contents_for_compare(sett)
-            difflines = difflib.ndiff(old, new)
-            realdifflines = [x for x in difflines if x.startswith('-') or x.startswith('+')]
-            origoutfile = pathlib.Path('apps.dat.diff.{}'.format(seq))
-            if origoutfile.exists():
-                origdifflines = origoutfile.read_text()
-            else:
-                origdifflines = realdifflines
-                origoutfile.write_text(''.join(origdifflines))
-            self.assertEqual(realdifflines, origdifflines)
-        # teardown
-        settorig.replace(sett)
-        if settold.exists():
-            settold.replace(settcopy)
-        else:
-            settcopy.unlink()
-        for seq in ['0', '1']:
-            pathlib.Path('apps.dat.diff.{}'.format(seq)).unlink()
-
-    def test_activate(self):
+    def _test_activate(self):
         "test activating the specified project(s)"
         # setup
+        shutil.copyfile('apps.dat', 'apps.dat.o')
         with open('apps.dat', 'a') as f:
             f.write('_;testproj;TestProj;test project\n')
         # database backuppen
@@ -302,17 +214,105 @@ class TestNewProj(unittest.TestCase):
         self.where_tpl.rmdir()
         # teardown_projdb() - database backup terugzetteni
         os.rename('actiereg.db.backup', 'actiereg.db')
+        os.remove('apps.dat')
+        os.rename('apps.dat.o', 'apps.dat')
 
-    ## def test_do_all(self):
-        ## ""
+    def _test_do_all(self):
+        # setup
+        shutil.copyfile('apps.dat', 'apps.dat.o')
+        #teardown
+        os.remove('apps.dat')
+        os.rename('apps.dat.o', 'apps.dat')
 
-    ## def test_undo(self):
-        ## ""
+    def _test_undo(self):
+        # setup
+        shutil.copyfile('apps.dat', 'apps.dat.o')
+        #teardown
+        os.remove('apps.dat')
+        os.rename('apps.dat.o', 'apps.dat')
 
-    def tearDown(self):
+    def _loaddata(self):
+        # setup
+        shutil.copyfile('apps.dat', 'apps.dat.o')
+        #teardown
         os.remove('apps.dat')
         os.rename('apps.dat.o', 'apps.dat')
 
 
-## if __name__ == '__main__':
-    ## unittest.main()
+class TestNewProjHelpers:
+    def _test_update_settings(self):
+        """test update_settings (doet het bijwerken van settings.py in de root
+        """
+        # bestaande backup veiligstellen om straks terug te kunnen zetten
+        sett = newapp.BASE / "settings.py"
+        settcopy = newapp.BASE / "settings.py~"
+        settold = newapp.BASE / "settings.py~.backup"
+        if settcopy.exists():
+            settcopy.replace(settold)
+        for action, seq in (("activate", '0'), ("undo", '1')):
+            old = get_contents_for_compare(sett)
+            # de test
+            test = newapp.NewProj('testproj', action)
+            test.update_settings()
+            # de analyse
+            new = get_contents_for_compare(sett)
+            difflines = difflib.ndiff(old, new)
+            realdifflines = [x for x in difflines if x.startswith('-') or x.startswith('+')]
+            origoutfile = pathlib.Path('settings.py.diff.{}'.format(seq))
+            if origoutfile.exists():
+                origdifflines = origoutfile.read_text()
+            else:
+                origdifflines = realdifflines
+                origoutfile.write_text(''.join(origdifflines))
+            assert realdifflines == origdifflines
+        # teardown
+        if settold.exists():
+            settold.replace(settcopy)
+        else:
+            settcopy.unlink()
+        for seq in ['0', '1']:
+            pathlib.Path('settings.py.diff.{}'.format(seq)).unlink()
+
+    def _test_update_urlconf(self):
+        pass
+
+    def _test_update_appreg(self):
+        """update_appreg doet het bijwerken van apps.dat
+        """
+        sett = newapp.BASE / "apps.dat"
+        settorig = newapp.BASE / "apps.dat.backup"
+        settcopy = newapp.BASE / "apps.dat~"
+        settold = newapp.BASE / "apps.dat~.backup"
+        settorig.write_text(sett.read_text())
+        if settcopy.exists():
+            settcopy.replace(settold)
+        with open('apps.dat', 'a') as f:
+            f.write('_;testproj;TestProj;test project\n')
+        for action, seq in (("activate", '0'), ("undo", '1')):
+            old = get_contents_for_compare(sett)
+            # de test
+            test = newapp.NewProj('testproj', action)
+            test.update_appreg()
+            # de analyse
+            new = get_contents_for_compare(sett)
+            difflines = difflib.ndiff(old, new)
+            realdifflines = [x for x in difflines if x.startswith('-') or x.startswith('+')]
+            origoutfile = pathlib.Path('apps.dat.diff.{}'.format(seq))
+            if origoutfile.exists():
+                origdifflines = origoutfile.read_text()
+            else:
+                origdifflines = realdifflines
+                origoutfile.write_text(''.join(origdifflines))
+            assert realdifflines == origdifflines
+        # teardown
+        settorig.replace(sett)
+        if settold.exists():
+            settold.replace(settcopy)
+        else:
+            settcopy.unlink()
+        for seq in ['0', '1']:
+            pathlib.Path('apps.dat.diff.{}'.format(seq)).unlink()
+
+
+def _test_allnew(monkeypatch, capsys):
+    pass

@@ -35,46 +35,6 @@ TEMPLATE_FILES = ('index', 'actie', 'tekst', 'voortgang', 'select', 'order',
                   'settings')
 
 
-def copyover(root, name, appname):
-    """copy components for project
-
-    arguments: project name, file name, apps file as a Path object
-    """
-    copyfrom = BASE / "_basic" / name
-    copyto = BASE / root / name
-    if name in SYMLINK:  # make symlink instead of real copy
-        copyto.symlink_to(copyfrom)
-        return
-    with copyfrom.open() as oldfile:
-        with copyto.open("w") as newfile:
-            for line in oldfile:
-                if "basic" in line:
-                    line = line.replace("_basic", root)
-                if line == 'ROOT = "basic"\n':  # TODO: moet dit niet `elif` zijn?
-                    newfile.write('ROOT = "{}"\n'.format(root))
-                elif line == 'NAME = "demo"\n':
-                    newfile.write('NAME = "{}"\n'.format(str(appname)))
-                else:
-                    newfile.write(line)
-
-
-def backup(fn):
-    """remove current file as it is to be (re)written, saving a backup if necessary
-
-    input is a Path object
-    return file and backup as Path objects
-    """
-    new = pathlib.Path(str(fn) + "~")
-    fn.replace(new)
-    return new, fn
-
-
-def call_manage(command):
-    """call django command manager
-    """
-    subprocess.run(["python", "manage.py"] + command)
-
-
 class NewProj:
     """applicatiefiles kopieren en aanpassen
     """
@@ -137,13 +97,21 @@ class NewProj:
         # ok, rt, self.app, oms = line.strip().split(";")
         self.app = line.strip().split(';')[2]
 
+    def do_all(self):
+        """perform all-in-one
+        """
+        self.do_copy()
+        self.activate()
+        if self.load_from:
+            self.loaddata()
+
     def do_copy(self):
         """copy programs and templates
         """
         print("creating and populating app root...")
         (BASE / self.root).mkdir()
         for name in ROOT_FILES:
-            copyover(self.root, name, self.app)
+            self.copyover(name)
         if self.root != "actiereg":                     # why?
             print("creating templates...")
             newdir = BASE / "templates" / self.root
@@ -193,14 +161,6 @@ class NewProj:
         print("loading data...", end=', ')
         ld.loaddata(self.load_from, self.root)
 
-    def do_all(self):
-        """perform all-in-one
-        """
-        self.do_copy()
-        self.activate()
-        if self.load_from:
-            self.loaddata()
-
     def undo(self):
         """reverse updates
         """
@@ -217,7 +177,7 @@ class NewProj:
         """toevoegen aan settings.py (INSTALLED_APPS)
         """
         print("updating settings...")
-        old, new = backup(BASE / "settings.py")
+        old, new = self.backup(BASE / "settings.py")
         schrijf = False
         with old.open() as oldfile:
             with new.open("w") as newfile:
@@ -258,7 +218,7 @@ class NewProj:
         """update apps registration
         """
         print("updating apps registration...")
-        old, new = backup(APPS)
+        old, new = self.backup(APPS)
         with old.open() as _in:
             with new.open("w") as _out:
                 for app in _in:
@@ -271,6 +231,45 @@ class NewProj:
                     else:
                         _out.write(app)
 
+    def copyover(self, name):
+        """copy components for project
+
+        arguments: project name, file name, apps file as a Path object
+        """
+        copyfrom = BASE / "_basic" / name
+        copyto = BASE / self.root / name
+        if name in SYMLINK:  # make symlink instead of real copy
+            copyto.symlink_to(copyfrom)
+            return
+        with copyfrom.open() as oldfile:
+            with copyto.open("w") as newfile:
+                for line in oldfile:
+                    if "basic" in line:
+                        line = line.replace("_basic", self.root)
+                    if line == 'ROOT = "basic"\n':  # TODO: moet dit niet `elif` zijn?
+                        newfile.write('ROOT = "{}"\n'.format(self.root))
+                    elif line == 'NAME = "demo"\n':
+                        newfile.write('NAME = "{}"\n'.format(str(self.app)))
+                    else:
+                        newfile.write(line)
+
+    @staticmethod
+    def backup(fn):
+        """remove current file as it is to be (re)written, saving a backup if necessary
+
+        input is a Path object
+        return file and backup as Path objects
+        """
+        new = pathlib.Path(str(fn) + "~")
+        fn.replace(new)
+        return new, fn
+
+    @staticmethod
+    def call_manage(command):
+        """call django command manager
+        """
+        subprocess.run(["python", "manage.py"] + command)
+
 
 def allnew():
     """create all new projects
@@ -279,11 +278,18 @@ def allnew():
     with open(APPS) as oldfile:
         newapps = [line.split(";")[1] for line in oldfile if line.startswith('_')]
     for app in newapps:
-        result = NewProj(app)
-        if result:
-            result = ':'.join((app, result))
+        build = NewProj(app, 'all')
+        if build.msg:
+            result = ': '.join((app, build.msg))
             break
+        build.do_stuff()
     return result
+
+
+
+
+
+
 
 if __name__ == "__main__":
     if len(sys.argv) == 1:

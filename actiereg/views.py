@@ -86,14 +86,18 @@ def add_from_actiereg(request, name=''):
     if not name:
         return HttpResponseRedirect('/msg/Geen projectnaam opgegeven om te activeren')
     if name == 'all':
-        allnew()
+        result = allnew()
+        if result:
+            return HttpResponseRedirect('/msg/{}/'.format(result))
     else:
-        test = NewProj(name, 'all')
-        if test.msg:
-            return HttpResponseRedirect('/msg/{}'.format(test.msg))
-    subprocess.run(['binfab', 'restart_server:actiereg'])
+        build = NewProj(name, 'all')
+        if build.msg:
+            return HttpResponseRedirect('/msg/{}/'.format(test.msg))
+        build.do_stuff()
+
+    subprocess.run(['binfab', 'server.restart' '-n' 'actiereg']) # FIXME: gebruikt sudo
     # return HttpResponseRedirect('/msg/De wsgi-server wordt gerestart. Ververs de pagina s.v.p.')
-    return HttpResponseRedirect('/')
+    return HttpResponseRedirect('/msg/project(en) geactiveerd/')
 
 
 def add_from_doctool(request, proj='', name='', desc=''):
