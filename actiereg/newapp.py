@@ -246,7 +246,7 @@ class NewProj:
                 for line in oldfile:
                     if "basic" in line:
                         line = line.replace("_basic", self.root)
-                    if line == 'ROOT = "basic"\n':  # TODO: moet dit niet `elif` zijn?
+                    if line == 'ROOT = "basic"\n':
                         newfile.write('ROOT = "{}"\n'.format(self.root))
                     elif line == 'NAME = "demo"\n':
                         newfile.write('NAME = "{}"\n'.format(str(self.app)))
