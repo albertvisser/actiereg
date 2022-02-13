@@ -1,3 +1,6 @@
+body {
+	background-color: lightblue;
+}
 div.clear,
 span.clear {
 	background: none;
