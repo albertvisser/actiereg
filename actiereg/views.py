@@ -21,16 +21,18 @@ appsfile = pathlib.Path(__file__).parent / "apps.dat"
 def index(request, msg=""):
     """Start pagina voor ActieReg
     """
-    msg = request.GET.get("msg", "")
-    user = request.GET.get("user", "") or request.user
     if not msg:
-        if user and user.is_authenticated:
-            msg = 'U bent ingelogd als <i>{}</i>. '.format(user.username)
-            msg += 'Klik <a href="/logout/?next=/">hier</a> om uit te loggen'
-        else:
-            msg = ('U bent niet ingelogd. '
-                   'Klik <a href="accounts/login/?next=/">hier</a> om in te loggen,'
-                   ' <a href="/">hier</a> om terug te gaan naar het begin.')
+        msg = request.GET.get("msg", "")
+    if msg:
+        msg += '<br/><br/>'
+    user = request.GET.get("user", "") or request.user
+    if user and user.is_authenticated:
+        msg += 'U bent ingelogd als <i>{}</i>. '.format(user.username)
+        msg += 'Klik <a href="/logout/?next=/">hier</a> om uit te loggen'
+    else:
+        msg += ('U bent niet ingelogd. '
+               'Klik <a href="accounts/login/?next=/">hier</a> om in te loggen,'
+               ' <a href="/">hier</a> om terug te gaan naar het begin.')
     app_list = [{"name": ''}]
     new_apps = []
     cursor = connection.cursor()
@@ -85,19 +87,25 @@ def add_from_actiereg(request, name=''):
     "project opvoeren en activeren vanaf admin link"
     if not name:
         return HttpResponseRedirect('/msg/Geen projectnaam opgegeven om te activeren')
-    if name == 'all':
-        result = allnew()
-        if result:
-            return HttpResponseRedirect('/msg/{}/'.format(result))
-    else:
-        build = NewProj(name, 'all')
-        if build.msg:
-            return HttpResponseRedirect('/msg/{}/'.format(test.msg))
-        build.do_stuff()
+    text = ' '.join(('Deze view werkt maar gedeeltelijk,',
+                     'Stop de server en voer `python newapp.py {}` handmatig uit'.format(name)))
+    return HttpResponseRedirect('/msg/{}/'.format(text))
+    # if name == 'all':
+    #     result = allnew()
+    #     if result:
+    #         return HttpResponseRedirect('/msg/{}/'.format(result))
+    # else:
+    #     build = NewProj(name, 'all')
+    #     if build.msg:
+    #         return HttpResponseRedirect('/msg/{}/'.format(test.msg))
+    #     build.do_stuff()
 
-    subprocess.run(['binfab', 'server.restart' '-n' 'actiereg']) # FIXME: gebruikt sudo
-    # return HttpResponseRedirect('/msg/De wsgi-server wordt gerestart. Ververs de pagina s.v.p.')
-    return HttpResponseRedirect('/msg/project(en) geactiveerd/')
+    # result = subprocess.run(['binfab', 'server.restart' '-n' 'actiereg']) # FIXME: gebruikt sudo
+    # # return HttpResponseRedirect('/msg/De wsgi-server wordt gerestart. Ververs de pagina s.v.p.')
+    # if result.returncode:
+    #     return HttpResponse('restarting server ended with rc {} {}'.format(result.returncode,
+    #                                                                        result.stderr))
+    # return HttpResponseRedirect('/msg/project(en) geactiveerd/')
 
 
 def add_from_doctool(request, proj='', name='', desc=''):
