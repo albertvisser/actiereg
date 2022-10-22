@@ -21,17 +21,17 @@ urlpatterns = [
     path('basic/', include('actiereg._basic.urls')),
     path('probreg_pc/', include('actiereg.probreg_pc.urls')),
     path('jvsdoe/', include('actiereg.jvsdoe.urls')),
-    path('leesJCL/', include('actiereg.leesJCL.urls')),
+    path('leesjcl/', include('actiereg.leesjcl.urls')),
     path('actiereg_web/', include('actiereg.actiereg_web.urls')),
-    path('DocTool/', include('actiereg.DocTool.urls')),
+    path('doctool/', include('actiereg.doctool.urls')),
     path('afrift/', include('actiereg.afrift.urls')),
     path('htmledit/', include('actiereg.htmledit.urls')),
     path('tcmdrkeys/', include('actiereg.tcmdrkeys.urls')),
     path('versies/', include('actiereg.versies.urls')),
     path('xmledit/', include('actiereg.xmledit.urls')),
     path('apropos/', include('actiereg.apropos.urls')),
-    path('DocTree/', include('actiereg.DocTree.urls')),
-    path('Todo/', include('actiereg.Todo.urls')),
+    path('doctree/', include('actiereg.doctree.urls')),
+    path('todo/', include('actiereg.todo.urls')),
 
     # Uncomment the admin/doc line below and add 'django.contrib.admindocs'
     # to INSTALLED_APPS to enable admin documentation:
