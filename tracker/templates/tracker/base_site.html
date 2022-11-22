@@ -1,8 +1,8 @@
 {% extends "base_site.html" %}
-{% load i18n %}
+{% load i18n %}{% load static %}
 {% load extratags %}
 {% block style %} <link rel="stylesheet" type="text/css" href="/static/admin/css/base.css" />
-<link rel="stylesheet" type="text/css" href="/static/actiereg.css" />
+<link rel="stylesheet" type="text/css" href="{% static 'actiereg.css' %}" />
 {% endblock %}
 {% block extrahead %}{% endblock %}
 {% block title %} ActieReg | {{name|capfirst}}: {{ title}}{{ page_titel }}{% endblock %}
@@ -32,8 +32,8 @@
             {% if forloop.first or actie %}</a>{%endif%}</div>
     {% endfor%}<div class="clear">&nbsp;</div>
 {% if actie %}
-    <div class="col_itall ttl">{{actie.about|capfirst}}: {{actie.title|trim_at:80}} </div>
-    <div class="clear">&nbsp;</div>{% endif %}
+<!--    <div class="col_itall ttl">{{actie.about|capfirst}}: {{actie.title|trim_at:80}} </div>
+<div class="clear">&nbsp;</div>{% endif %} -->
     <div class="col_itall">
     {% block content-data %} {{ content }} {% endblock %}
     </div>

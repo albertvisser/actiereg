@@ -40,30 +40,31 @@ span.clear {
 
 {% block content %}
 {{msg|safe}}
-<!-- login verplaatsen naar projectpagina's
-<a href="/logout/" title="logout">Log in</a> om meer te kunnen dan alleen bekijken
 <hr/>
--->
-<hr/>
-<h4>Kies een project:</h4>
-<!-- <a href="/basic/" title="basis model">Basic</a> -->
-<div style="max-height: 600px; overflow: auto">
-  <div>
-    <div class="col_link">&nbsp;</div>
-    <div class="col_stats">alle / open acties / in behandeling</div>
-    <div class="clear">&nbsp;</div>
-  </div>
-  {% for app in apps %}
+{% if apps %}
+  <h4>Kies een project:</h4>
+  <div style="max-height: 600px; overflow: auto">
     <div>
-      <div class="col_link">
-        <a href="/{{app.root}}/" title="{{app.name}}">{{app.name|capfirst}}: {{app.desc}}</a></div>
-      <div class="col_stats">{{app.alle}} / {{app.open}} / {{app.active}} </div>
+      <div class="col_link">&nbsp;</div>
+      <div class="col_stats">alle / open acties / in behandeling</div>
       <div class="clear">&nbsp;</div>
     </div>
-  {% endfor %}
-</div>
+    {% for app in apps %}
+      <div>
+        <div class="col_link">
+          <a href="/{{app.root}}/" title="{{app.name}}">{{app.name|capfirst}}: {{app.desc}}</a></div>
+        <div class="col_stats">{{app.alle}} / {{app.open}} / {{app.active}} </div>
+        <div class="clear">&nbsp;</div>
+      </div>
+    {% endfor %}
+  </div>
+{% else %}
+  <h4>Nog geen projecten aangemaakt</h4>
+{% endif %}
 <hr/>
-<a href="/new/" title="nieuw"><h6>Vraag een nieuw project aan</h6></a>
+{% if user.is_staff %}
+  <a href="/new/" title="nieuw"><h6>Maak een nieuw project aan</h6></a>
+{% endif %}
 {% if new %}
   <div>
     <h5>aangevraagde projecten:</h5>

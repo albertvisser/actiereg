@@ -1,4 +1,4 @@
-{% extends "basic/base_site.html" %}
+{% extends "tracker/base_site.html" %}
 {% load extratags %}
 {% block extrastyle %}<style>
 div.clear,
@@ -57,6 +57,7 @@ span.clear {
 {% block branding %}<h1>{{name|capfirst}} | {{title}}</h1>{% endblock %}
 {% block content-data %}
 {% if acties %}
+
   <div class="col_nr head">nummer</div>
   <div class="col_srt head">soort</div>
   <div class="col_stat head">status</div>

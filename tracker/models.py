@@ -21,9 +21,21 @@ OP_CHOICES = (('LT', 'kleiner dan'),
               ('EXCL', 'bevat niet'))
 
 
+class Project(models.Model):
+    """applicatie (of library) waarvoor software ontwikkeling gedaan wordt
+
+    assigned bevat de mogelijke waarden voor de user-velden in de actie"""
+    name = models.CharField(max_length=32)
+    description = models.CharField(max_length=80)
+
+    def __str__(self):
+        return self.name
+
+
 class Status(models.Model):
     """gemeld, in behandeling, afgehandeld e.d.
-    intitiele set waarden, kan door projectadmin aangepast worden"""
+    initiële set waarden, kan door projectadmin aangepast worden"""
+    project = models.ForeignKey(Project, related_name="status", on_delete=models.CASCADE)
     title = models.CharField(max_length=32)
     value = models.PositiveSmallIntegerField(unique=True)
     order = models.PositiveSmallIntegerField(unique=True)
@@ -34,7 +46,8 @@ class Status(models.Model):
 
 class Soort(models.Model):
     """probleem, wens e.d.
-    initiele set waarden, kan door projectadmin aangepast worden"""
+    initiële set waarden, kan door projectadmin aangepast worden"""
+    project = models.ForeignKey(Project, related_name="soort", on_delete=models.CASCADE)
     title = models.CharField(max_length=32)
     value = models.CharField(max_length=1, unique=True)
     order = models.PositiveSmallIntegerField(unique=True)
@@ -56,6 +69,7 @@ class Page(models.Model):
 
 class Actie(models.Model):
     """primaire gegevenstabel"""
+    project = models.ForeignKey(Project, related_name="acties", on_delete=models.CASCADE)
     nummer = models.CharField(max_length=32)
     start = models.DateTimeField(auto_now_add=True)
     starter = models.ForeignKey(User, related_name="actiehouder", on_delete=models.CASCADE)
@@ -86,7 +100,8 @@ class Event(models.Model):
 
 class SortOrder(models.Model):
     """per-user verzameling sorteersleutels t.b.v. actie-overzicht"""
-    user = models.PositiveSmallIntegerField()
+    user = models.PositiveSmallIntegerField()  # waarom geen foreign key?
+    project = models.ForeignKey(Project, related_name="sortings", on_delete=models.CASCADE)
     volgnr = models.PositiveSmallIntegerField()
     veldnm = models.CharField(max_length=16)
     richting = models.CharField(max_length=4, choices=ORIENTS)
@@ -97,7 +112,8 @@ class SortOrder(models.Model):
 
 class Selection(models.Model):
     """per-user verzameling selectieargumenten t.b.v. actie-overzicht"""
-    user = models.PositiveSmallIntegerField()
+    user = models.PositiveSmallIntegerField()  # waarom geen foreign key?
+    project = models.ForeignKey(Project, related_name="selections", on_delete=models.CASCADE)
     veldnm = models.CharField(max_length=16)
     operator = models.CharField(max_length=4, choices=OP_CHOICES)
     extra = models.CharField(max_length=2, choices=CHOICES)
@@ -108,9 +124,10 @@ class Selection(models.Model):
 
 
 class Worker(models.Model):
-    """medewerkers voor dit project
+    """medewerkers voor een project
     bevat de mogelijke waarden voor de user-velden in de actie"""
-    assigned = models.ForeignKey(User, related_name="worker", on_delete=models.CASCADE)
+    project = models.ForeignKey(Project, related_name="workers", on_delete=models.CASCADE)
+    assigned = models.ForeignKey(User, on_delete=models.CASCADE)
 
     def __str__(self):
         return self.assigned.username

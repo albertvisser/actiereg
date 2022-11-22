@@ -1,0 +1,10 @@
+[testdir]
+unittests
+
+[testscripts]
+core: tracker/test_core.py
+views: tracker/test_views.py
+
+[testees]
+core: tracker/core.py
+views: tracker/views.py
