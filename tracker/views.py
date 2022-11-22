@@ -1,11 +1,16 @@
+"""views for Django project pages
+"""
+import datetime as dt
 from django.shortcuts import render
 from django.http import HttpResponse, HttpResponseRedirect
+from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth import logout, models as aut
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
 import tracker.models as my
 from tracker import core
-from actiereg2.settings import SITES
+from actiereg.settings import SITES
+
 
 def index(request, msg=""):
     """Start pagina voor ActieReg
@@ -133,7 +138,8 @@ def setstats(request, proj):
 
 
 @login_required
-def show_selection(request, proj):  # nog niet uitgeprobeerd - unittest is ok
+def show_selection(request, proj):
+    "presenteer selectie mogelijkheden"
     # if request.user.is_authenticated:  # niet nodig met die decorator?
     msg = core.logged_in_message(request, proj)
     # else:
@@ -146,13 +152,15 @@ def show_selection(request, proj):  # nog niet uitgeprobeerd - unittest is ok
 
 
 @login_required
-def setselection(request, proj):  # nog niet uitgeprobeerd
+def setselection(request, proj):
+    "leg de selecite vast"
     core.setselection(request, proj)
     return HttpResponseRedirect(f"/{proj}/meld/De selectie is gewijzigd./")
 
 
 @login_required
-def show_ordering(request, proj):  # nog niet uitgeprobeerd - unittest is ok
+def show_ordering(request, proj):
+    "presenteer sorterings mogelijkheden"
     # if request.user.is_authenticated:  # niet nodig met die decorator?
     msg = core.logged_in_message(request, proj)
     # else:
@@ -161,7 +169,8 @@ def show_ordering(request, proj):  # nog niet uitgeprobeerd - unittest is ok
 
 
 @login_required
-def setordering(request, proj):  # nog niet uitgeprobeerd
+def setordering(request, proj):
+    "leg de soertering vast"
     core.setordering(request, proj)
     return HttpResponseRedirect(f"/{proj}/meld/De sortering is gewijzigd./")
 
@@ -205,7 +214,7 @@ def add_action_from_doctool(request, proj):  # Attention: signature changed from
             if not vervolg:
                 msg = fout + " bij doorkoppelen vanuit DocTool zonder terugkeeradres"
                 # response = f"/{root}/{actie.id}/mld/{msg}/"
-                response = f"/{root}/{actnum}/mld/{msg}/"
+                response = f"/{proj}/{actnum}/mld/{msg}/"
             else:
                 response = vervolg.format('0', fout)
             return HttpResponseRedirect(response)
@@ -220,15 +229,15 @@ def add_action_from_doctool(request, proj):  # Attention: signature changed from
         actie.save()
         if not vervolg:
             msg = "Aangepast vanuit DocTool zonder terugkeeradres"
-            response = f"/{root}/{actie.id}/mld/{msg}/"
+            response = f"/{proj}/{actie.id}/mld/{msg}/"
         else:
             obj = my.Event.objects.filter(actie=actie.id).order_by('id')
-            text = f"{UIT_DOCTOOL} {vervolg.split('koppel')[0]}"
+            text = f"{core.UIT_DOCTOOL} {vervolg.split('koppel')[0]}"
             if obj:
                 obj[0].text += "; " + text
                 obj[0].save()
             else:
-                store_event(my, text, actie, actie.starter)
+                core.store_event(my, text, actie, actie.starter)
             response = vervolg.format(actie.id, actie.nummer)
         return HttpResponseRedirect(response)
     volgnr = 0
@@ -264,16 +273,16 @@ def add_action_from_doctool(request, proj):  # Attention: signature changed from
     actie.melding = data.get("hOpm", "")
     actie.save()
     if vervolg:
-        store_event(my, f"{UIT_DOCTOOL} {vervolg.split('koppel')[0]}", actie, actie.starter)
-    store_event(my, f'titel: "{actie.title}"', actie, actie.starter)
-    store_event(my, f'categorie: "{actie.soort}"', actie, actie.starter)  # str() nodig?
-    store_event(my, f'status: "{actie.status}"', actie, actie.starter)    # str() nodig?
+        core.store_event(my, f"{core.UIT_DOCTOOL} {vervolg.split('koppel')[0]}", actie, actie.starter)
+    core.store_event(my, f'titel: "{actie.title}"', actie, actie.starter)
+    core.store_event(my, f'categorie: "{actie.soort}"', actie, actie.starter)  # str() nodig?
+    core.store_event(my, f'status: "{actie.status}"', actie, actie.starter)    # str() nodig?
 
     if vervolg:
         response = vervolg.format(actie.id, actie.nummer)
     else:
         msg = "Opgevoerd vanuit DocTool zonder terugkeeradres"
-        response = f"/{root}/{actie.id}/mld/{msg}/"
+        response = f"/{proj}/{actie.id}/mld/{msg}/"
     return HttpResponseRedirect(response)
 
 

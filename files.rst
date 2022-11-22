@@ -1,78 +1,61 @@
 Files in this directory
 =======================
 
-fcgi_handler.py
-    maakt het mogelijk deze site via fastcgi te draaien
 files.rst
     this file
-.hgignore
-    voor mercurial te negeren files
+.gitignore
+    voor Git te negeren files
 manage.py
-    controle module
+    command line functies voor Django
 readme.rst
     basic info
-wsgi_handler.py
-    maakt het mogelijk deze site via wsgi te draaien
+.rurc
+    configuratiebestand voor unittests
+server-config-apache/nginx
+    server configuratie voorbeelden
 
 actiereg (project directory)
 ............................
-
 __init__.py
     (lege) package indicator
-apps.dat.origineel
-    lijst met aangevraagde/opgenomen applicaties
-    (copy to apps.dat to make it work)
-copyover.py
-    utility programma om xml over te halen naar sqlite database
-core.py
-    code waar de views in de subdirectories naar verwijzen
-lees_probreg.py
-    utility voor het utlezen van de gui/xml versie
-loaddata.py
-    utility programma; onderdeel van newapp
-newapp.py
-    utility programma: realiseren nieuw project
-settings.py.origineel
-    site instellingen (copy to settings.py and adapt to local specifications to make it work)
-urls.py.origineel
-    root url dispatcher (similar)
-views.py
-    root views voor django
+asgi.py
+    server programma voor asgi protocol
+settings_no_key.py
+    site instellingen zonder secret key
+    (copy to settings.py and adapt to local specifications to make it work)
+urls.py
+    root url dispatcher
+wsgi.py
+    server programma voor wsgi protocol
 
-actiereg/_basic/ (primary app directory)
+tracker/ (primary app directory)
 ........................................
-de views.py hier bevat de programmatuur voor een specifiek project
-in de vorm van aanroepen naar gelijknamige routines in core.py
-moet per project gekopieerd worden naar aparte map
-dat biedt de mogelijkheid om dat per project specifieker te maken
-
 __init__.py
     (lege) package indicator
 admin.py
     registratie van models tbv admin site
-initial_data.json
-    bevat initiele data voor de status soort en titel-header tabellen
+apps.py
+    registratie van app t.b.v. settings
+core.py
+    logica- en data laag voor de views
 models.py
-    data mappings
-sample_data.py
-    voorbeeld gegevens
+    data definities
 urls.py
-     url dispatcher voor project
+    url dispatcher voor project
 views.py
-    project views
+    project views (presentatielaag)
 
-actiereg/_basic/templatetags/
+tracker/templatetags/
 .............................
-bevat zelfgedefinieerde tags
+bevat zelfgedefinieerde tags en filters voor de tracker app
 
 __init__.py
     (lege) package indicator
 extratags.py
     de eigenlijke code
 
-actiereg/templates/
+tracker/templates/
 ...................
-
 base.html
     basis template
 base_site.html
@@ -84,13 +67,8 @@ logged_out.html
 nieuw.html
     pagina voor aanmelden nieuw project
 
-actiereg/templates/basic/
+tracker/templates/tracker/
 .........................
-bevat de templates voor een project
-bij het aanmaken van een nieuw project worden koppelingen naar deze aangemaakt
-deze voor elk project apart hebben geeft de mogelijkheid om de
-templates specifieker te maken zonder de andere projecten te raken
-
 actie.html
     pagina voor weergave actiegegevens
 base_site.html
@@ -99,8 +77,6 @@ index.html
     pagina voor weergave lijst met acties
 order.html
     pagina voor definieren sortering van de lijst
-probreg.css
-    zit nu nog niks in
 select.html
     pagina voor definieren selectie van de lijst
 settings.html
@@ -112,14 +88,16 @@ voortgang.html
 
 actiereg/templates/registration/
 ................................
-
 login.html
     aanlog pagina
 
-actiereg/static
-...............
+tracker/migrations
+..................
+administratie voor databasewijzigingen
 
-static/ (not tracked)
+static/
 .......
-admin
+admin (not tracked)
     symlink to style stuff for the admin site (django/admin/static/admin)
+actiereg.css
+    extra vormgevingszaken

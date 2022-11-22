@@ -3,7 +3,7 @@ import types
 import datetime
 import pytest
 import django
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'actiereg2.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'actiereg.settings')
 django.setup()
 from django.contrib.auth import models as auth
 from django.core.exceptions import ObjectDoesNotExist

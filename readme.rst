@@ -18,7 +18,7 @@ to provide some context to the activity.
 Usage
 -----
 
-Use manage.py or the provided fcgi or wsgi script to start the django app, and
+Use manage.py or the provided asgi or wsgi script to start the django app, and
 configure your web server to communicate with it.
 
 
