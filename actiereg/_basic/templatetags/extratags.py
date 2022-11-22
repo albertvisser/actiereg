@@ -17,19 +17,28 @@ register = template.Library()
 # nbrk.is_safe = True
 
 
+def return_me(x):
+    """de linters vinden een lambda (in dit geval lambda x: x) aan de rechterkant van de = niet leuk
+    """
+    return x
+
+
 @register.filter
 @stringfilter
-def trimat(text, leng, autoescape=None):
+def trim_at(text, leng, autoescape=None):
     "Display up to a certain length"
     if autoescape:
         esc = conditional_escape
     else:
-        esc = lambda x: x
+        esc = return_me
     if len(text) > leng:
         text = text[:leng] + "..."
     return mark_safe(esc(text))
-trimat.needs_autoescape = False
-trimat.is_safe = True
+
+
+trim_at.needs_autoescape = False
+trim_at.is_safe = True
+
 
 # def initial_letter_filter(text, autoescape=None):
 #     first, other = text[0], text[1:]

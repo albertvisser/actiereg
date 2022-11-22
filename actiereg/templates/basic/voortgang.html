@@ -41,14 +41,14 @@ span.clear {
 	width: 590px;
 }
 </style> {% endblock %}
-{% block branding %}<h1>{{name|capfirst}} | {{title}} {{ actie.title|trimat:80 }}</h1>{% endblock %}
+{% block branding %}<h1>{{name|capfirst}} | {{title}} {{ actie.title|trim_at:80 }}</h1>{% endblock %}
 {% block content-data %}
 <div style="max-height: 240px; width: 660px; overflow: auto">
     {% if nieuw %}<div class="col_nw">-- nieuw voortgangsmoment --</div>
         <div class="clear">&nbsp;</div>{% endif %}
     {%for ev in events%}<a href="/{{root}}/{{actie.id}}/voortg/{{ev.id}}/">
         <div class="col_when">{{ev.start|date:"d-m-Y H:i:s"}} {{ev.starter}}:</div>
-        <div class="col_oms">{{ev.text|trimat:60}}</div></a><div class="clear">&nbsp;</div>
+        <div class="col_oms">{{ev.text|trim_at:60}}</div></a><div class="clear">&nbsp;</div>
         {%endfor%}</div>
 <div>
     {% if not readonly  %}{% if not actie.arch and not nieuw %}

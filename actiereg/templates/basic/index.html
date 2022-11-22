@@ -57,7 +57,6 @@ span.clear {
 {% block branding %}<h1>{{name|capfirst}} | {{title}}</h1>{% endblock %}
 {% block content-data %}
 {% if acties %}
-
   <div class="col_nr head">nummer</div>
   <div class="col_srt head">soort</div>
   <div class="col_stat head">status</div>
@@ -72,7 +71,7 @@ span.clear {
   <div class="col_stat"> {{actie.status.title|default:"onbekend"}} </div>
   <div class="col_who"> {{actie.behandelaar}} </div>
   <div class="col_when"> {{actie.gewijzigd|date:"d-m-Y"}} </div>
-  <div class="col_oms"> {{actie.about}}: {{actie.title|trimat:50}} {% if actie.arch %}(A){%endif %}</div>
+  <div class="col_oms"> {{actie.about}}: {{actie.title|trim_at:50}} {% if actie.arch %}(A){%endif %}</div>
   <div class="clear">&nbsp;</div>
 {% endfor %}
 

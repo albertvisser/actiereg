@@ -8,7 +8,7 @@ function setvervolg() {
 }
 </script>
 {%endblock%}
-{% block branding %}<h1>{{name|capfirst}} | {{title}} {{ actie.title|trimat:80 }}</h1>
+{% block branding %}<h1>{{name|capfirst}} | {{title}} {{ actie.title|trim_at:80 }}</h1>
     {% endblock %}
 {% block content-data %}
 <!-- <div>actie: {{actie.nummer}}</div>
