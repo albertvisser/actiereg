@@ -24,6 +24,7 @@ import sys
 import pathlib
 import subprocess
 import shutil
+from django.contrib.auth.models import Group, Permission
 BASE = pathlib.Path(__file__).parent.resolve()
 sys.path.append(str(BASE.parent))
 APPS = BASE / "apps.dat"
@@ -49,8 +50,7 @@ class NewProj:
 
     def __str__(self):
         name = str(self.__class__).split()[1][1:-2]
-        return "{}('{}', '{}', '{}')".format(
-            name, self.root, self.action, self.load_from)
+        return f"{name}('{self.root}', '{self.action}', '{self.load_from}')"
 
     def do_stuff(self):
         """perform actions
@@ -58,7 +58,7 @@ class NewProj:
         if self.msg:
             print(self.msg)
             return
-        print('performing actions for project "{}":'.format(self.root))
+        print('performing actions for project "{self.root}":')
         self.actiondict[self.action]()
         print("ready.")
         if self.action in ("activate", "all", "undo"):
@@ -73,8 +73,7 @@ class NewProj:
         if self.action == "loaddata":
             if len(args) != 3:
                 return "foute argumenten voor loaddata*"
-            else:
-                self.load_from = args[2]
+            self.load_from = args[2]
         elif self.action not in ("copy", "activate", "undo", "all"):
             return "foutief tweede argument (actie)*"
         elif len(args) > 2:
@@ -82,11 +81,11 @@ class NewProj:
         found = False
         with APPS.open() as oldfile:
             for line in oldfile:
-                if 'X;{};'.format(self.root) in line:
+                if 'X;{self.root};' in line:
                     found = True
                     if self.action not in ("loaddata", "undo"):
                         return "dit project is al geactiveerd"
-                if "_;{};".format(self.root) in line:
+                if "_;{self.root};" in line:
                     found = True
                     if self.action == "undo":
                         return "dit project is nog niet geactiveerd"
@@ -117,8 +116,8 @@ class NewProj:
             newdir = BASE / "templates" / self.root
             newdir.mkdir()
             for name in TEMPLATE_FILES:
-                fname = newdir / "{}.html".format(name)
-                fname.write_text('{{% extends "basic/{}.html" %}}\n'.format(name))
+                fname = newdir / "{name}.html"
+                fname.write_text('{{% extends "basic/{name}.html" %}}\n')
 
     def activate(self):
         """database aanpassen en initiele settings data opvoeren
@@ -128,21 +127,19 @@ class NewProj:
         sys.path.append(BASE)
         os.environ["DJANGO_SETTINGS_MODULE"] = 'actiereg.settings'
         ## import settings
-        from django.contrib.auth.models import Group, Permission
         print("modifying database...")
         self.call_manage(["syncdb"])
         print("loading inital data...")
-        self.call_manage(['loaddata', '{}/initial_data.json'.format(self.root)])
+        self.call_manage(['loaddata', f'{self.root}/initial_data.json'])
         print("setting up authorisation groups...")
-        group = Group.objects.create(name='{}_admin'.format(self.root))
+        group = Group.objects.create(name=f'{self.root}_admin')
         for permit in Permission.objects.filter(
-                content_type__app_label="{}".format(self.root)):
+                content_type__app_label=f"{self.root}"):
             group.permissions.add(permit)
-        group = Group.objects.create(name='{}_user'.format(self.root))
+        group = Group.objects.create(name=f'{self.root}_user')
         for permit in Permission.objects.filter(
-                content_type__app_label="{}".format(self.root)).filter(
-                    content_type__model__in=['actie', 'event', 'sortorder',
-                                             'selection']):
+                content_type__app_label=f"{self.root}").filter(
+                    content_type__model__in=['actie', 'event', 'sortorder', 'selection']):
             group.permissions.add(permit)
         self.update_appreg()
 
@@ -181,7 +178,7 @@ class NewProj:
         schrijf = False
         with old.open() as oldfile:
             with new.open("w") as newfile:
-                new_line = "    'actiereg.{}',\n".format(self.root)
+                new_line = f"    'actiereg.{self.root}',\n"
                 for line in oldfile:
                     if line.strip() == "INSTALLED_APPS = (":
                         schrijf = True
@@ -197,12 +194,11 @@ class NewProj:
         """toevoegen aan urls.py (urlpatterns)
         """
         print("updating urlconfs...")
-        old, new = backup(BASE / "urls.py")
+        old, new = self.backup(BASE / "urls.py")
         schrijf = False
         with old.open() as oldfile:
             with new.open("w") as newfile:
-                new_line = "    url(r'^{0}/', include('actiereg.{0}.urls')),\n".format(
-                    self.root)
+                new_line = "    url(r'^{self.root}/', include('actiereg.{self.root}.urls')),\n"
                 for line in oldfile:
                     if line.strip().startswith('urlpatterns'):
                         schrijf = True
@@ -247,9 +243,9 @@ class NewProj:
                     if "basic" in line:
                         line = line.replace("_basic", self.root)
                     if line == 'ROOT = "basic"\n':
-                        newfile.write('ROOT = "{}"\n'.format(self.root))
+                        newfile.write(f'ROOT = "{self.root}"\n')
                     elif line == 'NAME = "demo"\n':
-                        newfile.write('NAME = "{}"\n'.format(str(self.app)))
+                        newfile.write(f'NAME = "{self.app}"\n')
                     else:
                         newfile.write(line)
 
@@ -284,11 +280,6 @@ def allnew():
             break
         build.do_stuff()
     return result
-
-
-
-
-
 
 
 if __name__ == "__main__":

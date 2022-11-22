@@ -70,10 +70,11 @@ def modify_data(pnaam):
                 # datum goed zetten
                 try:
                     con.execute(cmd, (start, sql_evt_id))
-                except:
+                except Exception:
                     raise
                 print(cmd, start, sql_evt_id)
             con.commit()
+
 
 if __name__ == "__main__":
     add_data("doctool")

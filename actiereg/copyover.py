@@ -1,7 +1,9 @@
 """Copy actions from ProbReg project into ActieReg project
 """
-import dml
-import _basic.models as my
+import sys
+sys.path.append('~/projects/probreg')
+import probreg.dml_xml as dml
+import actiereg._basic.models as my
 from django.contrib.auth.models import User
 
 
@@ -33,6 +35,7 @@ def main(fnaam):
                                     start=start,
                                     starter=User.objects.get(pk=1),
                                     text=text)
+
 
 if __name__ == "__main__":
     main("probreg.xml")

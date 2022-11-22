@@ -75,8 +75,7 @@ def loaddata(fnaam, dbnaam):
                                         oplossing=actie.oplossing,
                                         vervolg=actie.vervolg)
         # datums goed zetten
-        cmd = "update {}_actie set start = ?, gewijzigd = ? where id = ?".format(
-            dbnaam)
+        cmd = f"update {dbnaam}_actie set start = ?, gewijzigd = ? where id = ?"
         con.execute(cmd, (actie.datum, actie.updated, nieuw.id))
         con.commit()
         for start, text in actie.events:
@@ -87,6 +86,6 @@ def loaddata(fnaam, dbnaam):
                                          starter=User.objects.get(pk=1),
                                          text=text)
             # datums goed zetten
-            cmd = "update {}_event set start = ? where id = ?".format(dbnaam)
+            cmd = f"update {dbnaam}_event set start = ? where id = ?"
             con.execute(cmd, (start, ok.id))
             con.commit()

@@ -1,14 +1,11 @@
 """Core functions for page views
 """
 import datetime as dt
-## from django.template import Context, loader
-## from django.http import
-## from django.http import Http404
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render, get_object_or_404
 from django.core.exceptions import ObjectDoesNotExist
-## from django.contrib.auth.decorators import login_required
-from django.db.models import Q
+from django.db.models import Q  # wordt gebruikt bij samenstellen filterstring (get_acties)
+from django.contrib import admin
 import django.contrib.auth.models as aut
 from django.views.decorators.csrf import csrf_exempt
 
@@ -18,7 +15,6 @@ UIT_DOCTOOL = "Actie opgevoerd vanuit Doctool"
 def register(my):
     """register models to the admin site (to be used from admin.py)
     """
-    from django.contrib import admin
     admin.site.register(my.Status)
     admin.site.register(my.Soort)
     admin.site.register(my.Page)
@@ -65,7 +61,7 @@ def store_event_with_date(my, msg, actie, date, user):
 def store_gewijzigd(my, msg, txt, mld, actie, user):
     """Maak nieuw standaard event (rubriek X is gewijzigd)
     """
-    store_event(my, '{} gewijzigd in "{}"'.format(msg, txt), actie, user)
+    store_event(my, f'{msg} gewijzigd in "{txt}"', actie, user)
     mld.append(msg)
     return mld
 
@@ -85,9 +81,9 @@ def get_acties(my, userid):
                     filter += " & "
                 elif f.extra.upper() in ("OF", 'OR'):
                     filter += " | "
-                filter += 'Q(nummer__{}="{}")'.format(f.operator.lower(), f.value)
+                filter += f'Q(nummer__{f.operator.lower()}="{f.value}")'
             try:
-                data = eval('data.filter({})'.format(filter))
+                data = eval(f'data.filter({filter})')
             except SyntaxError:
                 pass
 
@@ -109,7 +105,7 @@ def get_acties(my, userid):
         if filtered:
             test = filtered[0].value
             if test:
-                filter = 'Q(about__icontains="{}")'.format(test)
+                filter = f'Q(about__icontains="{test}")'
         filtered = seltest.filter(veldnm="title")
         if filtered:
             test = filtered[0].value
@@ -119,10 +115,10 @@ def get_acties(my, userid):
                         filter += " & "
                     elif filtered[0].extra.upper() in ("OF", "OR"):
                         filter += " | "
-                filter += 'Q(title__icontains="{}")'.format(test)
+                filter += f'Q(title__icontains="{test}")'
         if filter:
             try:
-                data = eval('data.filter({})'.format(filter))
+                data = eval(f'data.filter({filter})')
             except SyntaxError:
                 pass
 
@@ -163,10 +159,11 @@ def koppel(root, my, request):
         try:
             actie = my.Actie.objects.get(nummer=actnum)
         except my.Actie.DoesNotExist:
-            fout = 'Actie {} bestaat niet'.format(actnum)
+            fout = f'Actie {actnum} bestaat niet'
             if not vervolg:
                 msg = fout + " bij doorkoppelen vanuit DocTool zonder terugkeeradres"
-                response = "/{}/{}/mld/{}/".format(root, actie.id, msg)
+                # response = f"/{root}/{actie.id}/mld/{msg}/"
+                response = f"/{root}/{actnum}/mld/{msg}/"
             else:
                 response = vervolg.format('0', fout)
             return HttpResponseRedirect(response)
@@ -181,10 +178,10 @@ def koppel(root, my, request):
         actie.save()
         if not vervolg:
             msg = "Aangepast vanuit DocTool zonder terugkeeradres"
-            response = "/{}/{}/mld/{}/".format(root, actie.id, msg)
+            response = f"/{root}/{actie.id}/mld/{msg}/"
         else:
             obj = my.Event.objects.filter(actie=actie.id).order_by('id')
-            text = "{} {}".format(UIT_DOCTOOL, vervolg.split('koppel')[0])
+            text = f"{UIT_DOCTOOL} {vervolg.split('koppel')[0]}"
             if obj:
                 obj[0].text += "; " + text
                 obj[0].save()
@@ -201,7 +198,7 @@ def koppel(root, my, request):
         volgnr = int(volgnr) if int(jaar) == nw_date.year else 0
     volgnr += 1
     actie = my.Actie()
-    actie.nummer = "{0}-{1:04}".format(nw_date.year, volgnr)
+    actie.nummer = f"{nw_date.year}-{volgnr:04}"
     actie.start = nw_date
     actie.starter = aut.User.objects.get(pk=1)
     behandelaar = actie.starter
@@ -225,17 +222,16 @@ def koppel(root, my, request):
     actie.melding = data.get("hOpm", "")
     actie.save()
     if vervolg:
-        store_event(my, "{} {}".format(UIT_DOCTOOL, vervolg.split('koppel')[0]),
-                    actie, actie.starter)
-    store_event(my, 'titel: "{}"'.format(actie.title), actie, actie.starter)
-    store_event(my, 'categorie: "{}"'.format(str(actie.soort)), actie, actie.starter)
-    store_event(my, 'status: "{}"'.format(str(actie.status)), actie, actie.starter)
+        store_event(my, f"{UIT_DOCTOOL} {vervolg.split('koppel')[0]}", actie, actie.starter)
+    store_event(my, f'titel: "{actie.title}"', actie, actie.starter)
+    store_event(my, f'categorie: "{actie.soort}"', actie, actie.starter)  # str() nodig?
+    store_event(my, f'status: "{actie.status}"', actie, actie.starter)    # str() nodig?
 
     if vervolg:
         response = vervolg.format(actie.id, actie.nummer)
     else:
         msg = "Opgevoerd vanuit DocTool zonder terugkeeradres"
-        response = "/{}/{}/mld/{}/".format(root, actie.id, msg)
+        response = f"/{root}/{actie.id}/mld/{msg}/"
     return HttpResponseRedirect(response)
 
 
@@ -247,15 +243,8 @@ def index(root, name, my, request, msg=''):
         te verbergen
     """
     if not msg:
+        msg = get_appropriate_login_message(request, root)
         if request.user.is_authenticated:
-            msg = 'U bent ingelogd als <i>{}</i>. '.format(request.user.username)
-            msg += 'Klik <a href="/logout/'
-            inuit = 'uit'
-        else:
-            msg = 'U bent niet ingelogd. Klik <a href="/accounts/login/'
-            inuit = 'in'
-        msg += '?next=/{}/">hier</a> om {} te loggen. '.format(root, inuit)
-        if inuit == "uit":
             msg += "Klik op een actienummer om de details te bekijken."
     admin_ = is_admin(root, request.user)   # [0]
     page_data = {"title": "Actielijst",
@@ -290,8 +279,7 @@ def settings(root, name, my, request):
     """settings scherm opbouwen
     """
     if not is_admin(root, request.user):
-        return HttpResponse("U bent niet geautoriseerd om instellingen te wijzigen<br>"
-                            'Klik <a href="/{0}/">hier</a> om door te gaan'.format(root))
+        return no_authorization_message('instellingen te wijzigen', root)
     proj_users = my.Worker.objects.all().order_by('assigned__username')
     hlp = [x.assigned for x in proj_users]
     all_users = [x for x in aut.User.objects.all().order_by('username') if x not in hlp]
@@ -310,8 +298,7 @@ def setusers(root, my, request):
     """users aan project koppelen
     """
     if not is_admin(root, request.user):
-        return HttpResponse("U bent niet geautoriseerd om instellingen te wijzigen<br>"
-                            'Klik <a href="/{0}/">hier</a> om door te gaan'.format(root))
+        return no_authorization_message('instellingen te wijzigen', root)
     data = request.POST
     users = data.getlist("ProjUsers")
     users = [aut.User.objects.get(pk=x) for x in data.get("result").split("$#$")]
@@ -323,15 +310,14 @@ def setusers(root, my, request):
     for user in old_users:
         if user not in users:
             my.Worker.objects.get(assigned=user).delete()
-    return HttpResponseRedirect("/{}/settings/".format(root))
+    return HttpResponseRedirect("/{root}/settings/")
 
 
 def settabs(root, my, request):
     """tab titels aanpassen en terug naar settings scherm
     """
     if not is_admin(root, request.user):
-        return HttpResponse("U bent niet geautoriseerd om instellingen te wijzigen<br>"
-                            'Klik <a href="/{0}/">hier</a> om door te gaan'.format(root))
+        return no_authorization_message('instellingen te wijzigen', root)
     data = request.POST
     pages = my.Page.objects.all().order_by('order')
     for ix, item in enumerate(pages):
@@ -339,15 +325,14 @@ def settabs(root, my, request):
         if data[field] != item.title:
             item.title = data[field]
             item.save()
-    return HttpResponseRedirect("/{}/settings/".format(root))
+    return HttpResponseRedirect(f"/{root}/settings/")
 
 
 def settypes(root, my, request):
     """soort-gegevens aanpassen en terug naar settings scherm
     """
     if not is_admin(root, request.user):
-        return HttpResponse("U bent niet geautoriseerd om instellingen te wijzigen<br>"
-                            'Klik <a href="/{0}/">hier</a> om door te gaan'.format(root))
+        return no_authorization_message('instellingen te wijzigen', root)
     data = request.POST
     soorten = my.Soort.objects.all().order_by('order')
     for ix, item in enumerate(soorten):
@@ -373,15 +358,14 @@ def settypes(root, my, request):
         my.Soort.objects.create(order=data["order0"],
                                 title=data["title0"],
                                 value=data["value0"])
-    return HttpResponseRedirect("/{0}/settings/".format(root))
+    return HttpResponseRedirect(f"/{root}/settings/")
 
 
 def setstats(root, my, request):
     """status-gegevens aanpassen en terug naar settings scherm
     """
     if not is_admin(root, request.user):
-        return HttpResponse("U bent niet geautoriseerd om instellingen te wijzigen<br>"
-                            'Klik <a href="/{0}/">hier</a> om door te gaan'.format(root))
+        return no_authorization_message('instellingen te wijzigen', root)
     data = request.POST
     stats = my.Status.objects.all().order_by('order')
     for ix, item in enumerate(stats):
@@ -407,7 +391,7 @@ def setstats(root, my, request):
         my.Status.objects.create(order=data["order0"],
                                  title=data["title0"],
                                  value=data["value0"])
-    return HttpResponseRedirect("/{}/settings/".format(root))
+    return HttpResponseRedirect(f"/{root}/settings/")
 
 
 def select(root, name, my, request):
@@ -415,14 +399,9 @@ def select(root, name, my, request):
     bij de gebruiker
     """
     if request.user.is_authenticated:
-        msg = 'U bent ingelogd als <i>{}</i>. '.format(request.user.username)
-        msg += 'Klik <a href="/logout/?next=/{}/select/">hier</a> om uit te loggen.'.format(root)
+        msg = logged_in_message(request, root)
     else:
-        return HttpResponse('U moet ingelogd zijn om de selectie voor dit scherm '
-                            'te mogen wijzigen. <br/><br/>'
-                            'Klik <a href="/accounts/login/?next=/{0}/select/">'
-                            'hier</a> om in te loggen, <a href="/{0}/">hier</a>'
-                            ' om terug te gaan.'.format(root))
+        not_logged_in_message('de selectie voor dit scherm te mogen wijzigen', root)
 
     page_data = {"title": "Actielijst - selectie",
                  "name": name,
@@ -524,7 +503,7 @@ def setsel(root, my, request):
         if "all" in archall:
             ok = my.Selection.objects.create(user=request.user.id, veldnm="arch",
                                              operator="EQ", extra=extra, value=True)
-    return HttpResponseRedirect("/{}/meld/De selectie is gewijzigd./".format(root))
+    return HttpResponseRedirect(f"/{root}/meld/De selectie is gewijzigd./")
 
 
 def order(root, name, my, request):
@@ -532,15 +511,9 @@ def order(root, name, my, request):
     bij de gebruiker
     """
     if request.user.is_authenticated:
-        msg = 'U bent ingelogd als <i>{}</i>. '.format(request.user.username)
-        msg += 'Klik <a href="/logout/?next=/{}/order/">hier</a> om uit te loggen'.format(
-            root)
+        msg = logged_in_message(request, root)
     else:
-        return HttpResponse('U moet ingelogd zijn om de sortering voor dit scherm '
-                            'te mogen wijzigen. <br/><br/>'
-                            'Klik <a href="/accounts/login/?next=/{0}/select/">'
-                            'hier</a> om in te loggen, <a href="/{0}/">hier</a> '
-                            'om terug te gaan.'.format(root))
+        not_logged_in_message( 'de sortering voor dit scherm te mogen wijzigen', root)
     page_data = {"title": "Actielijst: volgorde",
                  "name": name,
                  "root": root,
@@ -583,7 +556,7 @@ def setorder(root, my, request):
         else:
             break
         ix += 1
-    return HttpResponseRedirect("/{}/meld/De sortering is gewijzigd./".format(root))
+    return HttpResponseRedirect(f"/{root}/meld/De sortering is gewijzigd./")
 
 
 def detail(root, name, my, request, actie="", msg=""):
@@ -593,15 +566,8 @@ def detail(root, name, my, request, actie="", msg=""):
     """
     ## msg = request.GET.get("msg", "")
     if not msg:
+        msg = get_appropriate_login_message(request, root, actie)
         if request.user.is_authenticated:
-            msg = 'U bent ingelogd als <i>{}</i>. '.format(request.user.username)
-            msg += 'Klik <a href="/logout/'
-            inuit = 'uit'
-        else:
-            msg = 'U bent niet ingelogd. Klik <a href="/accounts/login/'
-            inuit = 'in'
-        msg += '?next=/{}/{}/">hier</a> om {} te loggen. '.format(root, actie, inuit)
-        if inuit == "uit":
             msg += "Klik op een van onderstaande termen om meer te zien."
     page_data = {
         "name": name,
@@ -626,12 +592,12 @@ def detail(root, name, my, request, actie="", msg=""):
             jaar, volgnr = last.nummer.split("-")
             volgnr = int(volgnr) if int(jaar) == nw_date.year else 0
         volgnr += 1
-        page_data["nummer"] = "{0}-{1:04}".format(nw_date.year, volgnr)
+        page_data["nummer"] = f"{nw_date.year}-{volgnr:04}"
         page_data["nieuw"] = request.user
     else:
         actie = my.Actie.objects.get(pk=actie)
         page_data["actie"] = actie
-        titel = "Actie {0} - ".format(actie.nummer)
+        titel = f"Actie {actie.nummer} - "
         page_titel = "Titel/Status"
     page_data["title"] = titel
     page_data["page_titel"] = page_titel
@@ -643,11 +609,10 @@ def wijzig(root, my, request, actie="", doe=""):
     """
     if not is_user(root, request.user) and not is_admin(root, request.user):
         if actie == "nieuw":
-            text = "op te voeren"
+            text = "acties op te voeren"
         else:
-            text = "te wijzigen"
-        return HttpResponse("U bent niet geautoriseerd om acties {}<br>Klik "
-                            '<a href="/{}/">hier</a> om door te gaan'.format(text, root))
+            text = "acties te wijzigen"
+        return no_authorization_message(text, root)
     data = request.POST
     nummer = data.get("nummer", "")
     about = data.get("about", "")
@@ -657,7 +622,7 @@ def wijzig(root, my, request, actie="", doe=""):
     status = int(data.get("status", "1"))
     arch = data.get("archstat", "False")
     vervolg = data.get("vervolg", "")
-    arch = True if arch == "True" else False
+    arch = arch == "True"
 
     if actie == "nieuw":
         actie = my.Actie()
@@ -695,21 +660,17 @@ def wijzig(root, my, request, actie="", doe=""):
             msg = "Actie herleefd"
             store_event(my, msg, actie, request.user)
         if actie.about != over:
-            mld = store_gewijzigd(my, 'onderwerp', str(actie.about),
-                                  mld, actie, request.user)
+            mld = store_gewijzigd(my, 'onderwerp', str(actie.about), mld, actie, request.user)
         if actie.title != wat:
-            mld = store_gewijzigd(my, 'titel', str(actie.title),
-                                  mld, actie, request.user)
+            mld = store_gewijzigd(my, 'titel', str(actie.title), mld, actie, request.user)
         if actie.behandelaar != wie:
-            mld = store_gewijzigd(my, 'behandelaar', str(actie.behandelaar),
-                                  mld, actie, request.user)
+            mld = store_gewijzigd(my, 'behandelaar', str(actie.behandelaar), mld, actie,
+                                  request.user)
 
     if actie.soort != srt:
-        mld = store_gewijzigd(my, 'categorie', str(actie.soort),
-                              mld, actie, request.user)
+        mld = store_gewijzigd(my, 'categorie', str(actie.soort), mld, actie, request.user)
     if actie.status != stat:
-        mld = store_gewijzigd(my, 'status', str(actie.status),
-                              mld, actie, request.user)
+        mld = store_gewijzigd(my, 'status', str(actie.status), mld, actie, request.user)
     if actie.arch != oldarch and actie.arch:
         msg = "Actie gearchiveerd"
         store_event(my, msg, actie, request.user)
@@ -718,21 +679,21 @@ def wijzig(root, my, request, actie="", doe=""):
         if len(mld) == 1:
             msg = mld[0] + " gewijzigd"
         else:
-            msg = ", ".join(mld[:-1]) + " en {0} gewijzigd".format(mld[-1])
+            msg = ", ".join(mld[:-1]) + f" en {mld[-1]} gewijzigd"
         msg = msg.capitalize()
 
     if vervolg:
-        doc = "/{}/{}/{}/meld/{}/".format(root, actie.id, vervolg, msg)
+        doc = f"/{root}/{actie.id}/{vervolg}/meld/{msg}/"
     else:
-        doc = "/{}/{}/mld/{}/".format(root, actie.id, msg)
+        doc = f"/{root}/{actie.id}/mld/{msg}/"
 
     if actie.arch != oldarch:
         # indien nodig eerst naar doctool om de actie af te melden of te herleven
         doe = "arch" if actie.arch else "herl"
         follow = my.Event.objects.filter(actie=actie.id).order_by('id')[0].text
         if UIT_DOCTOOL in follow:  # follow.startswith(UIT_DOCTOOL):
-            doc = "{}meld/{}/{}/{}/".format(follow.split()[-1].strip(), doe, root,
-                                            actie.id)
+            # doc = f"{follow.split()[-1].strip()}meld/{doe}/{root}/{actie.id}/"
+            doc = f"{follow.split()[-1].strip()}/meld/{doe}/{root}/{actie.id}/"
     return HttpResponseRedirect(doc)
 
 
@@ -742,23 +703,14 @@ def tekst(root, name, my, request, actie="", page="", msg=''):
         maken en diverse knoppen te verbergen.
     """
     if not msg:
-        if request.user.is_authenticated:
-            msg = 'U bent ingelogd als <i>{}</i>. Klik <a href="/logout/'.format(
-                request.user.username)
-            inuit = 'uit'
-        else:
-            msg = 'U bent niet ingelogd. Klik <a href="/accounts/login/'
-            inuit = 'in'
-        msg += '?next=/{}/{}/{}/">hier</a> om {} te loggen'.format(
-            root, actie, page, inuit)
+        get_appropriate_login_message(request, root, actie)
 
     page_data = {
         "root": root,
         "name": name,
         "pages": my.Page.objects.all().order_by('order'),
         "msg": msg}
-    page_data["readonly"] = False if is_user(
-        root, request.user) or is_admin(root, request.user) else True
+    page_data["readonly"] = not (is_user(root, request.user) or is_admin(root, request.user))
     actie = get_object_or_404(my.Actie, pk=actie)
     tab = my.Page.objects.get(link=page)
     page_titel = tab.title
@@ -780,7 +732,7 @@ def tekst(root, name, my, request, actie="", page="", msg=''):
 
     page_data["page"] = page
     page_data["next"] = next
-    page_data["title"] = "Actie {} - ".format(actie.nummer)
+    page_data["title"] = f"Actie {actie.nummer} - "
     page_data["page_titel"] = page_titel
     page_data["page_text"] = page_text
     page_data["actie"] = actie
@@ -791,8 +743,7 @@ def wijzigtekst(root, my, request, actie="", page=""):
     """verwerk de aanpassingen en koppel door naar tonen van het scherm
     """
     if not is_user(root, request.user) and not is_admin(root, request.user):
-        return HttpResponse("U bent niet geautoriseerd om acties te wijzigen<br>"
-                            'Klik <a href="/{}/">hier</a> om door te gaan'.format(root))
+        return no_authorization_message('acties te wijzigen', root)
     data = request.POST
     tekst = data.get("data", "")
     vervolg = data.get("vervolg", "")
@@ -834,8 +785,7 @@ def wijzigtekst(root, my, request, actie="", page=""):
             store_event(my, msg, actie, request.user)
 
     page = vervolg if vervolg else page
-    return HttpResponseRedirect(
-        "/{}/{}/{}/meld/{}".format(root, actie.id, page, msg))
+    return HttpResponseRedirect(f"/{root}/{actie.id}/{page}/meld/{msg}")
 
 
 def events(root, name, my, request, actie="", event="", msg=''):
@@ -846,21 +796,12 @@ def events(root, name, my, request, actie="", event="", msg=''):
         maken en diverse knoppen te verbergen.
     """
     if not msg:
-        if request.user.is_authenticated:
-            msg = 'U bent ingelogd als <i>{0}</i>. '.format(request.user.username)
-            msg += 'Klik <a href="/logout/'
-            inuit = 'uit'
-        else:
-            msg = 'U bent niet ingelogd. Klik <a href="/accounts/login/'
-            inuit = 'in'
-        msg += '?next=/{}/{}/voortg/">hier</a> om {} te loggen.'.format(root,
-                                                                        actie,
-                                                                        inuit)
+        get_appropriate_login_message(request, root, actie)
     msg += " Klik op een voortgangsregel om de tekst nader te bekijken."
     actie = my.Actie.objects.select_related().get(id=actie)
 
     page_data = {
-        "title": "{} - ".format(actie.nummer),
+        "title": f"{actie.nummer} - ",
         "page_titel": "Voortgang",
         "name": name,
         "root": root,
@@ -869,8 +810,7 @@ def events(root, name, my, request, actie="", event="", msg=''):
         "actie": actie,
         "events": actie.events.order_by("-start").order_by("-id"),
         "user": request.user}
-    page_data["readonly"] = False if is_user(
-        root, request.user) or is_admin(root, request.user) else True
+    page_data["readonly"] = not (is_user(root, request.user) or is_admin(root, request.user))
 
     if event == "nieuw":
         nw_date = dt.datetime.now()
@@ -885,8 +825,7 @@ def wijzigevents(root, my, request, actie="", event=""):
     """verwerk de aanpassingen en koppel door naar tonen van het scherm
     """
     if not is_user(root, request.user) and not is_admin(root, request.user):
-        return HttpResponse("U bent niet geautoriseerd om acties  te wijzigen<br>"
-                            'Klik <a href="/{}/">hier</a> om door te gaan'.format(root))
+        return no_authorization_message('acties te wijzigen', root)
 
     data = request.POST
     tekst = data.get("data", "")
@@ -901,9 +840,43 @@ def wijzigevents(root, my, request, actie="", event=""):
     elif event:
         event = get_object_or_404(my.Event, pk=event)
     else:
-        return HttpResponse("{} {}".format(actie, event))
+        return HttpResponse(f"{actie} {event}")
 
     event.text = tekst
     event.save()
-    return HttpResponseRedirect(
-        "/{}/{}/voortg/meld/De gebeurtenis is bijgewerkt./".format(root, actie.id))
+    return HttpResponseRedirect("/{root}/{actie.id}/voortg/meld/De gebeurtenis is bijgewerkt./")
+
+
+def get_appropriate_login_message(request, root, actie=''):
+    "geef toepasselijke welkom boodschap afhankelijk van of de gebruiker is ingelogd"
+    if request.user.is_authenticated:
+        msg = f'U bent ingelogd als <i>{request.user.username}</i>. Klik <a href="/logout/'
+        inuit = 'uit'
+    else:
+        msg = 'U bent niet ingelogd. Klik <a href="/accounts/login/'
+        inuit = 'in'
+    if actie:
+        msg += f'?next=/{root}/{actie}/">hier</a> om {inuit} te loggen. '
+    else:
+        msg += f'?next=/{root}/">hier</a> om {inuit} te loggen. '
+    return msg
+
+
+def no_authorization_message(to_do, root):
+    "actie afbreken als gebruiker niet geautoriseerd is"
+    return HttpResponse("U bent niet geautoriseerd om {to_do}<br>Klik "
+                        '<a href="/{root}/">hier</a> om door te gaan')
+
+
+def logged_in_message(request, root):
+    "het eerste deel van get_appropriate_login_message?"
+    return ('U bent ingelogd als <i>{request.user.username}</i>. '
+            'Klik <a href="/logout/?next=/{root}/select/">hier</a> om uit te loggen.'
+            'Klik <a href="/{root}/">hier</a> om door te gaan')
+
+
+def not_logged_in_message(to_do, root):
+    "actie afbreken als gebruiker niet ingelogd is"
+    return HttpResponse('U moet ingelogd zijn om {to_do}.<br/><br/>'
+                        'Klik <a href="/accounts/login/?next=/{root}/select/">hier</a>'
+                        ' om in te loggen, <a href="/{root}/">hier</a> om terug te gaan.')

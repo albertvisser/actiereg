@@ -1,20 +1,20 @@
 """views for Django project pages
 """
-## import os
+# import os
 import pathlib
-## import shutil
-import subprocess
-## from django.http import Http404
+# import shutil
+# import subprocess
+# from django.http import Http404
 from django.contrib.auth import logout  # , login, authenticate
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render  # , get_object_or_404
 from django.db import connection
-## from django.views.decorators.csrf import csrf_exempt
+# from django.views.decorators.csrf import csrf_exempt
 from actiereg.settings import MEDIA_ROOT, SITES  # , DATABASES['default']['NAME']
-from actiereg.core import is_admin
-from actiereg.newapp import allnew, NewProj
-## appsfile = os.path.join(os.path.split(__file__)[0], "apps.dat")
+# from actiereg.core import is_admin
+# from actiereg.newapp import allnew, NewProj
+# appsfile = os.path.join(os.path.split(__file__)[0], "apps.dat")
 appsfile = pathlib.Path(__file__).parent / "apps.dat"
 
 
@@ -27,12 +27,12 @@ def index(request, msg=""):
         msg += '<br/><br/>'
     user = request.GET.get("user", "") or request.user
     if user and user.is_authenticated:
-        msg += 'U bent ingelogd als <i>{}</i>. '.format(user.username)
-        msg += 'Klik <a href="/logout/?next=/">hier</a> om uit te loggen'
+        msg += f'U bent ingelogd als <i>{user.username}</i>.'
+        msg += ' Klik <a href="/logout/?next=/">hier</a> om uit te loggen'
     else:
-        msg += ('U bent niet ingelogd. '
-               'Klik <a href="accounts/login/?next=/">hier</a> om in te loggen,'
-               ' <a href="/">hier</a> om terug te gaan naar het begin.')
+        msg += ('U bent niet ingelogd.'
+                ' Klik <a href="accounts/login/?next=/">hier</a> om in te loggen,'
+                ' <a href="/">hier</a> om terug te gaan naar het begin.')
     app_list = [{"name": ''}]
     new_apps = []
     cursor = connection.cursor()
@@ -42,8 +42,8 @@ def index(request, msg=""):
             if name == "Demo":
                 continue
             if ok == "X":
-                doe = "select count(*) from {}_actie".format(root)
-                all = cursor.execute(doe).fetchone()[0]
+                doe = f"select count(*) from {root}_actie"
+                all_items = cursor.execute(doe).fetchone()[0]
                 doe += " where arch = 0"
                 all_open = cursor.execute(doe).fetchone()[0]
                 doe += " and status_id > 1"
@@ -53,7 +53,7 @@ def index(request, msg=""):
                     if item['name'].lower() > name.lower():
                         app_list.insert(ix,
                                         {"root": root, "name": name, "desc": desc,
-                                         "alle": all, "open": all_open,
+                                         "alle": all_items, "open": all_open,
                                          "active": all_active})
                         inserted = True
                         break
@@ -87,9 +87,9 @@ def add_from_actiereg(request, name=''):
     "project opvoeren en activeren vanaf admin link"
     if not name:
         return HttpResponseRedirect('/msg/Geen projectnaam opgegeven om te activeren')
-    text = ' '.join(('Deze view werkt maar gedeeltelijk,',
-                     'Stop de server en voer `python newapp.py {}` handmatig uit'.format(name)))
-    return HttpResponseRedirect('/msg/{}/'.format(text))
+    text = ('Deze view werkt maar gedeeltelijk,',
+            f' stop de server en voer `python newapp.py {name}` handmatig uit')
+    return HttpResponseRedirect(f'/msg/{text}/')
     # if name == 'all':
     #     result = allnew()
     #     if result:
@@ -113,8 +113,8 @@ def add_from_doctool(request, proj='', name='', desc=''):
     with appsfile.open("a") as _out:
         _out.write(";".join(("_", name, name, desc)) + "\n")
     notify_admin(name)
-    return HttpResponseRedirect('{}/{}/meld/De aanvraag voor het project "{}"'
-                                ' is verstuurd/'.format(SITES['doctool'], proj, name))
+    return HttpResponseRedirect(f"{SITES['doctool']}/{proj}/meld/De aanvraag"
+                                f' voor het project "{name}" is verstuurd/')
 
 
 @login_required
@@ -127,8 +127,7 @@ def add(request):
     with appsfile.open("a") as _out:
         _out.write(";".join(("_", name, name, desc)) + "\n")
     notify_admin(name)
-    return HttpResponseRedirect(
-        '/msg/De aanvraag voor het project "{}" is verstuurd/'.format(name))
+    return HttpResponseRedirect('/msg/De aanvraag voor het project "{name}" is verstuurd/')
 
 
 def login(request):  # redefinition of unused 'login' from line 5
@@ -141,8 +140,7 @@ def log_out(request):
     """
     next = request.GET.get("next", "/")
     logout(request)
-    return render(request, "logged_out.html",
-                  {"next": "/accounts/login/?next={}".format(next)})
+    return render(request, "logged_out.html", {"next": f"/accounts/login/?next={next}"})
 
 
 def viewdoc(request):

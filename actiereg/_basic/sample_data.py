@@ -2,7 +2,7 @@
 """
 
 
-class Status(object):
+class Status:
     """gemeld, in behandeling, afgehandeld e.d."""
     def __init__(self, **args):
         self.id = args.get("id", "0")
@@ -11,7 +11,7 @@ class Status(object):
         self.order = args.get("order", "0")
 
 
-class Soort(object):
+class Soort:
     """probleem, wens e.d."""
     def __init__(self, **args):
         self.id = args.get("id", "0")
@@ -20,7 +20,7 @@ class Soort(object):
         self.order = args.get("order", "0")
 
 
-class Page(object):
+class Page:
     """titels voor de links/onderdelen"""
     def __init__(self, **args):
         self.id = args.get("id", "0")
@@ -29,7 +29,7 @@ class Page(object):
         self.order = args.get("order", "0")
 
 
-class Actie(object):
+class Actie:
     """primaire gegevenstabel"""
     def __init__(self, **args):
         self.id = args.get("id", "0")
@@ -47,13 +47,14 @@ class Actie(object):
         self.vervolg = args.get("vervolg", "")
 
 
-class Event(object):
+class Event:
     """historische gegevens over een actie"""
     def __init__(self, **args):
         self.id = args.get("id", "0")
         self.actie = args.get("actie", "1")
         self.start = args.get("start", "")
         self.text = args.get("text", "")
+
 
 soort_list = [
     Soort(id="1", value="0", title="onbekend"),
