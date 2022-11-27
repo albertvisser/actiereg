@@ -2,12 +2,12 @@
 """
 # import datetime as dt
 import django.utils as dt
-from django.http import HttpResponse, HttpResponseRedirect
-from django.shortcuts import render, get_object_or_404
-from django.core.exceptions import ObjectDoesNotExist
+from django.http import HttpResponse  # , HttpResponseRedirect
+from django.shortcuts import get_object_or_404
+# from django.core.exceptions import ObjectDoesNotExist - related to previous one - reconsider?
 from django.http import Http404
 from django.db.models import Q  # wordt gebruikt bij samenstellen filterstring (get_acties)
-from django.contrib import admin
+# from django.contrib import admin
 import django.contrib.auth.models as aut
 import tracker.models as my
 
@@ -86,14 +86,13 @@ def build_pagedata_for_project(request, proj, msg):
     return page_data
 
 
-def get_acties(project, userid):  # onduidelijk waar ik die user voor nodig heb
+def get_acties(project, userid):
     """return list of actions with selection and sort order applied
     """
     # data = my.Actie.objects.all()
     data = project.acties.all()
     if data and userid:
-        # seltest = my.Selection.objects.filter(user=userid, project=project)
-        seltest = project.selections.all()
+        seltest = project.selections.filter(user=userid)
         data = filter_data_on_nummer(data, seltest)
         data = filter_data_on_soort(data, seltest)
         data = filter_data_on_status(data, seltest)
@@ -101,13 +100,12 @@ def get_acties(project, userid):  # onduidelijk waar ik die user voor nodig heb
         data = filter_data_on_description(data, seltest)
         data = filter_data_on_arch(data, seltest)
 
-        # sorters = my.SortOrder.objects.filter(user=userid, project=project).order_by("volgnr")
-        sorters = project.sortings.all()
+        sorters = project.sortings.filter(user=userid)
         data = apply_sorters(data, sorters)
     return data
 
 
-def build_pagedata_for_settings(request, proj):
+def build_pagedata_for_settings(request, proj):  # request arg unused
     "bouw het scherm op met instellingen voor het huidige project"
     project = my.Project.objects.get(pk=proj)
     proj_users = project.workers.order_by('assigned__username')
@@ -276,7 +274,7 @@ def setselection(request, proj):  # nog verdelen tussen views en hier
     selact = data.getlist("select")    # aangekruiste selecties: "act" "srt" "stat" "txt" of "arch"
     project = my.Project.objects.get(pk=proj)
     project.selections.filter(user=request.user.id).delete()
-    extra = "  "
+    # extra = "  "
     if "act" in selact:
         set_selection_for_nummer(project, request.user, data)
     if "srt" in selact:
@@ -356,7 +354,7 @@ def set_selection_for_arch(project, user, data):
                                     operator="EQ", extra='', value=True)
 
 
-def build_pagedata_for_ordering(request, proj, msg):  # nog niet uitgeprobeerd
+def build_pagedata_for_ordering(request, proj, msg):  # msg arg unused
     """bouw het scherm op aan de hand van de huidige sorteringsgegevens
     bij de gebruiker
     """
@@ -379,7 +377,7 @@ def build_pagedata_for_ordering(request, proj, msg):  # nog niet uitgeprobeerd
     return page_data
 
 
-def setordering(request, proj):  # nog verdelen tussen views en hier
+def setordering(request, proj):
     """verwerk de aanpassingen en koppel door naar tonen van de lijst met acties
     de huidige sorteringsgegevens voor de user worden verwijderd
     daarna worden nieuwe sorteringsgegevens bepaald en opgeslagen
@@ -570,7 +568,7 @@ def wijzig_tekstpage(request, proj, actie, page=""):
     """verwerk de aanpassingen en koppel door naar tonen van het scherm
     """
     project = my.Project.objects.get(pk=proj)
-    if not is_user(project, request.user):  #  and not is_admin(project, request.user):
+    if not is_user(project, request.user):  # and not is_admin(project, request.user):
         return no_authorization_message('acties te wijzigen', proj)
     data = request.POST
     tekst = data.get("data", "")
@@ -741,7 +739,7 @@ def is_user(project, user):
     # return False
 
 
-def is_admin(project, user):
+def is_admin(project, user):  # TODO moet eigenlijk zijn: heeft admin rechten voor dit project
     """geeft indicatie terug of de betreffende gebruiker
     acties en settings mag wijzigen
     """
@@ -754,6 +752,7 @@ def is_admin(project, user):
 
 
 def filter_data_on_nummer(data, seltest):
+    "apply filter on 'nummer' to the data"
     filtered = seltest.filter(veldnm="nummer")
     if filtered:
         filter = ""
@@ -769,28 +768,36 @@ def filter_data_on_nummer(data, seltest):
             pass
     return data
 
+
 def filter_data_on_soort(data, seltest):
+    "apply filter on 'soort' to the data"
     filtered = seltest.filter(veldnm="soort")
     sel = [my.Soort.objects.get(value=x.value).id for x in filtered]
     if sel:
         data = data.filter(soort__in=sel)
     return data
 
+
 def filter_data_on_status(data, seltest):
+    "apply filter on 'status' to the data"
     filtered = seltest.filter(veldnm="status")
     sel = [my.Status.objects.get(value=int(x.value)).id for x in filtered]
     if sel:
         data = data.filter(status__in=sel)
     return data
 
+
 def filter_data_on_user(data, seltest):
+    "apply filter on 'behandelaar' to the data"
     filtered = seltest.filter(veldnm="user")
     sel = [int(x.value) for x in filtered]
     if sel:
         data = data.filter(behandelaar__in=sel)
     return data
 
+
 def filter_data_on_description(data, seltest):
+    "apply filter on descriptive fields to the data"
     filtered = seltest.filter(veldnm="about")
     filter = ''
     if filtered:
@@ -814,7 +821,9 @@ def filter_data_on_description(data, seltest):
             pass
     return data
 
+
 def filter_data_on_arch(data, seltest):
+    "apply filter on archive status to the data"
     filtered = seltest.filter(veldnm="arch")
     if not filtered:
         data = data.exclude(arch=True)
@@ -822,7 +831,9 @@ def filter_data_on_arch(data, seltest):
         data = data.filter(arch=True)
     return data
 
+
 def apply_sorters(data, sorters):
+    "sort the provided data"
     order = []
     for sorter in sorters:
         if sorter.veldnm == "title":
@@ -839,6 +850,7 @@ def apply_sorters(data, sorters):
             order.append(ordr)
     data = data.order_by(*order)
     return data
+
 
 def store_event(msg, actie, user):
     """Maak nieuw vrije tekst event en sla deze op in de lijst

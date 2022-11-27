@@ -473,7 +473,7 @@ def test_get_acties(monkeypatch, capsys):
     myproject = my.Project.objects.create(name='first')
     mysoort = my.Soort.objects.create(project=myproject, order=0, value='y', title='z')
     mystatus = my.Status.objects.create(project=myproject, order=0, value=0, title='z')
-    assert list(core.get_acties(myproject, 'userid')) == []
+    assert list(core.get_acties(myproject, myuser.id)) == []
 
     myselect = my.Selection.objects.create(user=myuser.id, project=myproject)
     mysorter = my.SortOrder.objects.create(user=myuser.id, project=myproject, volgnr=0)
@@ -482,7 +482,7 @@ def test_get_acties(monkeypatch, capsys):
                                       soort=mysoort, status=mystatus, behandelaar=myuser)
 
     assert list(core.get_acties(myproject, '')) == [myactie]
-    assert list(core.get_acties(myproject, 'userid')) == [myactie]
+    assert list(core.get_acties(myproject, myuser.id)) == [myactie]
     assert capsys.readouterr().out == (
             'called core.filter_data_on_nummer() with args [<Actie: 1>] [<Selection:    >]\n'
             'called core.filter_data_on_soort() with args [<Actie: 1>] [<Selection:    >]\n'
