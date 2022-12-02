@@ -9,10 +9,8 @@ logs/
 *.swo
 
 # live site files and directories
-actiereg/apps.dat
-actiereg/settings.py
-actiereg/*/
-!actiereg/_basic/
-!actiereg/templates/
-actiereg/templates/*/
-!actiereg/templates/basic/
+actiereg/settings*
+.coverage
+static/admin
+projdocs*
+secret_key
