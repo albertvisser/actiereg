@@ -351,7 +351,21 @@ def update_verv(request, proj, actie):
 def show_events(request, proj, actie, msg=""):
     "toon scherm voor (wijzigen/toevoegen) events"
     return render(request, 'tracker/voortgang.html',
-                  core.build_pagedata_for_events(request, proj, actie, msg))
+                  core.build_pagedata_for_events(request, proj, actie, msg=msg))
+
+
+@login_required
+def new_event(request, proj, actie):
+    "Rzet scherm open voor toevoegen"
+    return render(request, 'tracker/voortgang.html',
+                  core.build_pagedata_for_events(request, proj, actie, event='nieuw'))
+
+
+@login_required
+def edit_event(request, proj, actie, event):
+    "Rzet scherm open voor wijzigen"
+    return render(request, 'tracker/voortgang.html',
+                  core.build_pagedata_for_events(request, proj, actie, event=event))
 
 
 @login_required

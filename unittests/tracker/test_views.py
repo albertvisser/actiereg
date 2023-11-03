@@ -340,12 +340,33 @@ def test_update_verv(monkeypatch):
     assert views.update_verv(request, 'proj', 'actie') == (request, 'proj', 'actie', 'verv')
 
 def test_show_events(monkeypatch):
-    monkeypatch.setattr(views.core, 'build_pagedata_for_events', lambda *x: x)
+    monkeypatch.setattr(views.core, 'build_pagedata_for_events', lambda *x, **y: (x, y))
     monkeypatch.setattr(views, 'render', lambda *x: x)
     myuser = auth.User.objects.create(username='me')
     request = types.SimpleNamespace(user=myuser)
-    assert views.show_events(request, 'proj', 'actie', 'melding') == (
-            request, 'tracker/voortgang.html', (request, 'proj', 'actie', 'melding'))
+    assert views.show_events(request, 'proj', 'actie') == (
+            request, 'tracker/voortgang.html', ((request, 'proj', 'actie'), {'msg': ''}))
+
+    monkeypatch.setattr(views.core, 'build_pagedata_for_events', lambda *x, **y: (x, y))
+    monkeypatch.setattr(views, 'render', lambda *x: x)
+    assert views.show_events(request, 'proj', 'actie', msg='melding') == (
+            request, 'tracker/voortgang.html', ((request, 'proj', 'actie'), {'msg': 'melding'}))
+
+def test_new_event(monkeypatch):
+    monkeypatch.setattr(views.core, 'build_pagedata_for_events', lambda *x, **y: (x, y))
+    monkeypatch.setattr(views, 'render', lambda *x: x)
+    myuser = auth.User.objects.create(username='me')
+    request = types.SimpleNamespace(user=myuser)
+    assert views.new_event(request, 'proj', 'actie') == (
+            request, 'tracker/voortgang.html', ((request, 'proj', 'actie'), {'event': 'nieuw'}))
+
+def test_edit_event(monkeypatch):
+    monkeypatch.setattr(views.core, 'build_pagedata_for_events', lambda *x, **y: (x, y))
+    monkeypatch.setattr(views, 'render', lambda *x: x)
+    myuser = auth.User.objects.create(username='me')
+    request = types.SimpleNamespace(user=myuser)
+    assert views.edit_event(request, 'proj', 'actie', 15) == (
+            request, 'tracker/voortgang.html', ((request, 'proj', 'actie'), {'event': 15}))
 
 def test_add_event(monkeypatch):
     monkeypatch.setattr(views, 'HttpResponseRedirect' , lambda x: x)
