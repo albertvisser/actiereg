@@ -31,10 +31,7 @@
             {% if page.title|upper == page_titel|upper %}</div>{% endif %}
             {% if forloop.first or actie %}</a>{%endif%}</div>
     {% endfor%}<div class="clear">&nbsp;</div>
-{% if actie %}
-<!--    <div class="col_itall ttl">{{actie.about|capfirst}}: {{actie.title|trim_at:80}} </div>
-<div class="clear">&nbsp;</div>{% endif %} -->
-    <div class="col_itall">
-    {% block content-data %} {{ content }} {% endblock %}
-    </div>
+<div class="col_itall">
+{% block content-data %} {{ content }} {% endblock %}
+</div>
 {% endblock %}
