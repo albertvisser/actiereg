@@ -48,7 +48,7 @@ span.clear {
         <div class="clear">&nbsp;</div>{% endif %}
     {%for ev in events%}<a href="/{{root}}/{{actie.id}}/voortg/{{ev.id}}/">
         <div class="col_when">{{ev.start|date:"d-m-Y H:i:s"}} {{ev.starter}}:</div>
-        <div class="col_oms">{{ev.text|trim_at:60}}</div></a><div class="clear">&nbsp;</div>
+        <div class="col_oms">{{ev.text|trim_at:60}}&nbsp;</div></a><div class="clear">&nbsp;</div>
         {%endfor%}</div>
 <div>
     {% if not readonly  %}{% if not actie.arch and not nieuw %}
