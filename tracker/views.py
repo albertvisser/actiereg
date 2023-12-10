@@ -1,6 +1,7 @@
 """views for Django project pages
 """
 import datetime as dt
+import contextlib
 from django.shortcuts import render
 from django.http import HttpResponse, HttpResponseRedirect
 from django.core.exceptions import ObjectDoesNotExist
@@ -207,39 +208,46 @@ def add_action_from_doctool(request, proj):  # Attention: signature changed from
     usernaam = data.get("hUser", "")
     actnum = data.get("tActie", "")
     if actnum:
-        try:
-            actie = my.Actie.objects.get(nummer=actnum)
-        except my.Actie.DoesNotExist:
-            fout = f'Actie {actnum} bestaat niet'
-            if not vervolg:
-                msg = fout + " bij doorkoppelen vanuit DocTool zonder terugkeeradres"
-                # response = f"/{root}/{actie.id}/mld/{msg}/"
-                response = f"/{proj}/{actnum}/mld/{msg}/"
-            else:
-                response = vervolg.format('0', fout)
-            return HttpResponseRedirect(response)
-        actie.starter = aut.User.objects.get(pk=1)
-        behandelaar = actie.starter
-        if usernaam:
-            try:
-                behandelaar = aut.User.objects.get(username=usernaam)
-            except ObjectDoesNotExist:
-                pass
-        actie.lasteditor = behandelaar
-        actie.save()
+        response = add_specified_action_from_doctool(proj, actnum, usernaam, vervolg)
+    else:
+        response = add_new_action_from_doctool(proj, usernaam, vervolg)
+    return HttpResponseRedirect(response)
+
+def add_specified_action_from_doctool(proj, actnum, usernaam, vervolg):
+    "gebruik opgegeven actienummer bij opvoeren"
+    try:
+        actie = my.Actie.objects.get(nummer=actnum)
+    except my.Actie.DoesNotExist:
+        fout = f'Actie {actnum} bestaat niet'
         if not vervolg:
-            msg = "Aangepast vanuit DocTool zonder terugkeeradres"
-            response = f"/{proj}/{actie.id}/mld/{msg}/"
+            msg = fout + " bij doorkoppelen vanuit DocTool zonder terugkeeradres"
+            # response = f"/{root}/{actie.id}/mld/{msg}/"
+            return f"/{proj}/{actnum}/mld/{msg}/"
         else:
-            obj = my.Event.objects.filter(actie=actie.id).order_by('id')
-            text = f"{core.UIT_DOCTOOL} {vervolg.split('koppel')[0]}"
-            if obj:
-                obj[0].text += "; " + text
-                obj[0].save()
-            else:
-                core.store_event(my, text, actie, actie.starter)
-            response = vervolg.format(actie.id, actie.nummer)
-        return HttpResponseRedirect(response)
+            return vervolg.format('0', fout)
+    actie.starter = aut.User.objects.get(pk=1)
+    behandelaar = actie.starter
+    if usernaam:
+        with contextlib.suppress(ObjectDoesNotExist):
+            behandelaar = aut.User.objects.get(username=usernaam)
+    actie.lasteditor = behandelaar
+    actie.save()
+    if not vervolg:
+        msg = "Aangepast vanuit DocTool zonder terugkeeradres"
+        response = f"/{proj}/{actie.id}/mld/{msg}/"
+    else:
+        obj = my.Event.objects.filter(actie=actie.id).order_by('id')
+        text = f"{core.UIT_DOCTOOL} {vervolg.split('koppel')[0]}"
+        if obj:
+            obj[0].text += "; " + text
+            obj[0].save()
+        else:
+            core.store_event(my, text, actie, actie.starter)
+        response = vervolg.format(actie.id, actie.nummer)
+    return response
+
+def add_new_action_from_doctool(proj, data, usernaam, vervolg):
+    "maak nieuw actienummer aan en voer op"
     volgnr = 0
     aant = my.Actie.objects.count()
     nw_date = dt.datetime.now()
@@ -254,10 +262,8 @@ def add_action_from_doctool(request, proj):  # Attention: signature changed from
     actie.starter = aut.User.objects.get(pk=1)
     behandelaar = actie.starter
     if usernaam:
-        try:
+        with contextlib.suppress(ObjectDoesNotExist):
             behandelaar = aut.User.objects.get(username=usernaam)
-        except ObjectDoesNotExist:
-            pass
     actie.behandelaar = behandelaar
     actie.about = "testbevinding" if "bevinding" in vervolg else ""
     actie.title = data.get("hMeld", "")
@@ -283,7 +289,7 @@ def add_action_from_doctool(request, proj):  # Attention: signature changed from
     else:
         msg = "Opgevoerd vanuit DocTool zonder terugkeeradres"
         response = f"/{proj}/{actie.id}/mld/{msg}/"
-    return HttpResponseRedirect(response)
+    return response
 
 
 @login_required

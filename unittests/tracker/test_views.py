@@ -6,9 +6,7 @@ import django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'actiereg.settings')
 django.setup()
 from django.contrib.auth import models as auth
-from django.http.request import HttpRequest
 
-from tracker import core
 import tracker.models as my
 from tracker import views
 

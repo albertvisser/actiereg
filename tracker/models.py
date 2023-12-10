@@ -120,7 +120,7 @@ class Selection(models.Model):
     value = models.CharField(max_length=40)
 
     def __str__(self):
-        return " ".join((self.veldnm, self.extra, self.operator, self.value))
+        return f"{self.veldnm} {self.extra} {self.operator} {self.value}"
 
 
 class Worker(models.Model):

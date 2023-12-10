@@ -1,6 +1,7 @@
 """Core functions for page views
 """
 # import datetime as dt
+import contextlib
 import django.utils as dt
 from django.http import HttpResponse  # , HttpResponseRedirect
 from django.shortcuts import get_object_or_404
@@ -129,10 +130,7 @@ def set_users(request, proj):
     # genoemde select bevat de toegekende gebruikers(namen). Bij submitten worden de bijbehorende
     # ids hieruit m.b.v. javascript overgenomen in hidden field `result` gescheiden door #$#
     test = data.get("result", '')
-    if test:
-        users = [aut.User.objects.get(pk=x) for x in test.split("$#$")]
-    else:
-        users = []
+    users = [aut.User.objects.get(pk=x) for x in test.split("$#$")] if test else []
     project = my.Project.objects.get(pk=proj)
     current = project.workers.all()
     old_users = [x.assigned for x in current]
@@ -593,22 +591,18 @@ def wijzig_tekstpage(request, proj, actie, page=""):
     actie.lasteditor = request.user
     actie.save()
 
-    if page == "meld":
-        if actie.melding != orig:
-            msg = "Meldingtekst aangepast"
-            store_event(msg, actie, request.user)
-    elif page == "oorz":
-        if actie.oorzaak != orig:
-            msg = "Beschrijving oorzaak aangepast"
-            store_event(msg, actie, request.user)
-    elif page == "opl":
-        if actie.oplossing != orig:
-            msg = "Beschrijving oplossing aangepast"
-            store_event(msg, actie, request.user)
-    elif page == "verv":
-        if actie.vervolg != orig:
-            msg = "Beschrijving vervolgactie aangepast"
-            store_event(msg, actie, request.user)
+    if page == "meld" and actie.melding != orig:
+        msg = "Meldingtekst aangepast"
+        store_event(msg, actie, request.user)
+    elif page == "oorz" and actie.oorzaak != orig:
+        msg = "Beschrijving oorzaak aangepast"
+        store_event(msg, actie, request.user)
+    elif page == "opl" and actie.oplossing != orig:
+        msg = "Beschrijving oplossing aangepast"
+        store_event(msg, actie, request.user)
+    elif page == "verv" and actie.vervolg != orig:
+        msg = "Beschrijving vervolgactie aangepast"
+        store_event(msg, actie, request.user)
 
     page = vervolg if vervolg else page
     return f"/{proj}/{actie.id}/{page}/meld/{msg}"
@@ -762,10 +756,8 @@ def filter_data_on_nummer(data, seltest):
             elif f.extra.upper() in ("OF", 'OR'):
                 filter += " | "
             filter += f'Q(nummer__{f.operator.lower()}="{f.value}")'
-        try:
+        with contextlib.suppress(SyntaxError):
             data = eval(f'data.filter({filter})')
-        except SyntaxError:
-            pass
     return data
 
 
@@ -815,10 +807,8 @@ def filter_data_on_description(data, seltest):
                     filter += " | "
             filter += f'Q(title__icontains="{test}")'
     if filter:
-        try:
+        with contextlib.suppress(SyntaxError):
             data = eval(f'data.filter({filter})')
-        except SyntaxError:
-            pass
     return data
 
 

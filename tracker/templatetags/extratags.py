@@ -27,10 +27,7 @@ def return_me(x):
 @stringfilter
 def trim_at(text, leng, autoescape=None):
     "Display up to a certain length"
-    if autoescape:
-        esc = conditional_escape
-    else:
-        esc = return_me
+    esc = conditional_escape if autoescape else return_me
     if len(text) > leng:
         text = text[:leng] + "..."
     return mark_safe(esc(text))

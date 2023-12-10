@@ -92,7 +92,7 @@ def test_filter_data_on_nummer(monkeypatch):
     actie4 = my.Actie.objects.create(project=project, nummer='0004', starter=user, lasteditor=user,
                                      soort=soort, status=status, behandelaar=user)
     data = core.filter_data_on_nummer(my.Actie.objects.all(), my.Selection.objects.all())
-    assert len(data) == 4  # geen filters -> alles
+    assert len(data) == len([actie1, actie2, actie3, actie4]) # 4  # geen filters -> alles
 
     my.Selection.objects.create(user=user.id, project=project, veldnm="nummer",
                                 value='0001', operator='GT')
@@ -368,7 +368,7 @@ def test_add_default_pages():
     for item in my.Page.objects.all():
         assert (item.link, item.order, item.title) == expected[count]
         count += 1
-    assert count == 7
+    assert count == len(expected)
 
 @pytest.mark.django_db
 def test_add_default_soorten():
@@ -402,7 +402,7 @@ def test_add_default_statussen():
     for item in project.status.all():
         assert (item.order, item.value, item.title) == expected[count]
         count += 1
-    assert count == 6
+    assert count == len(expected)
 
 @pytest.mark.django_db
 def test_build_pagedata_for_project(monkeypatch):
@@ -810,7 +810,7 @@ def test_setordering():
                                           'field3': ''})
     core.setordering(request, myproject.id)
     data = myproject.sortings.filter(user=myuser.id)
-    assert len(data) == 2
+    assert len(data) == len(('field1', 'field2'))
     assert (data[0].volgnr, data[0].veldnm, data[0].richting) == (1, 'nummer', 'asc')
     assert (data[1].volgnr, data[1].veldnm, data[1].richting) == (2, 'gewijzigd', 'desc')
 
@@ -1028,7 +1028,7 @@ def test_wijzig_tekstpage(monkeypatch):
     # user aan het project koppelen, maar nog geen page meegeven
     myworker = my.Worker.objects.create(project=myproject, assigned=myuser)
     with pytest.raises(ValueError) as exc:
-        core.wijzig_tekstpage(request, myproject.id, myactie.id) == ''
+        assert core.wijzig_tekstpage(request, myproject.id, myactie.id) == ''
         assert str(exc.value) == 'missing/wrong page'
 
     assert list(myactie.events.all()) == []
