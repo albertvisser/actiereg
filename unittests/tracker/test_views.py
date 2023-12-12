@@ -261,8 +261,29 @@ def test_add_action(monkeypatch):
     monkeypatch.setattr(views.core, 'is_user', lambda *x: True)
     assert views.add_action(request, project.id) == (request, project, 'nieuw')
 
-def _test_add_action_from_doctool():
-    pass
+def test_add_action_from_doctool(monkeypatch, capsys):
+    def mock_add_spec(*args):
+        print('called copy_existing_action_from_here with args', args)
+        return 'response x'
+    def mock_add_new(*args):
+        print('called add_new_action_on_both_sides with args', args)
+        return 'response y'
+    monkeypatch.setattr(views, 'HttpResponseRedirect' , lambda x: x)
+    monkeypatch.setattr(views.core, 'copy_existing_action_from_here', mock_add_spec)
+    monkeypatch.setattr(views.core, 'add_new_action_on_both_sides', mock_add_new)
+    proj = 'qq'
+    request = types.SimpleNamespace(POST={})
+    assert views.add_action_from_doctool(request, proj) == 'response y'
+    assert capsys.readouterr().out == ("called add_new_action_on_both_sides with args"
+                                       " ('qq', {}, '', '')\n")
+    request = types.SimpleNamespace(POST={'hFrom':'next', 'hUser':'me'})
+    assert views.add_action_from_doctool(request, proj) == 'response y'
+    assert capsys.readouterr().out == ("called add_new_action_on_both_sides with args"
+                                       f" ('qq', {request.POST}, 'me', 'next')\n")
+    request = types.SimpleNamespace(POST={'hFrom':'next', 'hUser':'me', 'tActie':'x'})
+    assert views.add_action_from_doctool(request, proj) == 'response x'
+    assert capsys.readouterr().out == ("called copy_existing_action_from_here with args"
+                                       " ('qq', 'x', 'me', 'next')\n")
 
 @pytest.mark.django_db
 def test_update_action(monkeypatch):

@@ -5,7 +5,7 @@ import contextlib
 import django.utils as dt
 from django.http import HttpResponse  # , HttpResponseRedirect
 from django.shortcuts import get_object_or_404
-# from django.core.exceptions import ObjectDoesNotExist - related to previous one - reconsider?
+from django.core.exceptions import ObjectDoesNotExist
 from django.http import Http404
 from django.db.models import Q  # wordt gebruikt bij samenstellen filterstring (get_acties)
 # from django.contrib import admin
@@ -511,6 +511,87 @@ def wijzig_detail(request, project, actie):
             # doc = f"{follow.split()[-1].strip()}meld/{doe}/{project.id}/{actie.id}/"
             doc = f"{follow.split()[-1].strip()}/meld/{doe}/{project.id}/{actie.id}/"
     return doc
+
+
+def copy_existing_action_from_here(proj, actnum, usernaam, vervolg):
+    "gebruik opgegeven actienummer bij opvoeren"
+    try:
+        actie = my.Actie.objects.get(nummer=actnum)
+    except my.Actie.DoesNotExist:
+        fout = f'Actie {actnum} bestaat niet'
+        if not vervolg:
+            msg = fout + " bij doorkoppelen vanuit DocTool zonder terugkeeradres"
+            # response = f"/{root}/{actie.id}/mld/{msg}/"
+            return f"/{proj}/{actnum}/mld/{msg}/"
+        else:
+            return vervolg.format('0', fout)
+    actie.starter = aut.User.objects.get(pk=1)
+    behandelaar = actie.starter
+    if usernaam:
+        with contextlib.suppress(ObjectDoesNotExist):
+            behandelaar = aut.User.objects.get(username=usernaam)
+    actie.lasteditor = behandelaar
+    actie.save()
+    if not vervolg:
+        msg = "Aangepast vanuit DocTool zonder terugkeeradres"
+        response = f"/{proj}/{actie.id}/mld/{msg}/"
+    else:
+        obj = my.Event.objects.filter(actie=actie.id).order_by('id')
+        text = f"{UIT_DOCTOOL} {vervolg.split('koppel')[0]}"
+        if obj:
+            obj[0].text += "; " + text
+            obj[0].save()
+        else:
+            store_event(text, actie, actie.starter)
+        response = vervolg.format(actie.id, actie.nummer)
+    return response
+
+
+def add_new_action_on_both_sides(proj, data, usernaam, vervolg):
+    "maak nieuw actienummer aan en voer op"
+    volgnr = 0
+    aant = my.Actie.objects.count()
+    nw_date = dt.timezone.now()
+    if aant:
+        last = my.Actie.objects.all()[aant - 1]
+        jaar, volgnr = last.nummer.split("-")
+        volgnr = int(volgnr) if int(jaar) == nw_date.year else 0
+    volgnr += 1
+    actie = my.Actie()
+    actie.project = my.Project.objects.get(pk=proj)
+    actie.nummer = f"{nw_date.year}-{volgnr:04}"
+    actie.start = nw_date
+    actie.starter = aut.User.objects.get(pk=1)
+    behandelaar = actie.starter
+    if usernaam:
+        with contextlib.suppress(ObjectDoesNotExist):
+            behandelaar = aut.User.objects.get(username=usernaam)
+    actie.behandelaar = behandelaar
+    actie.about = "testbevinding" if "bevinding" in vervolg else ""
+    actie.title = data.get("hMeld", "")
+    if "userwijz" in vervolg:
+        soort = "W"
+    elif "userprob" in vervolg:
+        soort = "P"
+    else:
+        soort = " "
+    actie.soort = my.Soort.objects.get(value=soort)
+    actie.status = my.Status.objects.get(value='0')
+    actie.lasteditor = actie.behandelaar
+    actie.melding = data.get("hOpm", "")
+    actie.save()
+    if vervolg:
+        store_event(f"{UIT_DOCTOOL} {vervolg.split('koppel')[0]}", actie, actie.starter)
+    store_event(f'titel: "{actie.title}"', actie, actie.starter)
+    store_event(f'categorie: "{actie.soort}"', actie, actie.starter)
+    store_event(f'status: "{actie.status}"', actie, actie.starter)
+
+    if vervolg:
+        response = vervolg.format(actie.id, actie.nummer)
+    else:
+        msg = "Opgevoerd vanuit DocTool zonder terugkeeradres"
+        response = f"/{proj}/{actie.id}/mld/{msg}/"
+    return response
 
 
 def build_full_message(mld, msg):

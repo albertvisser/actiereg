@@ -12,7 +12,7 @@ from django.http import QueryDict
 from tracker import core
 import tracker.models as my
 
-FIXDATE = datetime.datetime(2020, 1, 1)
+FIXDATE = datetime.datetime(2020, 1, 1, tzinfo=datetime.timezone.utc)
 
 def test_get_appropriate_login_message():
     noauth = types.SimpleNamespace(username='MyName', is_authenticated=False)
@@ -291,7 +291,6 @@ def test_apply_sorters():
                              richting ='asc')
     data = core.apply_sorters(my.Actie.objects.all(), my.SortOrder.objects.all())
     assert [x.nummer for x in data] == ['0001', '0003', '0002', '0004']
-
 
 @pytest.mark.django_db
 def test_store_event():
@@ -941,6 +940,143 @@ def test_wijzig_detail():
     assert not myactie3_nn.arch
     assert len(list(myactie3.events.all())) == 7
     assert list(myactie3.events.all())[-1].text == 'Actie herleefd'
+
+@pytest.mark.django_db
+def test_copy_existing_action_from_here(monkeypatch, capsys):
+    myproject = my.Project.objects.create(name='first')
+    myuser = auth.User.objects.create(username='me')
+    assert core.copy_existing_action_from_here(myproject.id, 1, myuser.username, '') == (
+            f'/{myproject.id}/1/mld/'
+            'Actie 1 bestaat niet bij doorkoppelen vanuit DocTool zonder terugkeeradres/')
+    assert core.copy_existing_action_from_here(myproject.id, 1, myuser.username,
+                                                '/doctool/new/{}/{}') == ('/doctool/new/0/'
+                                                                          'Actie 1 bestaat niet')
+    mysoort = my.Soort.objects.create(project=myproject, order=0, value='y', title='z')
+    mystatus = my.Status.objects.create(project=myproject, order=0, value=0, title='z')
+    myactie = my.Actie.objects.create(project=myproject, nummer='1', starter=myuser,
+                                      lasteditor=myuser,
+                                      soort=mysoort, status=mystatus, behandelaar=myuser)
+    assert core.copy_existing_action_from_here(myproject.id, myactie.id, 'mwah', '') == (
+            f'/{myproject.id}/{myactie.id}/mld/Aangepast vanuit DocTool zonder terugkeeradres/')
+    myactie_v2 = my.Actie.objects.get(pk=myactie.id)
+    assert myactie_v2.behandelaar == myuser
+    assert myactie_v2.lasteditor == myuser
+    newuser = auth.User.objects.create(username='mwah')
+    assert core.copy_existing_action_from_here(
+            myproject.id, myactie.id, 'mwah', '/doctool/koppel/{}/{}/') == (
+                    f'/doctool/koppel/{myactie.id}/{myactie.nummer}/')
+    myactie_v3 = my.Actie.objects.get(pk=myactie.id)
+    assert myactie_v3.behandelaar == myuser
+    assert myactie_v3.lasteditor == newuser
+    events = myactie_v3.events.all()
+    assert len(events) == len([events[0]])
+    assert (events[0].text, events[0].starter) == (f'{core.UIT_DOCTOOL} /doctool/', myuser)
+    # nu nog een dat er al wel events waren
+    events[0].text = 'text1'
+    events[0].save()
+    myevent2 = my.Event.objects.create(actie=myactie_v3, starter=myuser, text='text2')
+    events = myactie_v3.events.all()  # even controleren
+    assert len(events) == len([events[0], myevent2])
+    assert (events[0].text, events[1].text) == ('text1', 'text2')
+    # nu dan de test
+    assert core.copy_existing_action_from_here(
+            myproject.id, myactie.id, 'mwah', '/doctool/koppel/{}/{}/') == (
+                    f'/doctool/koppel/{myactie.id}/{myactie.nummer}/')
+    myactie_v4 = my.Actie.objects.get(pk=myactie.id)
+    assert myactie_v4.behandelaar == myuser
+    assert myactie_v4.lasteditor == newuser
+    events = myactie_v4.events.all()
+    assert len(events) == len([events[0], events[1]])
+    assert (events[0].text, events[0].starter) == (f'text1; {core.UIT_DOCTOOL} /doctool/', myuser)
+
+@pytest.mark.django_db
+def test_add_new_action_on_both_sides(monkeypatch, capsys):
+    def mock_store(*args):
+        print('called store_event with args', *args)
+    monkeypatch.setattr(core, 'store_event', mock_store)
+    monkeypatch.setattr(core.dt.timezone, 'now', lambda *x: FIXDATE)
+    myproject = my.Project.objects.create(name='first')
+    mysoort = my.Soort.objects.create(project=myproject, order=0, value=' ', title='onbekend')
+    mysoortW = my.Soort.objects.create(project=myproject, order=1, value='W', title='wijziging')
+    mysoortP = my.Soort.objects.create(project=myproject, order=2, value='P', title='probleem')
+    mystatus = my.Status.objects.create(project=myproject, order=0, value=0, title='opgevoerd')
+    actie_aant = len(myproject.acties.all())
+    myuser = auth.User.objects.create(username='me')
+    assert core.add_new_action_on_both_sides(myproject.id, {}, '', '') == (
+            f'/{myproject.id}/1/mld/Opgevoerd vanuit DocTool zonder terugkeeradres/')
+    acties = myproject.acties.all()
+    actie_aant += 1
+    assert len(acties) == actie_aant
+    new_actie = acties[actie_aant - 1]
+    assert (new_actie.nummer, new_actie.start, new_actie.starter) == ('2020-0001', FIXDATE, myuser)
+    assert (new_actie.behandelaar, new_actie.about, new_actie.title) == (myuser, '', '')
+    assert (new_actie.soort, new_actie.status, new_actie.lasteditor) == (mysoort, mystatus, myuser)
+    assert new_actie.melding == ''
+    assert capsys.readouterr().out == ('called store_event with args titel: "" 2020-0001 me\n'
+                                       'called store_event with args categorie: "onbekend"'
+                                       ' 2020-0001 me\n'
+                                       'called store_event with args status: "opgevoerd"'
+                                       ' 2020-0001 me\n')
+
+    assert core.add_new_action_on_both_sides(myproject.id, {'hMeld': 'request', 'hOpm': 'this'},
+                                             'you', '/doctool/userwijz/koppel/{}/{}/') == (
+                                                     '/doctool/userwijz/koppel/2/2020-0002/')
+    acties = myproject.acties.all()
+    actie_aant += 1
+    assert len(acties) == actie_aant
+    new_actie = acties[actie_aant - 1]
+    assert (new_actie.nummer, new_actie.start, new_actie.starter) == ('2020-0002', FIXDATE, myuser)
+    assert (new_actie.behandelaar, new_actie.about, new_actie.title) == (myuser, '', 'request')
+    assert (new_actie.soort, new_actie.status, new_actie.lasteditor) == (mysoortW, mystatus, myuser)
+    assert new_actie.melding == 'this'
+    assert capsys.readouterr().out == ('called store_event with args Actie opgevoerd vanuit Doctool'
+                                       ' /doctool/userwijz/ 2020-0002 me\n'
+                                       'called store_event with args titel: "request" 2020-0002 me\n'
+                                       'called store_event with args categorie: "wijziging"'
+                                       ' 2020-0002 me\n'
+                                       'called store_event with args status: "opgevoerd"'
+                                       ' 2020-0002 me\n')
+
+    myuser2 = auth.User.objects.create(username='you')
+    assert core.add_new_action_on_both_sides(myproject.id, {'hMeld': 'issue', 'hOpm': 'this'},
+                                             'you', '/doctool/userprob/koppel/{}/{}/') == (
+                                                     '/doctool/userprob/koppel/3/2020-0003/')
+    acties = myproject.acties.all()
+    actie_aant += 1
+    assert len(acties) == actie_aant
+    new_actie = acties[actie_aant - 1]
+    assert (new_actie.nummer, new_actie.start, new_actie.starter) == ('2020-0003', FIXDATE, myuser)
+    assert (new_actie.behandelaar, new_actie.about, new_actie.title) == (myuser2, '', 'issue')
+    assert (new_actie.soort, new_actie.status, new_actie.lasteditor) == (mysoortP, mystatus, myuser2)
+    assert new_actie.melding == 'this'
+    assert capsys.readouterr().out == ('called store_event with args Actie opgevoerd vanuit Doctool'
+                                       ' /doctool/userprob/ 2020-0003 me\n'
+                                       'called store_event with args titel: "issue" 2020-0003 me\n'
+                                       'called store_event with args categorie: "probleem"'
+                                       ' 2020-0003 me\n'
+                                       'called store_event with args status: "opgevoerd"'
+                                       ' 2020-0003 me\n')
+
+    assert core.add_new_action_on_both_sides(myproject.id, {'hMeld': 'found some', 'hOpm': 'this'},
+                                             'you', '/doctool/bevinding/koppel/{}/{}/') == (
+                                                     '/doctool/bevinding/koppel/4/2020-0004/')
+    acties = myproject.acties.all()
+    actie_aant += 1
+    assert len(acties) == actie_aant
+    new_actie = acties[actie_aant - 1]
+    assert (new_actie.nummer, new_actie.start, new_actie.starter) == ('2020-0004', FIXDATE, myuser)
+    assert (new_actie.behandelaar, new_actie.about, new_actie.title) == (myuser2, 'testbevinding',
+                                                                         'found some')
+    assert (new_actie.soort, new_actie.status, new_actie.lasteditor) == (mysoort, mystatus, myuser2)
+    assert new_actie.melding == 'this'
+    assert capsys.readouterr().out == ('called store_event with args Actie opgevoerd vanuit Doctool'
+                                       ' /doctool/bevinding/ 2020-0004 me\n'
+                                       'called store_event with args titel: "found some"'
+                                       ' 2020-0004 me\n'
+                                       'called store_event with args categorie: "onbekend"'
+                                       ' 2020-0004 me\n'
+                                       'called store_event with args status: "opgevoerd"'
+                                       ' 2020-0004 me\n')
 
 def test_build_full_message():
     assert core.build_full_message([], 'melding') == 'melding'
