@@ -1,3 +1,5 @@
+"""unittests for ./tracker/views.py
+"""
 import os
 import types
 import datetime
@@ -14,6 +16,8 @@ FIXDATE = datetime.datetime(2020, 1, 1)
 pytestmark = pytest.mark.django_db
 
 def test_index(monkeypatch):
+    """unittest for views.index
+    """
     monkeypatch.setattr(views, 'render', lambda *x: x)
     myuser = auth.User.objects.create(username='me')
     myuser2 = auth.User.objects.create(username='myself')
@@ -60,7 +64,11 @@ def test_index(monkeypatch):
              'new': [], 'msg': 'massage<br/><br/>login_message', 'who': myuser})
 
 def test_log_out(monkeypatch, capsys):
+    """unittest for views.log_out
+    """
     def mock_logout(*args):
+        """stub
+        """
         print('called logout()')
     monkeypatch.setattr(views, 'logout', mock_logout)
     monkeypatch.setattr(views, 'render', lambda *x: x)
@@ -75,6 +83,8 @@ def test_log_out(monkeypatch, capsys):
     assert capsys.readouterr().out == 'called logout()\n'
 
 def test_new_project(monkeypatch):
+    """unittest for views.new_project
+    """
     monkeypatch.setattr(views.core, 'not_logged_in_message', lambda x: x)
     monkeypatch.setattr(views, 'render', lambda *x: x)
     request = types.SimpleNamespace(user=auth.AnonymousUser())
@@ -84,7 +94,11 @@ def test_new_project(monkeypatch):
     assert views.new_project(request) == (request, 'nieuw.html', {})
 
 def test_add_project(monkeypatch, capsys):
+    """unittest for views.add_project
+    """
     def mock_add_project(*args):
+        """stub
+        """
         print('called core.add_project with args', args)
     monkeypatch.setattr(views.core, 'add_project', mock_add_project)
     monkeypatch.setattr(views, 'HttpResponseRedirect', lambda x: x)
@@ -94,7 +108,11 @@ def test_add_project(monkeypatch, capsys):
     assert capsys.readouterr().out == "called core.add_project with args ('new', 'project')\n"
 
 def test_add_from_doctool(monkeypatch, capsys):
+    """unittest for views.add_from_doctool
+    """
     def mock_add_project(*args):
+        """stub
+        """
         print('called core.add_project with args', args)
         return 2
     monkeypatch.setattr(views.core, 'add_project', mock_add_project)
@@ -105,7 +123,9 @@ def test_add_from_doctool(monkeypatch, capsys):
             f"{views.SITES['doctool']}/1/meld/Project new is aangemaakt met id 2/")
     assert capsys.readouterr().out == "called core.add_project with args ('new', 'project')\n"
 
-def test_show_project(monkeypatch, capsys):
+def test_show_project(monkeypatch):
+    """unittest for views.show_project
+    """
     monkeypatch.setattr(views.core, 'get_appropriate_login_message', lambda *x: 'login_message')
     monkeypatch.setattr(views.core, 'build_pagedata_for_project', lambda *x: x)
     monkeypatch.setattr(views, 'render', lambda *x: x)
@@ -118,7 +138,9 @@ def test_show_project(monkeypatch, capsys):
                                                    (request, 'proj', 'login_messageKlik op een'
                                                     ' actienummer om de details te bekijken.'))
 
-def test_show_settings(monkeypatch, capsys):
+def test_show_settings(monkeypatch):
+    """unittest for views.show_settings
+    """
     monkeypatch.setattr(views.core, 'no_authorization_message', lambda *x: x)
     monkeypatch.setattr(views.core, 'build_pagedata_for_settings', lambda *x: x)
     monkeypatch.setattr(views, 'render', lambda *x: x)
@@ -131,7 +153,11 @@ def test_show_settings(monkeypatch, capsys):
                                                     (request, 'proj'))
 
 def test_setusers(monkeypatch, capsys):
+    """unittest for views.setusers
+    """
     def mock_set_users(*args):
+        """stub
+        """
         print('called core.set_users')
     monkeypatch.setattr(views.core, 'no_authorization_message', lambda *x: x)
     monkeypatch.setattr(views.core, 'set_users', mock_set_users)
@@ -145,7 +171,11 @@ def test_setusers(monkeypatch, capsys):
     assert capsys.readouterr().out == "called core.set_users\n"
 
 def test_settabs(monkeypatch, capsys):
+    """unittest for views.settabs
+    """
     def mock_set_tabs(*args):
+        """stub
+        """
         print('called core.set_tabs')
     monkeypatch.setattr(views.core, 'no_authorization_message', lambda *x: x)
     monkeypatch.setattr(views.core, 'set_tabs', mock_set_tabs)
@@ -159,7 +189,11 @@ def test_settabs(monkeypatch, capsys):
     assert capsys.readouterr().out == "called core.set_tabs\n"
 
 def test_settypes(monkeypatch, capsys):
+    """unittest for views.settypes
+    """
     def mock_set_types(*args):
+        """stub
+        """
         print('called core.set_types')
     monkeypatch.setattr(views.core, 'no_authorization_message', lambda *x: x)
     monkeypatch.setattr(views.core, 'set_types', mock_set_types)
@@ -173,7 +207,11 @@ def test_settypes(monkeypatch, capsys):
     assert capsys.readouterr().out == "called core.set_types\n"
 
 def test_setstats(monkeypatch, capsys):
+    """unittest for views.setstats
+    """
     def mock_set_stats(*args):
+        """stub
+        """
         print('called core.set_stats')
     monkeypatch.setattr(views.core, 'no_authorization_message', lambda *x: x)
     monkeypatch.setattr(views.core, 'set_stats', mock_set_stats)
@@ -187,6 +225,8 @@ def test_setstats(monkeypatch, capsys):
     assert capsys.readouterr().out == "called core.set_stats\n"
 
 def test_show_selection(monkeypatch):
+    """unittest for views.show_selection
+    """
     # noauth = types.SimpleNamespace(username='MyName', is_authenticated=False)
     monkeypatch.setattr(views.core, 'logged_in_message', lambda *x: 'logged in')
     # monkeypatch.setattr(views.core, 'not_logged_in_message', lambda *x: x)
@@ -204,7 +244,11 @@ def test_show_selection(monkeypatch):
             request, 'tracker/select.html', (request, 'proj', 'logged in'))
 
 def test_setselection(monkeypatch, capsys):
+    """unittest for views.setselection
+    """
     def mock_setselection(*args):
+        """stub
+        """
         print('called core.setselection with args', args)
     monkeypatch.setattr(views.core, 'setselection', mock_setselection)
     monkeypatch.setattr(views, 'HttpResponseRedirect', lambda x: x)
@@ -214,6 +258,8 @@ def test_setselection(monkeypatch, capsys):
     assert capsys.readouterr().out == f"called core.setselection with args ({request}, 'proj')\n"
 
 def test_show_ordering(monkeypatch):
+    """unittest for views.show_ordering
+    """
     monkeypatch.setattr(views.core, 'logged_in_message', lambda *x: 'logged in')
     monkeypatch.setattr(views, 'render', lambda *x: x)
     myuser = auth.User.objects.create(username='me')
@@ -223,7 +269,11 @@ def test_show_ordering(monkeypatch):
             request, 'tracker/order.html', (request, 'proj', 'logged in'))
 
 def test_setordering(monkeypatch, capsys):
+    """unittest for views.setordering
+    """
     def mock_setordering(*args):
+        """stub
+        """
         print('called core.setordering with args', args)
     monkeypatch.setattr(views.core, 'setordering', mock_setordering)
     monkeypatch.setattr(views, 'HttpResponseRedirect', lambda x: x)
@@ -233,6 +283,8 @@ def test_setordering(monkeypatch, capsys):
     assert capsys.readouterr().out == f"called core.setordering with args ({request}, 'proj')\n"
 
 def test_new_action(monkeypatch):
+    """unittest for views.new_action
+    """
     monkeypatch.setattr(views, 'render', lambda *x: x)
     myuser = auth.User.objects.create(username='me')
     request = types.SimpleNamespace(user=myuser)
@@ -241,6 +293,8 @@ def test_new_action(monkeypatch):
             request, 'tracker/actie.html', (request, 'proj', 'new', 'message'))
 
 def test_show_action(monkeypatch):
+    """unittest for views.show_action
+    """
     monkeypatch.setattr(views, 'render', lambda *x: x)
     myuser = auth.User.objects.create(username='me')
     request = types.SimpleNamespace(user=myuser)
@@ -250,8 +304,10 @@ def test_show_action(monkeypatch):
 
 @pytest.mark.django_db
 def test_add_action(monkeypatch):
+    """unittest for views.add_action
+    """
     project = my.Project.objects.create(name='first')
-    monkeypatch.setattr(views, 'HttpResponseRedirect' , lambda x: x)
+    monkeypatch.setattr(views, 'HttpResponseRedirect', lambda x: x)
     monkeypatch.setattr(views.core, 'wijzig_detail', lambda x, y, z: (x, y, z))
     monkeypatch.setattr(views.core, 'no_authorization_message', lambda *x: 'noauth')
     myuser = auth.User.objects.create(username='me')
@@ -262,13 +318,19 @@ def test_add_action(monkeypatch):
     assert views.add_action(request, project.id) == (request, project, 'nieuw')
 
 def test_add_action_from_doctool(monkeypatch, capsys):
+    """unittest for views.add_action_from_doctool
+    """
     def mock_add_spec(*args):
+        """stub
+        """
         print('called copy_existing_action_from_here with args', args)
         return 'response x'
     def mock_add_new(*args):
+        """stub
+        """
         print('called add_new_action_on_both_sides with args', args)
         return 'response y'
-    monkeypatch.setattr(views, 'HttpResponseRedirect' , lambda x: x)
+    monkeypatch.setattr(views, 'HttpResponseRedirect', lambda x: x)
     monkeypatch.setattr(views.core, 'copy_existing_action_from_here', mock_add_spec)
     monkeypatch.setattr(views.core, 'add_new_action_on_both_sides', mock_add_new)
     proj = 'qq'
@@ -276,19 +338,21 @@ def test_add_action_from_doctool(monkeypatch, capsys):
     assert views.add_action_from_doctool(request, proj) == 'response y'
     assert capsys.readouterr().out == ("called add_new_action_on_both_sides with args"
                                        " ('qq', {}, '', '')\n")
-    request = types.SimpleNamespace(POST={'hFrom':'next', 'hUser':'me'})
+    request = types.SimpleNamespace(POST={'hFrom': 'next', 'hUser': 'me'})
     assert views.add_action_from_doctool(request, proj) == 'response y'
     assert capsys.readouterr().out == ("called add_new_action_on_both_sides with args"
                                        f" ('qq', {request.POST}, 'me', 'next')\n")
-    request = types.SimpleNamespace(POST={'hFrom':'next', 'hUser':'me', 'tActie':'x'})
+    request = types.SimpleNamespace(POST={'hFrom': 'next', 'hUser': 'me', 'tActie': 'x'})
     assert views.add_action_from_doctool(request, proj) == 'response x'
     assert capsys.readouterr().out == ("called copy_existing_action_from_here with args"
                                        " ('qq', 'x', 'me', 'next')\n")
 
 @pytest.mark.django_db
 def test_update_action(monkeypatch):
+    """unittest for views.update_action
+    """
     project = my.Project.objects.create(name='first')
-    monkeypatch.setattr(views, 'HttpResponseRedirect' , lambda x: x)
+    monkeypatch.setattr(views, 'HttpResponseRedirect', lambda x: x)
     monkeypatch.setattr(views.core, 'wijzig_detail', lambda x, y, z: (x, y, z))
     monkeypatch.setattr(views.core, 'no_authorization_message', lambda *x: 'noauth')
     myuser = auth.User.objects.create(username='me')
@@ -299,6 +363,8 @@ def test_update_action(monkeypatch):
     assert views.update_action(request, project.id, 'actie') == (request, project, 'actie')
 
 def test_show_meld(monkeypatch):
+    """unittest for views.show_meld
+    """
     monkeypatch.setattr(views.core, 'build_pagedata_for_tekstpage', lambda *x: x)
     monkeypatch.setattr(views, 'render', lambda *x: x)
     myuser = auth.User.objects.create(username='me')
@@ -307,6 +373,8 @@ def test_show_meld(monkeypatch):
             request, 'tracker/tekst.html', (request, 'proj', 'actie', 'meld', 'melding'))
 
 def test_show_oorz(monkeypatch):
+    """unittest for views.show_oorz
+    """
     monkeypatch.setattr(views.core, 'build_pagedata_for_tekstpage', lambda *x: x)
     monkeypatch.setattr(views, 'render', lambda *x: x)
     myuser = auth.User.objects.create(username='me')
@@ -315,6 +383,8 @@ def test_show_oorz(monkeypatch):
             request, 'tracker/tekst.html', (request, 'proj', 'actie', 'oorz', 'melding'))
 
 def test_show_opl(monkeypatch):
+    """unittest for views.show_opl
+    """
     monkeypatch.setattr(views.core, 'build_pagedata_for_tekstpage', lambda *x: x)
     monkeypatch.setattr(views, 'render', lambda *x: x)
     myuser = auth.User.objects.create(username='me')
@@ -323,6 +393,8 @@ def test_show_opl(monkeypatch):
             request, 'tracker/tekst.html', (request, 'proj', 'actie', 'opl', 'melding'))
 
 def test_show_verv(monkeypatch):
+    """unittest for views.show_verv
+    """
     monkeypatch.setattr(views.core, 'build_pagedata_for_tekstpage', lambda *x: x)
     monkeypatch.setattr(views, 'render', lambda *x: x)
     myuser = auth.User.objects.create(username='me')
@@ -331,34 +403,44 @@ def test_show_verv(monkeypatch):
             request, 'tracker/tekst.html', (request, 'proj', 'actie', 'verv', 'melding'))
 
 def test_update_meld(monkeypatch):
-    monkeypatch.setattr(views, 'HttpResponseRedirect' , lambda x: x)
+    """unittest for views.update_meld
+    """
+    monkeypatch.setattr(views, 'HttpResponseRedirect', lambda x: x)
     monkeypatch.setattr(views.core, 'wijzig_tekstpage', lambda x, y, z, a: (x, y, z, a))
     myuser = auth.User.objects.create(username='me')
     request = types.SimpleNamespace(user=myuser)
     assert views.update_meld(request, 'proj', 'actie') == (request, 'proj', 'actie', 'meld')
 
 def test_update_oorz(monkeypatch):
-    monkeypatch.setattr(views, 'HttpResponseRedirect' , lambda x: x)
+    """unittest for views.update_oorz
+    """
+    monkeypatch.setattr(views, 'HttpResponseRedirect', lambda x: x)
     monkeypatch.setattr(views.core, 'wijzig_tekstpage', lambda x, y, z, a: (x, y, z, a))
     myuser = auth.User.objects.create(username='me')
     request = types.SimpleNamespace(user=myuser)
     assert views.update_oorz(request, 'proj', 'actie') == (request, 'proj', 'actie', 'oorz')
 
 def test_update_opl(monkeypatch):
-    monkeypatch.setattr(views, 'HttpResponseRedirect' , lambda x: x)
+    """unittest for views.update_opl
+    """
+    monkeypatch.setattr(views, 'HttpResponseRedirect', lambda x: x)
     monkeypatch.setattr(views.core, 'wijzig_tekstpage', lambda x, y, z, a: (x, y, z, a))
     myuser = auth.User.objects.create(username='me')
     request = types.SimpleNamespace(user=myuser)
     assert views.update_opl(request, 'proj', 'actie') == (request, 'proj', 'actie', 'opl')
 
 def test_update_verv(monkeypatch):
-    monkeypatch.setattr(views, 'HttpResponseRedirect' , lambda x: x)
+    """unittest for views.update_verv
+    """
+    monkeypatch.setattr(views, 'HttpResponseRedirect', lambda x: x)
     monkeypatch.setattr(views.core, 'wijzig_tekstpage', lambda x, y, z, a: (x, y, z, a))
     myuser = auth.User.objects.create(username='me')
     request = types.SimpleNamespace(user=myuser)
     assert views.update_verv(request, 'proj', 'actie') == (request, 'proj', 'actie', 'verv')
 
 def test_show_events(monkeypatch):
+    """unittest for views.show_events
+    """
     monkeypatch.setattr(views.core, 'build_pagedata_for_events', lambda *x, **y: (x, y))
     monkeypatch.setattr(views, 'render', lambda *x: x)
     myuser = auth.User.objects.create(username='me')
@@ -372,6 +454,8 @@ def test_show_events(monkeypatch):
             request, 'tracker/voortgang.html', ((request, 'proj', 'actie'), {'msg': 'melding'}))
 
 def test_new_event(monkeypatch):
+    """unittest for views.new_event
+    """
     monkeypatch.setattr(views.core, 'build_pagedata_for_events', lambda *x, **y: (x, y))
     monkeypatch.setattr(views, 'render', lambda *x: x)
     myuser = auth.User.objects.create(username='me')
@@ -380,6 +464,8 @@ def test_new_event(monkeypatch):
             request, 'tracker/voortgang.html', ((request, 'proj', 'actie'), {'event': 'nieuw'}))
 
 def test_edit_event(monkeypatch):
+    """unittest for views.edit_event
+    """
     monkeypatch.setattr(views.core, 'build_pagedata_for_events', lambda *x, **y: (x, y))
     monkeypatch.setattr(views, 'render', lambda *x: x)
     myuser = auth.User.objects.create(username='me')
@@ -388,14 +474,18 @@ def test_edit_event(monkeypatch):
             request, 'tracker/voortgang.html', ((request, 'proj', 'actie'), {'event': 15}))
 
 def test_add_event(monkeypatch):
-    monkeypatch.setattr(views, 'HttpResponseRedirect' , lambda x: x)
+    """unittest for views.add_event
+    """
+    monkeypatch.setattr(views, 'HttpResponseRedirect', lambda x: x)
     monkeypatch.setattr(views.core, 'wijzig_events', lambda x, y, z, a: (x, y, z, a))
     myuser = auth.User.objects.create(username='me')
     request = types.SimpleNamespace(user=myuser)
     assert views.add_event(request, 'proj', 'actie') == (request, 'proj', 'actie', 'nieuw')
 
 def test_update_event(monkeypatch):
-    monkeypatch.setattr(views, 'HttpResponseRedirect' , lambda x: x)
+    """unittest for views.update_event
+    """
+    monkeypatch.setattr(views, 'HttpResponseRedirect', lambda x: x)
     monkeypatch.setattr(views.core, 'wijzig_events', lambda x, y, z, a: (x, y, z, a))
     myuser = auth.User.objects.create(username='me')
     request = types.SimpleNamespace(user=myuser)
