@@ -1046,7 +1046,7 @@ def test_wijzig_detail():
                                                        'categorie gewijzigd in "new"',
                                                        'status gewijzigd in "new"']
     with pytest.raises(IndexError):
-        myactie.events.all()[3]
+        myactie2.events.all()[3]
 
     myactie3 = my.Actie.objects.create(project=myproject, nummer='z', starter=myuser,
                                       lasteditor=myuser,
@@ -1061,7 +1061,7 @@ def test_wijzig_detail():
     assert myactie3_n.arch
     # assert len(list(myactie3.events.all())) == 6
     with pytest.raises(IndexError):
-        myactie.events.all()[6]
+        myactie3.events.all()[6]
     assert list(myactie3.events.all())[-1].text == 'Actie gearchiveerd'
 
     request = types.SimpleNamespace(POST={'nummer': 'z', 'about': 'a', 'title': 't', 'user': "1",
@@ -1072,7 +1072,7 @@ def test_wijzig_detail():
     assert not myactie3_nn.arch
     # assert len(list(myactie3.events.all())) == 7
     with pytest.raises(IndexError):
-        myactie.events.all()[7]
+        myactie3.events.all()[7]
     assert list(myactie3.events.all())[-1].text == 'Actie herleefd'
 
 @pytest.mark.django_db
