@@ -2,7 +2,7 @@
 """
 from django.shortcuts import render
 from django.http import HttpResponse, HttpResponseRedirect
-from django.contrib.auth import logout  #, models as aut
+from django.contrib.auth import logout
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
 import tracker.models as my
@@ -89,7 +89,8 @@ def show_project(request, proj, msg=''):
 def show_settings(request, proj):
     """settings scherm opbouwen
     """
-    if not core.is_admin(proj, request.user):
+    project = my.Project.objects.get(pk=proj)
+    if not core.is_admin(project, request.user):
         return core.no_authorization_message('instellingen te wijzigen', proj)
     page_data = core.build_pagedata_for_settings(request, proj)
     return render(request, 'tracker/settings.html', page_data)
@@ -99,7 +100,8 @@ def show_settings(request, proj):
 def setusers(request, proj):
     """users aan project koppelen
     """
-    if not core.is_admin(proj, request.user):
+    project = my.Project.objects.get(pk=proj)
+    if not core.is_admin(project, request.user):
         return core.no_authorization_message('instellingen te wijzigen', proj)
     core.set_users(request, proj)
     return HttpResponseRedirect(f"/{proj}/settings/")
@@ -109,7 +111,8 @@ def setusers(request, proj):
 def settabs(request, proj):
     """tab titels aanpassen en terug naar settings scherm
     """
-    if not core.is_admin(proj, request.user):
+    project = my.Project.objects.get(pk=proj)
+    if not core.is_admin(project, request.user):
         return core.no_authorization_message('instellingen te wijzigen', proj)
     core.set_tabs(request)
     return HttpResponseRedirect(f"/{proj}/settings/")
@@ -119,7 +122,8 @@ def settabs(request, proj):
 def settypes(request, proj):
     """soort-gegevens aanpassen en terug naar settings scherm
     """
-    if not core.is_admin(proj, request.user):
+    project = my.Project.objects.get(pk=proj)
+    if not core.is_admin(project, request.user):
         return core.no_authorization_message('instellingen te wijzigen', proj)
     core.set_types(request, proj)
     return HttpResponseRedirect(f"/{proj}/settings/")
@@ -129,7 +133,8 @@ def settypes(request, proj):
 def setstats(request, proj):
     """status-gegevens aanpassen en terug naar settings scherm
     """
-    if not core.is_admin(proj, request.user):
+    project = my.Project.objects.get(pk=proj)
+    if not core.is_admin(project, request.user):
         return core.no_authorization_message('instellingen te wijzigen', proj)
     core.set_stats(request, proj)
     return HttpResponseRedirect(f"/{proj}/settings/")

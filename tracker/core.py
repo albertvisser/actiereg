@@ -22,6 +22,7 @@ def add_project(name, desc):
         add_default_pages()
     add_default_soorten(newproj)
     add_default_statussen(newproj)
+    add_auth_for_project(newproj)
     return newproj.id
 
 
@@ -60,6 +61,18 @@ def add_default_statussen(project):
                     (4, 4, "afgehandeld - opgelost"),
                     (5, 5, "afgehandeld - vervolg")]:
         my.Status.objects.create(project=project, order=x, value=y, title=z)
+
+
+def add_auth_for_project(project):
+    """add groups to cluster user permissions
+    """
+    group = aut.Group.objects.create(name=f'{project.name}_admin')
+    for permit in aut.Permission.objects.filter(content_type__app_label="tracker"):
+        group.permissions.add(permit)
+    group = aut.Group.objects.create(name=f'{project.name}_user')
+    for permit in aut.Permission.objects.filter(content_type__app_label="tracker").filter(
+            content_type__model__in=['actie', 'event', 'sortorder', 'selection']):
+        group.permissions.add(permit)
 
 
 def build_pagedata_for_project(request, proj, msg):
@@ -523,8 +536,7 @@ def copy_existing_action_from_here(proj, actnum, usernaam, vervolg):
             msg = fout + " bij doorkoppelen vanuit DocTool zonder terugkeeradres"
             # response = f"/{root}/{actie.id}/mld/{msg}/"
             return f"/{proj}/{actnum}/mld/{msg}/"
-        else:
-            return vervolg.format('0', fout)
+        return vervolg.format('0', fout)
     actie.starter = aut.User.objects.get(pk=1)
     behandelaar = actie.starter
     if usernaam:
@@ -814,16 +826,14 @@ def is_user(project, user):
     # return False
 
 
-def is_admin(project, user):  # TODO moet eigenlijk zijn: heeft admin rechten voor dit project
+def is_admin(project, user):
     """geeft indicatie terug of de betreffende gebruiker
     acties en settings mag wijzigen
     """
-    return user.is_staff   # vooralsnog even algemene admin i.p.v. project admin
-    # test = root + "_admin"
-    # for grp in user.groups.all():
-    #     if grp.name == test:
-    #         return True     # , test, grp.name  -- why the rest?
-    # return False    # , test, str(user.groups.all()) - why the rest?
+    for grp in user.groups.all():
+        if grp.name == f'{project.name}_admin':
+            return True
+    return False
 
 
 def filter_data_on_nummer(data, seltest):
