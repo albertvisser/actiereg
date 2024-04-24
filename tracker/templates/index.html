@@ -65,22 +65,4 @@ span.clear {
 {% if user.is_staff %}
   <a href="/new/" title="nieuw"><h6>Maak een nieuw project aan</h6></a>
 {% endif %}
-{% if new %}
-  <div>
-    <h5>aangevraagde projecten:</h5>
-    {% for app in new %}
-      <div>
-	{{app.name|capfirst}}: {{app.desc}}
-      </div>
-    {% endfor %}
-    {% if user.is_staff %}
-    <div><br>De view om projecten toe te voegen werkt helaas nog niet helemaal<br/>
-    Dus het moet voorlopig nog offline (met de server gestopt zodat je bij de database kunt)<br/>
-    Voer hiervoor het script `newapp.py` uit met als argument de projectnaam
-    (of "all" voor alles dat er openstaat) en herstart daarna de server<br/></div>
-    {% else %}
-    <div><br/>Nieuwe projecten moeten handmatig worden toegevoegd, dus kan even duren</div>
-    {% endif %}
-  </div>
-{% endif %}
 {% endblock %}
