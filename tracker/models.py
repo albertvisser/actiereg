@@ -37,8 +37,8 @@ class Status(models.Model):
     initiële set waarden, kan door projectadmin aangepast worden"""
     project = models.ForeignKey(Project, related_name="status", on_delete=models.CASCADE)
     title = models.CharField(max_length=32)
-    value = models.PositiveSmallIntegerField(unique=True)
-    order = models.PositiveSmallIntegerField(unique=True)
+    value = models.PositiveSmallIntegerField()
+    order = models.PositiveSmallIntegerField()
 
     def __str__(self):
         return self.title
@@ -49,8 +49,8 @@ class Soort(models.Model):
     initiële set waarden, kan door projectadmin aangepast worden"""
     project = models.ForeignKey(Project, related_name="soort", on_delete=models.CASCADE)
     title = models.CharField(max_length=32)
-    value = models.CharField(max_length=1, unique=True)
-    order = models.PositiveSmallIntegerField(unique=True)
+    value = models.CharField(max_length=1)
+    order = models.PositiveSmallIntegerField()
 
     def __str__(self):
         return self.title
