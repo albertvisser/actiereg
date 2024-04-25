@@ -7,17 +7,19 @@ import pytest
 import django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'actiereg.settings')
 django.setup()
-from django.contrib.auth import models as auth
-from django.core.exceptions import ObjectDoesNotExist
-from django.http.response import Http404
+# from django.contrib.auth import models as auth
+# from django.core.exceptions import ObjectDoesNotExist
+# from django.http.response import Http404
 from django.http import QueryDict
 from tracker import core as testee
-import tracker.models as my
+# import tracker.models as my
+auth = testee.auth
+my = testee.my
 
 FIXDATE = datetime.datetime(2020, 1, 1, tzinfo=datetime.timezone.utc)
 
 def test_get_appropriate_login_message():
-    """unittest for testee.get_appropriate_login_message
+    """unittest for core.get_appropriate_login_message
     """
     noauth = types.SimpleNamespace(username='MyName', is_authenticated=False)
     assert testee.get_appropriate_login_message(noauth) == (
@@ -29,7 +31,7 @@ def test_get_appropriate_login_message():
             ' Klik <a href="/logout/?next=/1/actie/">hier</a> om uit te loggen. ')
 
 def test_no_authorization_message(monkeypatch):
-    """unittest for testee.no_authorization_message
+    """unittest for core.no_authorization_message
     """
     monkeypatch.setattr(testee, 'HttpResponse', lambda x: x)
     assert testee.no_authorization_message('iets te doen') == (
@@ -40,7 +42,7 @@ def test_no_authorization_message(monkeypatch):
             'Klik <a href="/1/">hier</a> om door te gaan')
 
 def test_logged_in_message():
-    """unittest for testee.logged_in_message
+    """unittest for core.logged_in_message
     """
     class MockRequest:
         """stub
@@ -54,7 +56,7 @@ def test_logged_in_message():
             'Klik <a href="/1/">hier</a> om door te gaan')
 
 def test_not_logged_in_message(monkeypatch):
-    """unittest for testee.not_logged_in_message
+    """unittest for core.not_logged_in_message
     """
     monkeypatch.setattr(testee, 'HttpResponse', lambda x: x)
     assert testee.not_logged_in_message('iets te doen') == (
@@ -67,7 +69,7 @@ def test_not_logged_in_message(monkeypatch):
             ', <a href="/1/">hier</a> om terug te gaan.<body></html>')
 
 def test_determine_readonly(monkeypatch):
-    """unittest for testee.determine_readonly
+    """unittest for core.determine_readonly
     """
     monkeypatch.setattr(testee, 'is_user', lambda *x: False)
     assert testee.determine_readonly('project', 'user')
@@ -76,7 +78,7 @@ def test_determine_readonly(monkeypatch):
 
 @pytest.mark.django_db
 def test_is_user():
-    """unittest for testee.is_user
+    """unittest for core.is_user
     """
     user = auth.User.objects.create(username='me')
     project = my.Project.objects.create(name='first')
@@ -89,7 +91,7 @@ def test_is_user():
 
 @pytest.mark.django_db
 def test_is_admin():
-    """unittest for testee.is_admin
+    """unittest for core.is_admin
     """
     user = auth.User.objects.create(username='me')
     project = my.Project.objects.create(name='first')
@@ -103,7 +105,7 @@ def test_is_admin():
 
 @pytest.mark.django_db
 def test_filter_data_on_nummer():
-    """unittest for testee.filter_data_on_nummer
+    """unittest for core.filter_data_on_nummer
     """
     # voorlopig de except SyntaxError op de eval maar even laten zitten
     # toch nog maar eens kijken of ik het niet met eval voor elkaar kan krijgen
@@ -120,42 +122,42 @@ def test_filter_data_on_nummer():
     actie4 = my.Actie.objects.create(project=project, nummer='0004', starter=user, lasteditor=user,
                                      soort=soort, status=status, behandelaar=user)
     data = testee.filter_data_on_nummer(my.Actie.objects.all(), my.Selection.objects.all())
-    assert len(data) == len([actie1, actie2, actie3, actie4])  # 4  # geen filters -> alles
+    assert list(data) == [actie1, actie2, actie3, actie4]  # 4  # geen filters -> alles
 
-    my.Selection.objects.create(user=user.id, project=project, veldnm="nummer",
-                                value='0001', operator='GT')
-    my.Selection.objects.create(user=user.id, project=project, veldnm="nummer",
-                                value='0004', operator='LT', extra='en')
+    my.Selection.objects.create(user=user.id, project=project, veldnm="nummer", value='0001',
+                                operator='GT')
+    my.Selection.objects.create(user=user.id, project=project, veldnm="nummer", value='0004',
+                                operator='LT', extra='en')
     data = testee.filter_data_on_nummer(my.Actie.objects.all(), my.Selection.objects.all())
     assert [x.nummer for x in data] == ['0002', '0003']
 
     my.Selection.objects.all().delete()
-    my.Selection.objects.create(user=user.id, project=project, veldnm="nummer",
-                                value='0002', operator='LT')
-    my.Selection.objects.create(user=user.id, project=project, veldnm="nummer",
-                                value='0003', operator='GT', extra='of')
+    my.Selection.objects.create(user=user.id, project=project, veldnm="nummer", value='0002',
+                                operator='LT')
+    my.Selection.objects.create(user=user.id, project=project, veldnm="nummer", value='0003',
+                                operator='GT', extra='of')
     data = testee.filter_data_on_nummer(my.Actie.objects.all(), my.Selection.objects.all())
     assert [x.nummer for x in data] == ['0001', '0004']
 
     my.Selection.objects.all().delete()
-    my.Selection.objects.create(user=user.id, project=project, veldnm="nummer",
-                                value='0001', operator='GT')
-    my.Selection.objects.create(user=user.id, project=project, veldnm="nummer",
-                                value='0004', operator='LT', extra='and')
+    my.Selection.objects.create(user=user.id, project=project, veldnm="nummer", value='0001',
+                                operator='GT')
+    my.Selection.objects.create(user=user.id, project=project, veldnm="nummer", value='0004',
+                                operator='LT', extra='and')
     data = testee.filter_data_on_nummer(my.Actie.objects.all(), my.Selection.objects.all())
     assert [x.nummer for x in data] == ['0002', '0003']
 
     my.Selection.objects.all().delete()
-    my.Selection.objects.create(user=user.id, project=project, veldnm="nummer",
-                                value='0002', operator='LT')
-    my.Selection.objects.create(user=user.id, project=project, veldnm="nummer",
-                                value='0003', operator='GT', extra='or')
+    my.Selection.objects.create(user=user.id, project=project, veldnm="nummer", value='0002',
+                                operator='LT')
+    my.Selection.objects.create(user=user.id, project=project, veldnm="nummer", value='0003',
+                                operator='GT', extra='or')
     data = testee.filter_data_on_nummer(my.Actie.objects.all(), my.Selection.objects.all())
     assert [x.nummer for x in data] == ['0001', '0004']
 
 @pytest.mark.django_db
 def test_filter_data_on_soort():
-    """unittest for testee.filter_data_on_soort
+    """unittest for core.filter_data_on_soort
     """
     user = auth.User.objects.create(username='me')
     project = my.Project.objects.create(name='first')
@@ -163,14 +165,14 @@ def test_filter_data_on_soort():
     soort2 = my.Soort.objects.create(project=project, title='y', order=1, value='y')
     soort3 = my.Soort.objects.create(project=project, title='z', order=2, value='z')
     status = my.Status.objects.create(project=project, title='x', order=0, value=0)
-    actie = my.Actie.objects.create(project=project, nummer='0001', starter=user, lasteditor=user,
-                                    soort=soort, status=status, behandelaar=user)
-    actie = my.Actie.objects.create(project=project, nummer='0002', starter=user, lasteditor=user,
-                                    soort=soort2, status=status, behandelaar=user)
-    actie = my.Actie.objects.create(project=project, nummer='0003', starter=user, lasteditor=user,
-                                    soort=soort, status=status, behandelaar=user)
-    actie = my.Actie.objects.create(project=project, nummer='0004', starter=user, lasteditor=user,
-                                    soort=soort3, status=status, behandelaar=user)
+    my.Actie.objects.create(project=project, nummer='0001', starter=user, lasteditor=user,
+                            soort=soort, status=status, behandelaar=user)
+    my.Actie.objects.create(project=project, nummer='0002', starter=user, lasteditor=user,
+                            soort=soort2, status=status, behandelaar=user)
+    my.Actie.objects.create(project=project, nummer='0003', starter=user, lasteditor=user,
+                            soort=soort, status=status, behandelaar=user)
+    my.Actie.objects.create(project=project, nummer='0004', starter=user, lasteditor=user,
+                            soort=soort3, status=status, behandelaar=user)
     my.Selection.objects.create(user=user.id, project=project, veldnm="soort", value='x')
     data = testee.filter_data_on_soort(my.Actie.objects.all(), my.Selection.objects.all())
     assert [x.nummer for x in data] == ['0001', '0003']
@@ -181,7 +183,7 @@ def test_filter_data_on_soort():
 
 @pytest.mark.django_db
 def test_filter_data_on_status():
-    """unittest for testee.filter_data_on_status
+    """unittest for core.filter_data_on_status
     """
     user = auth.User.objects.create(username='me')
     project = my.Project.objects.create(name='first')
@@ -189,14 +191,14 @@ def test_filter_data_on_status():
     status = my.Status.objects.create(project=project, title='x', order=0, value=0)
     status2 = my.Status.objects.create(project=project, title='x', order=1, value=1)
     status3 = my.Status.objects.create(project=project, title='x', order=2, value=2)
-    actie = my.Actie.objects.create(project=project, nummer='0001', starter=user, lasteditor=user,
-                                    soort=soort, status=status, behandelaar=user)
-    actie = my.Actie.objects.create(project=project, nummer='0002', starter=user, lasteditor=user,
-                                    soort=soort, status=status2, behandelaar=user)
-    actie = my.Actie.objects.create(project=project, nummer='0003', starter=user, lasteditor=user,
-                                    soort=soort, status=status, behandelaar=user)
-    actie = my.Actie.objects.create(project=project, nummer='0004', starter=user, lasteditor=user,
-                                    soort=soort, status=status3, behandelaar=user)
+    my.Actie.objects.create(project=project, nummer='0001', starter=user, lasteditor=user,
+                            soort=soort, status=status, behandelaar=user)
+    my.Actie.objects.create(project=project, nummer='0002', starter=user, lasteditor=user,
+                            soort=soort, status=status2, behandelaar=user)
+    my.Actie.objects.create(project=project, nummer='0003', starter=user, lasteditor=user,
+                            soort=soort, status=status, behandelaar=user)
+    my.Actie.objects.create(project=project, nummer='0004', starter=user, lasteditor=user,
+                            soort=soort, status=status3, behandelaar=user)
     my.Selection.objects.create(user=user.id, project=project, veldnm="status", value=0)
     data = testee.filter_data_on_status(my.Actie.objects.all(), my.Selection.objects.all())
     assert [x.nummer for x in data] == ['0001', '0003']
@@ -207,28 +209,28 @@ def test_filter_data_on_status():
 
 @pytest.mark.django_db
 def test_filter_data_on_user():
-    """unittest for testee.filter_data_on_user
+    """unittest for core.filter_data_on_user
     """
     user = auth.User.objects.create(username='me')
     user2 = auth.User.objects.create(username='mine')
     project = my.Project.objects.create(name='first')
     soort = my.Soort.objects.create(project=project, title='x', order=0, value='x')
     status = my.Status.objects.create(project=project, title='x', order=0, value=0)
-    actie = my.Actie.objects.create(project=project, nummer='0001', starter=user, lasteditor=user,
-                                    soort=soort, status=status, behandelaar=user)
-    actie = my.Actie.objects.create(project=project, nummer='0002', starter=user, lasteditor=user,
-                                    soort=soort, status=status, behandelaar=user2)
-    actie = my.Actie.objects.create(project=project, nummer='0003', starter=user, lasteditor=user,
-                                    soort=soort, status=status, behandelaar=user)
-    actie = my.Actie.objects.create(project=project, nummer='0004', starter=user, lasteditor=user,
-                                    soort=soort, status=status, behandelaar=user2)
+    my.Actie.objects.create(project=project, nummer='0001', starter=user, lasteditor=user,
+                            soort=soort, status=status, behandelaar=user)
+    my.Actie.objects.create(project=project, nummer='0002', starter=user, lasteditor=user,
+                            soort=soort, status=status, behandelaar=user2)
+    my.Actie.objects.create(project=project, nummer='0003', starter=user, lasteditor=user,
+                            soort=soort, status=status, behandelaar=user)
+    my.Actie.objects.create(project=project, nummer='0004', starter=user, lasteditor=user,
+                            soort=soort, status=status, behandelaar=user2)
     my.Selection.objects.create(user=user.id, project=project, veldnm="user", value=user.id)
     data = testee.filter_data_on_user(my.Actie.objects.all(), my.Selection.objects.all())
     assert [x.nummer for x in data] == ['0001', '0003']
 
 @pytest.mark.django_db
 def test_filter_data_on_description():
-    """unittest for testee.filter_data_on_description
+    """unittest for core.filter_data_on_description
     """
     # voorlopig de except SyntaxError op de eval maar even laten zitten
     # toch nog maar eens kijken of ik het niet met eval voor elkaar kan krijgen
@@ -236,18 +238,18 @@ def test_filter_data_on_description():
     project = my.Project.objects.create(name='first')
     soort = my.Soort.objects.create(project=project, title='x', order=0, value='x')
     status = my.Status.objects.create(project=project, title='x', order=0, value=0)
-    actie = my.Actie.objects.create(project=project, nummer='0001', starter=user, lasteditor=user,
-                                    soort=soort, status=status, behandelaar=user,
-                                    about='1111', title='aaaaaa')
-    actie = my.Actie.objects.create(project=project, nummer='0002', starter=user, lasteditor=user,
-                                    soort=soort, status=status, behandelaar=user,
-                                    about='2222', title='bbbbbb')
-    actie = my.Actie.objects.create(project=project, nummer='0003', starter=user, lasteditor=user,
-                                    soort=soort, status=status, behandelaar=user,
-                                    about='1111', title='cccccc')
-    actie = my.Actie.objects.create(project=project, nummer='0004', starter=user, lasteditor=user,
-                                    soort=soort, status=status, behandelaar=user,
-                                    about='2222', title='dddddd')
+    my.Actie.objects.create(project=project, nummer='0001', starter=user, lasteditor=user,
+                            soort=soort, status=status, behandelaar=user,
+                            about='1111', title='aaaaaa')
+    my.Actie.objects.create(project=project, nummer='0002', starter=user, lasteditor=user,
+                            soort=soort, status=status, behandelaar=user,
+                            about='2222', title='bbbbbb')
+    my.Actie.objects.create(project=project, nummer='0003', starter=user, lasteditor=user,
+                            soort=soort, status=status, behandelaar=user,
+                            about='1111', title='cccccc')
+    my.Actie.objects.create(project=project, nummer='0004', starter=user, lasteditor=user,
+                            soort=soort, status=status, behandelaar=user,
+                            about='2222', title='dddddd')
     my.Selection.objects.create(user=user.id, project=project, veldnm="about", value='11')
     my.Selection.objects.create(user=user.id, project=project, veldnm="title", value='bb',
                                 extra='of')
@@ -262,7 +264,7 @@ def test_filter_data_on_description():
 
 @pytest.mark.django_db
 def test_filter_data_on_arch():
-    """unittest for testee.filter_data_on_arch
+    """unittest for core.filter_data_on_arch
     """
     user = auth.User.objects.create(username='me')
     project = my.Project.objects.create(name='first')
@@ -285,7 +287,7 @@ def test_filter_data_on_arch():
 
 @pytest.mark.django_db
 def test_apply_sorters():
-    """unittest for testee.apply_sorters
+    """unittest for core.apply_sorters
     """
     user = auth.User.objects.create(username='me')
     user2 = auth.User.objects.create(username='also me')
@@ -334,7 +336,7 @@ def test_apply_sorters():
 
 @pytest.mark.django_db
 def test_store_event():
-    """unittest for testee.store_event
+    """unittest for core.store_event
     """
     user = auth.User.objects.create(username='me')
     project = my.Project.objects.create(name='first')
@@ -352,7 +354,7 @@ def test_store_event():
 
 @pytest.mark.django_db
 def test_store_gewijzigd():
-    """unittest for testee.store_gewijzigd
+    """unittest for core.store_gewijzigd
     """
     user = auth.User.objects.create(username='me')
     project = my.Project.objects.create(name='first')
@@ -369,8 +371,17 @@ def test_store_gewijzigd():
     assert event.text == 'rubriek gewijzigd in "waarde"'
 
 @pytest.mark.django_db
+def test_build_pagedata_for_newproj():
+    """unittest for core.build_pagedata_for_newproj
+    """
+    user1 = auth.User.objects.create(username='me')
+    user2 = auth.User.objects.create(username='also me')
+    user3 = auth.User.objects.create(username='me too')
+    assert testee.build_pagedata_for_newproj() == {'all_users': [user2, user1, user3]}
+
+@pytest.mark.django_db
 def test_add_project(monkeypatch, capsys):
-    """unittest for testee.add_project
+    """unittest for core.add_project
     """
     def mock_add_default_pages():
         """stub
@@ -388,32 +399,39 @@ def test_add_project(monkeypatch, capsys):
         """stub
         """
         print(f'called add_auth_for_project() for project {proj}')
+    def mock_add_admins(proj, admins):
+        """stub
+        """
+        print(f'called add_admins() for project {proj} with arg {admins}')
     monkeypatch.setattr(testee, 'add_default_pages', mock_add_default_pages)
     monkeypatch.setattr(testee, 'add_default_soorten', mock_add_default_soorten)
     monkeypatch.setattr(testee, 'add_default_statussen', mock_add_default_statussen)
     monkeypatch.setattr(testee, 'add_auth_for_project', mock_add_auth_for_project)
+    monkeypatch.setattr(testee, 'add_admins', mock_add_admins)
     start_id = my.Project.objects.create(name='dummy').id
     assert my.Page.objects.count() == 0
     new_id = start_id + 1
-    assert testee.add_project('name', 'desc') == new_id
+    assert testee.add_project('name', 'desc', []) == new_id
     proj = my.Project.objects.get(pk=new_id)
     assert proj.name, proj.desc == ('name', 'desc')
     assert capsys.readouterr().out == ('called add_default_pages()\n'
                                        'called add_default_soorten() for project name\n'
                                        'called add_default_statussen() for project name\n'
-                                       'called add_auth_for_project() for project name\n')
+                                       'called add_auth_for_project() for project name\n'
+                                       'called add_admins() for project name with arg []\n')
     new_id += 1
     my.Page.objects.create(link='x', order=0, title='y')
-    assert testee.add_project('name2', 'desc2') == new_id
+    assert testee.add_project('name2', 'desc2', ['1']) == new_id
     dproj = my.Project.objects.get(pk=new_id)
     assert proj.name, proj.desc == ('name2', 'desc2')
     assert capsys.readouterr().out == ('called add_default_soorten() for project name2\n'
                                        'called add_default_statussen() for project name2\n'
-                                       'called add_auth_for_project() for project name2\n')
+                                       'called add_auth_for_project() for project name2\n'
+                                       "called add_admins() for project name2 with arg ['1']\n")
 
 @pytest.mark.django_db
 def test_add_default_pages():
-    """unittest for testee.add_default_pages
+    """unittest for core.add_default_pages
     """
     assert not list(my.Page.objects.all())
     expected = [("index", 0, "lijst"),
@@ -432,7 +450,7 @@ def test_add_default_pages():
 
 @pytest.mark.django_db
 def test_add_default_soorten():
-    """unittest for testee.add_default_soorten
+    """unittest for core.add_default_soorten
     """
     project = my.Project.objects.create(name='first')
     assert not list(project.soort.all())
@@ -451,7 +469,7 @@ def test_add_default_soorten():
 
 @pytest.mark.django_db
 def test_add_default_statussen():
-    """unittest for testee.add_default_statussen
+    """unittest for core.add_default_statussen
     """
     project = my.Project.objects.create(name='first')
     assert not list(project.status.all())
@@ -470,18 +488,31 @@ def test_add_default_statussen():
 
 @pytest.mark.django_db
 def test_add_auth_for_project():
-    """unittest for testee.add_auth_for_project
+    """unittest for core.add_auth_for_project
     """
     project = my.Project.objects.create(name='first')
     testee.add_auth_for_project(project)
-    grp1 = testee.aut.Group.objects.get(name='first_admin')
+    grp1 = auth.Group.objects.get(name='first_admin')
     assert len(grp1.permissions.all()) == 36
-    grp2 = testee.aut.Group.objects.get(name='first_user')
+    grp2 = auth.Group.objects.get(name='first_user')
     assert len(grp2.permissions.all()) == 16
 
 @pytest.mark.django_db
+def test_add_admins():
+    """unittest for core.add_admins
+    """
+    myuser = auth.User.objects.create(username='me')
+    myproject = my.Project.objects.create(name='first')
+    mygroup = auth.Group.objects.create(name='first_admin')
+    assert len(myuser.groups.all()) == 0
+    testee.add_admins(myproject, ['0', mygroup.id])
+    assert len(myuser.groups.all()) == 1
+    assert myuser.groups.all()[0] == mygroup
+    assert myuser.groups.all()[0].name == 'first_admin'
+
+@pytest.mark.django_db
 def test_build_pagedata_for_project(monkeypatch):
-    """unittest for testee.build_pagedata_for_project
+    """unittest for core.build_pagedata_for_project
     """
     myuser = auth.User.objects.create(username='me')
     myproject = my.Project.objects.create(name='first')
@@ -517,7 +548,7 @@ def test_build_pagedata_for_project(monkeypatch):
 
 @pytest.mark.django_db
 def test_get_acties(monkeypatch, capsys):
-    """unittest for testee.get_acties
+    """unittest for core.get_acties
     """
     def mock_filter_data_on_nummer(data, y):
         """stub
@@ -587,7 +618,7 @@ def test_get_acties(monkeypatch, capsys):
 
 @pytest.mark.django_db
 def test_build_pagedata_for_settings():
-    """unittest for testee.build_pagedata_for_settings
+    """unittest for core.build_pagedata_for_settings
     """
     myuser = auth.User.objects.create(username='me')
     myuser2 = auth.User.objects.create(username='another_me')
@@ -599,16 +630,22 @@ def test_build_pagedata_for_settings():
     mystatus = my.Status.objects.create(project=myproject, order=0, value=0, title='z')
     myworker = my.Worker.objects.create(project=myproject, assigned=myuser)
     myworker2 = my.Worker.objects.create(project=myproject, assigned=myuser4)
+    mygroup = auth.Group.objects.create(name='first_admin')
+    myuser3.groups.add(mygroup)
     request = types.SimpleNamespace(user=myuser)
     data = testee.build_pagedata_for_settings(request, myproject.id)
     assert (data['title'], data['name'], data['root']) == ('Instellingen', 'first', 1)
-    assert (list(data['pages']), list(data['soorten'])) == ([mypage], [mysoort])
-    assert (list(data['stats']), list(data['all_users'])) == ([mystatus], [myuser3, myuser2])
-    assert list(data['proj_users']) == [myworker2, myworker]  # [myuser4, myuser]
+    assert list(data['pages']) == [mypage]
+    assert list(data['soorten']) == [mysoort]
+    assert list(data['stats']) == [mystatus]
+    assert list(data['all_users']) == [myuser3, myuser2]
+    assert list(data['proj_users']) == [myworker2, myworker]
+    assert list(data['admin_users']) == [myuser4, myuser2, myuser]
+    assert list(data['proj_admins']) == [myuser3]
 
 @pytest.mark.django_db
 def test_set_users():
-    """unittest for testee.set_users
+    """unittest for core.set_users
     """
     myuser = auth.User.objects.create(username='me')
     myuser2 = auth.User.objects.create(username='another')
@@ -623,8 +660,27 @@ def test_set_users():
     assert [x.assigned.username for x in myproject.workers.all()] == ['me', 'another']
 
 @pytest.mark.django_db
+def test_set_admins():
+    """unittest for core.set_users
+    """
+    myuser = auth.User.objects.create(username='me')
+    myuser2 = auth.User.objects.create(username='another')
+    myproject = my.Project.objects.create(name='first')
+    mygroup = auth.Group.objects.create(name='first_admin')
+    myuser2.groups.add(mygroup)
+    request = types.SimpleNamespace(user=myuser, POST={})
+    testee.set_admins(request, myproject.id)
+    assert not list(myuser2.groups.all())
+
+    myuser2.groups.add(mygroup)
+    request = types.SimpleNamespace(user=myuser, POST={'result': f'{myuser.id}$#${myuser2.id}'})
+    testee.set_admins(request, myproject.id)
+    assert list(myuser.groups.all()) == [mygroup]
+    assert list(myuser2.groups.all()) == [mygroup]
+
+@pytest.mark.django_db
 def test_set_tabs():
-    """unittest for testee.set_tabs
+    """unittest for core.set_tabs
     """
     myuser = auth.User.objects.create(username='me')
     my.Page.objects.create(title='Page1', order=0)
@@ -635,7 +691,7 @@ def test_set_tabs():
 
 @pytest.mark.django_db
 def test_set_types():
-    """unittest for testee.set_types
+    """unittest for core.set_types
     """
     myuser = auth.User.objects.create(username='me')
     myproject = my.Project.objects.create(name='first')
@@ -677,7 +733,7 @@ def test_set_types():
 
 @pytest.mark.django_db
 def test_set_stats():
-    """unittest for testee.set_stats
+    """unittest for core.set_stats
     """
     myuser = auth.User.objects.create(username='me')
     myproject = my.Project.objects.create(name='first')
@@ -713,7 +769,7 @@ def test_set_stats():
 
 @pytest.mark.django_db
 def test_build_pagedata_for_selection():
-    """unittest for testee.build_pagedata_for_selection
+    """unittest for core.build_pagedata_for_selection
     """
     myuser = auth.User.objects.create(username='me')
     request = types.SimpleNamespace(user=myuser)
@@ -758,7 +814,7 @@ def test_build_pagedata_for_selection():
 
 @pytest.mark.django_db
 def test_setselection(monkeypatch, capsys):
-    """unittest for testee.setselection
+    """unittest for core.setselection
     """
     def mock_set_selection_for_nummer(*args):
         """stub
@@ -808,7 +864,7 @@ def test_setselection(monkeypatch, capsys):
 
 @pytest.mark.django_db
 def test_set_selection_for_nummer():
-    """unittest for testee.set_selection_for_nummer
+    """unittest for core.set_selection_for_nummer
     """
     myuser = auth.User.objects.create(username='me')
     myproject = my.Project.objects.create(name='first')
@@ -823,7 +879,7 @@ def test_set_selection_for_nummer():
 
 @pytest.mark.django_db
 def test_set_selection_for_soort():
-    """unittest for testee.set_selection_for_soort
+    """unittest for core.set_selection_for_soort
     """
     myuser = auth.User.objects.create(username='me')
     myproject = my.Project.objects.create(name='first')
@@ -840,7 +896,7 @@ def test_set_selection_for_soort():
 
 @pytest.mark.django_db
 def test_set_selection_for_status():
-    """unittest for testee.set_selection_for_status
+    """unittest for core.set_selection_for_status
     """
     myuser = auth.User.objects.create(username='me')
     myproject = my.Project.objects.create(name='first')
@@ -857,7 +913,7 @@ def test_set_selection_for_status():
 
 @pytest.mark.django_db
 def test_set_selection_for_user():
-    """unittest for testee.set_selection_for_user
+    """unittest for core.set_selection_for_user
     """
     myuser = auth.User.objects.create(username='me')
     myproject = my.Project.objects.create(name='first')
@@ -874,7 +930,7 @@ def test_set_selection_for_user():
 
 @pytest.mark.django_db
 def test_set_selection_for_description():
-    """unittest for testee.set_selection_for_description
+    """unittest for core.set_selection_for_description
     """
     myuser = auth.User.objects.create(username='me')
     myproject = my.Project.objects.create(name='first')
@@ -889,7 +945,7 @@ def test_set_selection_for_description():
 
 @pytest.mark.django_db
 def test_set_selection_for_arch():
-    """unittest for testee.set_selection_for_arch
+    """unittest for core.set_selection_for_arch
     """
     myuser = auth.User.objects.create(username='me')
     myproject = my.Project.objects.create(name='first')
@@ -917,7 +973,7 @@ def test_set_selection_for_arch():
 
 @pytest.mark.django_db
 def test_build_pagedata_for_ordering():
-    """unittest for testee.build_pagedata_for_ordering
+    """unittest for core.build_pagedata_for_ordering
     """
     myuser = auth.User.objects.create(username='me')
     request = types.SimpleNamespace(user=myuser)
@@ -937,7 +993,7 @@ def test_build_pagedata_for_ordering():
 
 @pytest.mark.django_db
 def test_setordering():
-    """unittest for testee.setordering
+    """unittest for core.setordering
     """
     myuser = auth.User.objects.create(username='me')
     request = types.SimpleNamespace(user=myuser)
@@ -954,7 +1010,7 @@ def test_setordering():
 
 @pytest.mark.django_db
 def test_build_pagedata_for_detail(monkeypatch):
-    """unittest for testee.build_pagedata_for_detail
+    """unittest for core.build_pagedata_for_detail
     """
     class MockDatetime(datetime.datetime):
         """stub
@@ -1021,7 +1077,7 @@ def test_build_pagedata_for_detail(monkeypatch):
 
 @pytest.mark.django_db
 def test_wijzig_detail():
-    """unittest for testee.wijzig_detail
+    """unittest for core.wijzig_detail
     """
     myuser = auth.User.objects.create(username='me')
     myuser2 = auth.User.objects.create(username='myname')
@@ -1104,7 +1160,7 @@ def test_wijzig_detail():
 
 @pytest.mark.django_db
 def test_copy_existing_action_from_here(monkeypatch, capsys):
-    """unittest for testee.copy_existing_action_from_here
+    """unittest for core.copy_existing_action_from_here
     """
     myproject = my.Project.objects.create(name='first')
     myuser = auth.User.objects.create(username='me')
@@ -1154,7 +1210,7 @@ def test_copy_existing_action_from_here(monkeypatch, capsys):
 
 @pytest.mark.django_db
 def test_add_new_action_on_both_sides(monkeypatch, capsys):
-    """unittest for testee.add_new_action_on_both_sides
+    """unittest for core.add_new_action_on_both_sides
     """
     def mock_store(*args):
         """stub
@@ -1246,7 +1302,7 @@ def test_add_new_action_on_both_sides(monkeypatch, capsys):
                                        ' 2020-0004 me\n')
 
 def test_build_full_message():
-    """unittest for testee.build_full_message
+    """unittest for core.build_full_message
     """
     assert testee.build_full_message([], 'melding') == 'melding'
     assert testee.build_full_message(['hallo'], 'melding') == 'melding'
@@ -1257,7 +1313,7 @@ def test_build_full_message():
 
 @pytest.mark.django_db
 def test_build_pagedata_for_tekstpage(monkeypatch, capsys):
-    """unittest for testee.build_pagedata_for_tekstpage
+    """unittest for core.build_pagedata_for_tekstpage
     """
     class MockRequest:
         """stub
@@ -1285,10 +1341,12 @@ def test_build_pagedata_for_tekstpage(monkeypatch, capsys):
                                       vervolg='en verder...')
     monkeypatch.setattr(testee, 'get_appropriate_login_message', lambda *x: 'login_message')
     monkeypatch.setattr(testee, 'determine_readonly', lambda *x: True)
-    with pytest.raises(django.http.response.Http404) as exc:
+    # with pytest.raises(django.http.response.Http404) as exc:
+    with pytest.raises(testee.Http404) as exc:
         data = testee.build_pagedata_for_tekstpage(MockRequest(), myproject.id, myactie.id + 1)
         assert str(exc.value) == 'No Actie matches the given query'
-    with pytest.raises(django.http.response.Http404) as exc:
+    # with pytest.raises(django.http.response.Http404) as exc:
+    with pytest.raises(testee.Http404) as exc:
         data = testee.build_pagedata_for_tekstpage(MockRequest(), myproject.id, myactie.id)
         assert str(exc.value) == 'No Page matches the given query'
     data = testee.build_pagedata_for_tekstpage(MockRequest(), myproject.id, myactie.id, 'meld')
@@ -1314,7 +1372,7 @@ def test_build_pagedata_for_tekstpage(monkeypatch, capsys):
 
 @pytest.mark.django_db
 def test_wijzig_tekstpage(monkeypatch):
-    """unittest for testee.wijzig_tekstpage
+    """unittest for core.wijzig_tekstpage
     """
     myuser = auth.User.objects.create(username='me')
     myproject = my.Project.objects.create(name='first')
@@ -1383,7 +1441,7 @@ def test_wijzig_tekstpage(monkeypatch):
 
 @pytest.mark.django_db
 def test_build_pagedata_for_events(monkeypatch):
-    """unittest for testee.build_pagedata_for_events
+    """unittest for core.build_pagedata_for_events
     """
     class MockDatetime(datetime.datetime):
         """stub
@@ -1443,7 +1501,7 @@ def test_build_pagedata_for_events(monkeypatch):
 
 @pytest.mark.django_db
 def test_wijzig_events(monkeypatch):
-    """unittest for testee.wijzig_events
+    """unittest for core.wijzig_events
     """
     myuser = auth.User.objects.create(username='me')
     myproject = my.Project.objects.create(name='first')
@@ -1455,10 +1513,10 @@ def test_wijzig_events(monkeypatch):
     mysoort = my.Soort.objects.create(project=myproject, order=0, value='y', title='z')
     mystatus = my.Status.objects.create(project=myproject, order=0, value=0, title='z')
     myactie = my.Actie.objects.create(project=myproject, nummer='x', starter=myuser,
-                                      lasteditor=myuser,
-                                      soort=mysoort, status=mystatus, behandelaar=myuser,
-                                      melding='dit', oorzaak='dat', oplossing='iets',
-                                      vervolg='en verder...')
+                                             lasteditor=myuser,
+                                             soort=mysoort, status=mystatus, behandelaar=myuser,
+                                             melding='dit', oorzaak='dat', oplossing='iets',
+                                             vervolg='en verder...')
     assert not list(myactie.events.all())
 
     # eerst zonder dat user aan het project zit
@@ -1469,13 +1527,13 @@ def test_wijzig_events(monkeypatch):
 
     # user aan het project koppelen en verder testen
     myworker = my.Worker.objects.create(project=myproject, assigned=myuser)
-    with pytest.raises(ObjectDoesNotExist):
+    with pytest.raises(testee.ObjectDoesNotExist):
         result = testee.wijzig_events(request, myproject.id + 1)
-    with pytest.raises(Http404):
+    with pytest.raises(testee.Http404):
         result = testee.wijzig_events(request, myproject.id, myactie.id + 1)
-    with pytest.raises(Http404):
+    with pytest.raises(testee.Http404):
         result = testee.wijzig_events(request, myproject.id, myactie.id, 1)
-    with pytest.raises(Http404):
+    with pytest.raises(testee.Http404):
         assert testee.wijzig_events(request, myproject.id, myactie.id, '')
     assert testee.wijzig_events(request, myproject.id, myactie.id, 'nieuw') == (
             f'/{myproject.id}/{myactie.id}/voortg/meld/De gebeurtenis is toegevoegd./')

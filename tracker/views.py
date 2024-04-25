@@ -8,7 +8,7 @@ from django.views.decorators.csrf import csrf_exempt
 import tracker.models as my
 from tracker import core
 from actiereg.settings import SITES
-
+default_admin = my.User.objects.get(username='avisser')
 
 def index(request, msg=""):
     """Start pagina voor ActieReg
@@ -50,7 +50,8 @@ def new_project(request):
     "Toon het scherm om een nieuw project op te voeren"
     if not request.user.is_authenticated:
         return core.not_logged_in_message('een project aan te kunnen maken')
-    return render(request, 'nieuw.html', {})
+    page_data = core.build_pagedata_for_newproj()
+    return render(request, 'nieuw.html', page_data)
 
 
 @login_required
@@ -59,13 +60,14 @@ def add_project(request):
     data = request.POST
     name = data.get("name", "")
     desc = data.get("desc", "")
-    core.add_project(name, desc)
+    admins = data.get("admin", [])
+    core.add_project(name, desc, admins)
     return HttpResponseRedirect('/msg/project aangemaakt/')
 
 
 def add_from_doctool(request, proj='', name='', desc=''):
     "project opvoeren en terug naar DocTool"
-    projectid = core.add_project(name, desc)
+    projectid = core.add_project(name, desc, [default_admin])
     return HttpResponseRedirect(f"{SITES['doctool']}/{proj}/meld/Project {name}"
                                 f" is aangemaakt met id {projectid}/")
 
@@ -104,6 +106,17 @@ def setusers(request, proj):
     if not core.is_admin(project, request.user):
         return core.no_authorization_message('instellingen te wijzigen', proj)
     core.set_users(request, proj)
+    return HttpResponseRedirect(f"/{proj}/settings/")
+
+
+@login_required
+def setadmins(request, proj):
+    """admins aan project koppelen
+    """
+    project = my.Project.objects.get(pk=proj)
+    if not core.is_admin(project, request.user):
+        return core.no_authorization_message('instellingen te wijzigen', proj)
+    core.set_admins(request, proj)
     return HttpResponseRedirect(f"/{proj}/settings/")
 
 

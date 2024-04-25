@@ -125,6 +125,32 @@ function herbepaal(o,p)
     <a href="/{{root}}/" title="back"><input type="button" value="terug naar actielijst"/></a>
     <a href="#top">terug naar het begin van de pagina</a>
     </form>
+<form action="/{{root}}/wijzigadmins/" method="post">{% csrf_token %}
+<div>
+    <div class="col sel_left bold">Bekende gebruikers:</div>
+    <div class="col sel_mid">&nbsp;</div>
+    <div class="col sel_right bold">Admins voor dit project:</div>
+    <div class="clear">&nbsp;</div></div>
+<div>
+    <div class="col sel_left">
+        <select name="AllAdmins" multiple="multiple" size="6">{% for usr in admin_users %}
+            <option value="{{ usr.id }}">{{ usr }}</option>{% endfor %}</select></div>
+    <div class="col sel_mid"><br/><br/>&nbsp;&nbsp;
+        <input type="button" name="pbAdd" value="toevoegen ->"
+            onclick="move_item(AllAdmins, ProjAdmins)"><br/>&nbsp;&nbsp;&nbsp;
+        <input type="button" name="pbDel" value="<- weghalen"
+            onclick="move_item(ProjAdmins, AllAdmins)"/><br/></div>
+    <div class="col sel_right">
+        <select name="ProjAdmins" multiple="multiple" size="6">{% for usr in proj_admins %}
+            <option value="{{ usr.id }}">{{ usr }}</option>{% endfor %}
+            </select></div>
+    <div class="clear">&nbsp;</div>
+</div>
+    <input type="hidden" name="result" />
+    <input type="submit" value="aanpassen"  onclick="herbepaal(ProjAdmins,result)"/>
+    <a href="/{{root}}/" title="back"><input type="button" value="terug naar actielijst"/></a>
+    <a href="#top">terug naar het begin van de pagina</a>
+    </form>
 <hr/>
 <a name="tab"></a>
 <div><h3>Tab headers</h3></div>

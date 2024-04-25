@@ -82,16 +82,21 @@ def test_log_out(monkeypatch, capsys):
                                       {'next': '/accounts/login/?next=volgende'})
     assert capsys.readouterr().out == 'called logout()\n'
 
-def test_new_project(monkeypatch):
+def test_new_project(monkeypatch, capsys):
     """unittest for views.new_project
     """
+    def mock_build():
+        print('called core.build_pagedata_for_newproj')
+        return {'all_users': ['xxx']}
     monkeypatch.setattr(views.core, 'not_logged_in_message', lambda x: x)
+    monkeypatch.setattr(views.core, 'build_pagedata_for_newproj', mock_build)
     monkeypatch.setattr(views, 'render', lambda *x: x)
     request = types.SimpleNamespace(user=auth.AnonymousUser())
     assert views.new_project(request) == 'een project aan te kunnen maken'
     myuser = auth.User.objects.create(username='me')
     request = types.SimpleNamespace(user=myuser)
-    assert views.new_project(request) == (request, 'nieuw.html', {})
+    assert views.new_project(request) == (request, 'nieuw.html', {'all_users': ['xxx']})
+    assert capsys.readouterr().out == 'called core.build_pagedata_for_newproj\n'
 
 def test_add_project(monkeypatch, capsys):
     """unittest for views.add_project
@@ -103,9 +108,11 @@ def test_add_project(monkeypatch, capsys):
     monkeypatch.setattr(views.core, 'add_project', mock_add_project)
     monkeypatch.setattr(views, 'HttpResponseRedirect', lambda x: x)
     myuser = auth.User.objects.create(username='me')
-    request = types.SimpleNamespace(user=myuser, POST={'name': 'new', 'desc': 'project'})
+    request = types.SimpleNamespace(user=myuser, POST={'name': 'new', 'desc': 'project',
+                                                       'admin': ['xxx']})
     assert views.add_project(request) == '/msg/project aangemaakt/'
-    assert capsys.readouterr().out == "called core.add_project with args ('new', 'project')\n"
+    assert capsys.readouterr().out == (
+            "called core.add_project with args ('new', 'project', ['xxx'])\n")
 
 def test_add_from_doctool(monkeypatch, capsys):
     """unittest for views.add_from_doctool
@@ -121,7 +128,8 @@ def test_add_from_doctool(monkeypatch, capsys):
     request = types.SimpleNamespace(user=myuser)
     assert views.add_from_doctool(request, 1, 'new', 'project') == (
             f"{views.SITES['doctool']}/1/meld/Project new is aangemaakt met id 2/")
-    assert capsys.readouterr().out == "called core.add_project with args ('new', 'project')\n"
+    assert capsys.readouterr().out == (
+            f"called core.add_project with args ('new', 'project', [{views.default_admin!r}])\n")
 
 def test_show_project(monkeypatch):
     """unittest for views.show_project
@@ -138,20 +146,23 @@ def test_show_project(monkeypatch):
                                                    (request, 'proj', 'login_messageKlik op een'
                                                     ' actienummer om de details te bekijken.'))
 
+@pytest.mark.django_db
 def test_show_settings(monkeypatch):
     """unittest for views.show_settings
     """
     monkeypatch.setattr(views.core, 'no_authorization_message', lambda *x: x)
     monkeypatch.setattr(views.core, 'build_pagedata_for_settings', lambda *x: x)
     monkeypatch.setattr(views, 'render', lambda *x: x)
+    myproj = my.Project.objects.create(name='first')
     myuser = auth.User.objects.create(username='me')
     request = types.SimpleNamespace(user=myuser)
     monkeypatch.setattr(views.core, 'is_admin', lambda *x: False)
-    assert views.show_settings(request, 'proj') == ('instellingen te wijzigen', 'proj')
+    assert views.show_settings(request, myproj.id) == ('instellingen te wijzigen', myproj.id)
     monkeypatch.setattr(views.core, 'is_admin', lambda *x: True)
-    assert views.show_settings(request, 'proj') == (request, 'tracker/settings.html',
-                                                    (request, 'proj'))
+    assert views.show_settings(request, myproj.id) == (request, 'tracker/settings.html',
+                                                    (request, myproj.id))
 
+@pytest.mark.django_db
 def test_setusers(monkeypatch, capsys):
     """unittest for views.setusers
     """
@@ -162,14 +173,36 @@ def test_setusers(monkeypatch, capsys):
     monkeypatch.setattr(views.core, 'no_authorization_message', lambda *x: x)
     monkeypatch.setattr(views.core, 'set_users', mock_set_users)
     monkeypatch.setattr(views, 'HttpResponseRedirect', lambda x: x)
+    myproj = my.Project.objects.create(name='first')
     myuser = auth.User.objects.create(username='me')
     request = types.SimpleNamespace(user=myuser)
     monkeypatch.setattr(views.core, 'is_admin', lambda *x: False)
-    assert views.setusers(request, 'proj') == ('instellingen te wijzigen', 'proj')
+    assert views.setusers(request, myproj.id) == ('instellingen te wijzigen', myproj.id)
     monkeypatch.setattr(views.core, 'is_admin', lambda *x: True)
-    assert views.setusers(request, 'proj') == '/proj/settings/'
+    assert views.setusers(request, myproj.id) == f'/{myproj.id}/settings/'
     assert capsys.readouterr().out == "called core.set_users\n"
 
+@pytest.mark.django_db
+def test_setadmins(monkeypatch, capsys):
+    """unittest for views.setadmins
+    """
+    def mock_set_admins(*args):
+        """stub
+        """
+        print('called core.set_admins')
+    monkeypatch.setattr(views.core, 'no_authorization_message', lambda *x: x)
+    monkeypatch.setattr(views.core, 'set_admins', mock_set_admins)
+    monkeypatch.setattr(views, 'HttpResponseRedirect', lambda x: x)
+    myproj = my.Project.objects.create(name='first')
+    myuser = auth.User.objects.create(username='me')
+    request = types.SimpleNamespace(user=myuser)
+    monkeypatch.setattr(views.core, 'is_admin', lambda *x: False)
+    assert views.setadmins(request, myproj.id) == ('instellingen te wijzigen', myproj.id)
+    monkeypatch.setattr(views.core, 'is_admin', lambda *x: True)
+    assert views.setadmins(request, myproj.id) == f'/{myproj.id}/settings/'
+    assert capsys.readouterr().out == "called core.set_admins\n"
+
+@pytest.mark.django_db
 def test_settabs(monkeypatch, capsys):
     """unittest for views.settabs
     """
@@ -180,14 +213,16 @@ def test_settabs(monkeypatch, capsys):
     monkeypatch.setattr(views.core, 'no_authorization_message', lambda *x: x)
     monkeypatch.setattr(views.core, 'set_tabs', mock_set_tabs)
     monkeypatch.setattr(views, 'HttpResponseRedirect', lambda x: x)
+    myproj = my.Project.objects.create(name='first')
     myuser = auth.User.objects.create(username='me')
     request = types.SimpleNamespace(user=myuser)
     monkeypatch.setattr(views.core, 'is_admin', lambda *x: False)
-    assert views.settabs(request, 'proj') == ('instellingen te wijzigen', 'proj')
+    assert views.settabs(request, myproj.id) == ('instellingen te wijzigen', myproj.id)
     monkeypatch.setattr(views.core, 'is_admin', lambda *x: True)
-    assert views.settabs(request, 'proj') == '/proj/settings/'
+    assert views.settabs(request, myproj.id) == f'/{myproj.id}/settings/'
     assert capsys.readouterr().out == "called core.set_tabs\n"
 
+@pytest.mark.django_db
 def test_settypes(monkeypatch, capsys):
     """unittest for views.settypes
     """
@@ -198,14 +233,16 @@ def test_settypes(monkeypatch, capsys):
     monkeypatch.setattr(views.core, 'no_authorization_message', lambda *x: x)
     monkeypatch.setattr(views.core, 'set_types', mock_set_types)
     monkeypatch.setattr(views, 'HttpResponseRedirect', lambda x: x)
+    myproj = my.Project.objects.create(name='first')
     myuser = auth.User.objects.create(username='me')
     request = types.SimpleNamespace(user=myuser)
     monkeypatch.setattr(views.core, 'is_admin', lambda *x: False)
-    assert views.settypes(request, 'proj') == ('instellingen te wijzigen', 'proj')
+    assert views.settypes(request, myproj.id) == ('instellingen te wijzigen', myproj.id)
     monkeypatch.setattr(views.core, 'is_admin', lambda *x: True)
-    assert views.settypes(request, 'proj') == '/proj/settings/'
+    assert views.settypes(request, myproj.id) == f'/{myproj.id}/settings/'
     assert capsys.readouterr().out == "called core.set_types\n"
 
+@pytest.mark.django_db
 def test_setstats(monkeypatch, capsys):
     """unittest for views.setstats
     """
@@ -216,14 +253,16 @@ def test_setstats(monkeypatch, capsys):
     monkeypatch.setattr(views.core, 'no_authorization_message', lambda *x: x)
     monkeypatch.setattr(views.core, 'set_stats', mock_set_stats)
     monkeypatch.setattr(views, 'HttpResponseRedirect', lambda x: x)
+    myproj = my.Project.objects.create(name='first')
     myuser = auth.User.objects.create(username='me')
     request = types.SimpleNamespace(user=myuser)
     monkeypatch.setattr(views.core, 'is_admin', lambda *x: False)
-    assert views.setstats(request, 'proj') == ('instellingen te wijzigen', 'proj')
+    assert views.setstats(request, myproj.id) == ('instellingen te wijzigen', myproj.id)
     monkeypatch.setattr(views.core, 'is_admin', lambda *x: True)
-    assert views.setstats(request, 'proj') == '/proj/settings/'
+    assert views.setstats(request, myproj.id) == f'/{myproj.id}/settings/'
     assert capsys.readouterr().out == "called core.set_stats\n"
 
+@pytest.mark.django_db
 def test_show_selection(monkeypatch):
     """unittest for views.show_selection
     """
@@ -235,14 +274,16 @@ def test_show_selection(monkeypatch):
     # request = types.SimpleNamespace(user=auth.AnonymousUser())
     # assert views.show_selection(request, 'proj') == (
     #         'de selectie voor dit scherm te mogen wijzigen')
+    myproj = my.Project.objects.create(name='first')
     myuser = auth.User.objects.create(username='me')
     request = types.SimpleNamespace(user=myuser)
     monkeypatch.setattr(views.core, 'build_pagedata_for_selection', lambda *x: (x, 'oh-oh'))
-    assert views.show_selection(request, 'proj') == 'oh-oh'
+    assert views.show_selection(request, myproj.id) == 'oh-oh'
     monkeypatch.setattr(views.core, 'build_pagedata_for_selection', lambda *x: (x, ''))
-    assert views.show_selection(request, 'proj') == (
-            request, 'tracker/select.html', (request, 'proj', 'logged in'))
+    assert views.show_selection(request, myproj.id) == (
+            request, 'tracker/select.html', (request, myproj.id, 'logged in'))
 
+@pytest.mark.django_db
 def test_setselection(monkeypatch, capsys):
     """unittest for views.setselection
     """
@@ -252,22 +293,26 @@ def test_setselection(monkeypatch, capsys):
         print('called core.setselection with args', args)
     monkeypatch.setattr(views.core, 'setselection', mock_setselection)
     monkeypatch.setattr(views, 'HttpResponseRedirect', lambda x: x)
+    myproj = my.Project.objects.create(name='first')
     myuser = auth.User.objects.create(username='me')
     request = types.SimpleNamespace(user=myuser)
-    assert views.setselection(request, 'proj') == '/proj/meld/De selectie is gewijzigd./'
-    assert capsys.readouterr().out == f"called core.setselection with args ({request}, 'proj')\n"
+    assert views.setselection(request, myproj.id) == f'/{myproj.id}/meld/De selectie is gewijzigd./'
+    assert capsys.readouterr().out == f"called core.setselection with args ({request}, {myproj.id})\n"
 
+@pytest.mark.django_db
 def test_show_ordering(monkeypatch):
     """unittest for views.show_ordering
     """
     monkeypatch.setattr(views.core, 'logged_in_message', lambda *x: 'logged in')
     monkeypatch.setattr(views, 'render', lambda *x: x)
+    myproj = my.Project.objects.create(name='first')
     myuser = auth.User.objects.create(username='me')
     request = types.SimpleNamespace(user=myuser)
     monkeypatch.setattr(views.core, 'build_pagedata_for_ordering', lambda *x: x)
-    assert views.show_ordering(request, 'proj') == (
-            request, 'tracker/order.html', (request, 'proj', 'logged in'))
+    assert views.show_ordering(request, myproj.id) == (
+            request, 'tracker/order.html', (request, myproj.id, 'logged in'))
 
+@pytest.mark.django_db
 def test_setordering(monkeypatch, capsys):
     """unittest for views.setordering
     """
@@ -277,30 +322,35 @@ def test_setordering(monkeypatch, capsys):
         print('called core.setordering with args', args)
     monkeypatch.setattr(views.core, 'setordering', mock_setordering)
     monkeypatch.setattr(views, 'HttpResponseRedirect', lambda x: x)
+    myproj = my.Project.objects.create(name='first')
     myuser = auth.User.objects.create(username='me')
     request = types.SimpleNamespace(user=myuser)
-    assert views.setordering(request, 'proj') == '/proj/meld/De sortering is gewijzigd./'
-    assert capsys.readouterr().out == f"called core.setordering with args ({request}, 'proj')\n"
+    assert views.setordering(request, myproj.id) == f'/{myproj.id}/meld/De sortering is gewijzigd./'
+    assert capsys.readouterr().out == f"called core.setordering with args ({request}, {myproj.id})\n"
 
+@pytest.mark.django_db
 def test_new_action(monkeypatch):
     """unittest for views.new_action
     """
     monkeypatch.setattr(views, 'render', lambda *x: x)
+    myproj = my.Project.objects.create(name='first')
     myuser = auth.User.objects.create(username='me')
     request = types.SimpleNamespace(user=myuser)
     monkeypatch.setattr(views.core, 'build_pagedata_for_detail', lambda *x: x)
-    assert views.new_action(request, 'proj', 'message') == (
-            request, 'tracker/actie.html', (request, 'proj', 'new', 'message'))
+    assert views.new_action(request, myproj.id, 'message') == (
+            request, 'tracker/actie.html', (request, myproj.id, 'new', 'message'))
 
+@pytest.mark.django_db
 def test_show_action(monkeypatch):
     """unittest for views.show_action
     """
     monkeypatch.setattr(views, 'render', lambda *x: x)
+    myproj = my.Project.objects.create(name='first')
     myuser = auth.User.objects.create(username='me')
     request = types.SimpleNamespace(user=myuser)
     monkeypatch.setattr(views.core, 'build_pagedata_for_detail', lambda *x: x)
-    assert views.show_action(request, 'proj', 'actie', 'message') == (
-            request, 'tracker/actie.html', (request, 'proj', 'actie', 'message'))
+    assert views.show_action(request, myproj.id, 'actie', 'message') == (
+            request, 'tracker/actie.html', (request, myproj.id, 'actie', 'message'))
 
 @pytest.mark.django_db
 def test_add_action(monkeypatch):

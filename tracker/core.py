@@ -9,13 +9,19 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.http import Http404
 from django.db.models import Q  # wordt gebruikt bij samenstellen filterstring (get_acties)
 # from django.contrib import admin
-import django.contrib.auth.models as aut
+import django.contrib.auth.models as auth
 import tracker.models as my
 
 UIT_DOCTOOL = "Actie opgevoerd vanuit Doctool"
 
 
-def add_project(name, desc):
+def build_pagedata_for_newproj():
+    """bepaal te tonen gegevens voor "nieuw project" scherm
+    """
+    return {'all_users': list(auth.User.objects.all().order_by('username'))}
+
+
+def add_project(name, desc, admins):
     "nieuw project aanmaken"
     newproj = my.Project.objects.create(name=name, description=desc)
     if my.Page.objects.count() == 0:
@@ -23,6 +29,7 @@ def add_project(name, desc):
     add_default_soorten(newproj)
     add_default_statussen(newproj)
     add_auth_for_project(newproj)
+    add_admins(newproj, admins)
     return newproj.id
 
 
@@ -66,13 +73,24 @@ def add_default_statussen(project):
 def add_auth_for_project(project):
     """add groups to cluster user permissions
     """
-    group = aut.Group.objects.create(name=f'{project.name}_admin')
-    for permit in aut.Permission.objects.filter(content_type__app_label="tracker"):
+    group = auth.Group.objects.create(name=f'{project.name}_admin')
+    for permit in auth.Permission.objects.filter(content_type__app_label="tracker"):
         group.permissions.add(permit)
-    group = aut.Group.objects.create(name=f'{project.name}_user')
-    for permit in aut.Permission.objects.filter(content_type__app_label="tracker").filter(
+    group = auth.Group.objects.create(name=f'{project.name}_user')
+    for permit in auth.Permission.objects.filter(content_type__app_label="tracker").filter(
             content_type__model__in=['actie', 'event', 'sortorder', 'selection']):
         group.permissions.add(permit)
+
+
+def add_admins(project, admin_list):
+    """add initial admin(s)
+    """
+    for entry in admin_list:
+        if entry == '0':
+            continue
+        user = auth.User.objects.get(pk=entry)
+        group = auth.Group.objects.get(name=f'{project.name}_admin')
+        user.groups.add(group.id)
 
 
 def build_pagedata_for_project(request, proj, msg):
@@ -124,7 +142,16 @@ def build_pagedata_for_settings(request, proj):  # request arg unused
     project = my.Project.objects.get(pk=proj)
     proj_users = project.workers.order_by('assigned__username')
     hlp = [x.assigned for x in proj_users]
-    all_users = [x for x in aut.User.objects.all().order_by('username') if x not in hlp]
+    # all_users = [x for x in auth.User.objects.all().order_by('username') if x not in hlp]
+    all_users, proj_admins, admin_users = [], [], []
+    wanted_group = auth.Group.objects.get(name=f'{project.name}_admin')
+    for user in auth.User.objects.all().order_by('username'):
+        if user not in hlp:
+            all_users.append(user)
+        if wanted_group in user.groups.all():
+            proj_admins.append(user)
+        else:
+            admin_users.append(user)
     page_data = {"title": "Instellingen",
                  "name": project.name,
                  "root": proj,
@@ -132,7 +159,9 @@ def build_pagedata_for_settings(request, proj):  # request arg unused
                  "soorten": project.soort.order_by('order'),
                  "stats": project.status.order_by('order'),
                  "all_users": all_users,
-                 "proj_users": proj_users}  # .order_by('username')
+                 "proj_users": proj_users,
+                 "admin_users": admin_users,
+                 "proj_admins": proj_admins}
     return page_data
 
 
@@ -143,7 +172,7 @@ def set_users(request, proj):
     # genoemde select bevat de toegekende gebruikers(namen). Bij submitten worden de bijbehorende
     # ids hieruit m.b.v. javascript overgenomen in hidden field `result` gescheiden door #$#
     test = data.get("result", '')
-    users = [aut.User.objects.get(pk=x) for x in test.split("$#$")] if test else []
+    users = [auth.User.objects.get(pk=x) for x in test.split("$#$")] if test else []
     project = my.Project.objects.get(pk=proj)
     current = project.workers.all()
     old_users = [x.assigned for x in current]
@@ -153,6 +182,27 @@ def set_users(request, proj):
     for user in old_users:
         if user not in users:
             my.Worker.objects.get(project=project, assigned=user).delete()
+
+
+def set_admins(request, proj):
+    "leg de aangegeven admins vast bij het project"
+    data = request.POST
+    # users = data.getlist("ProjAdmins")
+    # genoemde select bevat de toegekende gebruikers(namen). Bij submitten worden de bijbehorende
+    # ids hieruit m.b.v. javascript overgenomen in hidden field `result` gescheiden door #$#
+    test = data.get("result", '')
+    users = [auth.User.objects.get(pk=x) for x in test.split("$#$")] if test else []
+    project = my.Project.objects.get(pk=proj)
+    wanted_group = auth.Group.objects.get(name=f'{project.name}_admin')
+    old_admins = [x for x in auth.User.objects.all() if wanted_group in x.groups.all()]
+    for user in users:
+        if user not in old_admins:
+            grp = auth.Group.objects.get(name=f'{project.name}_admin')
+            user.groups.add(grp)
+    for user in old_admins:
+        if user not in users:
+            grp = auth.Group.objects.get(name=f'{project.name}_admin')
+            user.groups.remove(grp)
 
 
 def set_tabs(request):
@@ -481,7 +531,7 @@ def wijzig_detail(request, project, actie):
     actie.title = data.get("title", "")
     oldarch = actie.arch
     actie.arch = data.get("archstat", "False") == "True"
-    actie.behandelaar = aut.User.objects.get(pk=int(data.get("user", "0")))
+    actie.behandelaar = auth.User.objects.get(pk=int(data.get("user", "0")))
     actie.soort = my.Soort.objects.get(value=data.get("soort", " "))
     actie.status = my.Status.objects.get(value=int(data.get("status", "1")))
     actie.lasteditor = request.user
@@ -537,11 +587,11 @@ def copy_existing_action_from_here(proj, actnum, usernaam, vervolg):
             # response = f"/{root}/{actie.id}/mld/{msg}/"
             return f"/{proj}/{actnum}/mld/{msg}/"
         return vervolg.format('0', fout)
-    actie.starter = aut.User.objects.get(pk=1)
+    actie.starter = auth.User.objects.get(pk=1)
     behandelaar = actie.starter
     if usernaam:
         with contextlib.suppress(ObjectDoesNotExist):
-            behandelaar = aut.User.objects.get(username=usernaam)
+            behandelaar = auth.User.objects.get(username=usernaam)
     actie.lasteditor = behandelaar
     actie.save()
     if not vervolg:
@@ -573,11 +623,11 @@ def add_new_action_on_both_sides(proj, data, usernaam, vervolg):
     actie.project = my.Project.objects.get(pk=proj)
     actie.nummer = f"{nw_date.year}-{volgnr:04}"
     actie.start = nw_date
-    actie.starter = aut.User.objects.get(pk=1)
+    actie.starter = auth.User.objects.get(pk=1)
     behandelaar = actie.starter
     if usernaam:
         with contextlib.suppress(ObjectDoesNotExist):
-            behandelaar = aut.User.objects.get(username=usernaam)
+            behandelaar = auth.User.objects.get(username=usernaam)
     actie.behandelaar = behandelaar
     actie.about = "testbevinding" if "bevinding" in vervolg else ""
     actie.title = data.get("hMeld", "")

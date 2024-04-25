@@ -1,4 +1,40 @@
 {% extends "base_site.html" %}
+{% block extrastyle %}<style>
+body {
+	background-color: lightblue;
+}
+div.clear,
+span.clear {
+	background: none;
+	border: 0;
+	clear: both;
+	display: block;
+	float: none;
+	font-size: 0;
+	margin: 0;
+	padding: 0;
+	overflow: hidden;
+	visibility: hidden;
+	width: 0;
+	height: 0;
+}
+.col_link,
+.col_stats {
+/*    font-family:"Lucida Grande", Verdana, Arial, sans-serif;
+    line-height:13px; border-top:1px solid #eee; vertical-align:top;
+    padding: 5px 0 5px 0 ;
+    font-size:11px; */
+    display: inline;
+	float: left;
+}
+.col_link {
+	width: 500px;
+}
+.col_stats {
+    text-align: center;
+	width: 300px;
+}
+</style> {% endblock %}
 
 {% block branding %}<h1>ActieRegistratie | Nieuw project opvoeren</h1>{% endblock %}
 
@@ -10,8 +46,18 @@
 <tr><th>korte beschrijving: </th>
     <td><input type="text" name="desc" value="" size="80"/></td></tr>
 <tr><td colspan="2">
+    <h3>Selecteer alvast een eerste admin voor dit project</h3>
+    <select name="admin" multiple="multiple" size="6">
+        <option value="0">-- choose one or more --</option>
+        {% for usr in all_users %}
+            <option value="{{ usr.id }}">{{ usr }}</option>
+        {% endfor %}
+    </select>
+</td></tr>
+<tr><td colspan="2">
     <input type="submit" value="opvoeren"/>
     <a href="/" title="back"><input type="button" value="terug"/></a>
 </td></tr>
 </table>
+</form>
 {% endblock %}

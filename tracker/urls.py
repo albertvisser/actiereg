@@ -1,3 +1,5 @@
+"""Url configuration for Actiereg Tracker app
+"""
 from django.urls import path, include
 from django.contrib.auth.views import LoginView
 from . import views
@@ -22,13 +24,13 @@ urlpatterns = [
         path('setorder/', views.setordering),
         path('settings/', views.show_settings),
         path('wijzigusers/', views.setusers),
+        path('wijzigadmins/', views.setadmins),
         path('wijzigtabs/', views.settabs),
         path('wijzigtypes/', views.settypes),
         path('wijzigstats/', views.setstats),
         # path('koppel/', views.add_action_from_doctool),
         path('nieuw/', views.new_action),
-        path('nieuw/update/', views.add_action),
-        ])),
+        path('nieuw/update/', views.add_action), ])),
     path('<int:proj>/<int:actie>/', include([
         path('', views.show_action),
         path('detail/', views.show_action),
@@ -54,6 +56,4 @@ urlpatterns = [
         path('voortg/nieuw/', views.new_event),
         path('voortg/nieuw/update/', views.add_event),
         path('voortg/<int:event>/', views.edit_event),
-        path('voortg/<int:event>/update/', views.update_event),
-        ])),
-    ]
+        path('voortg/<int:event>/update/', views.update_event), ])), ]
