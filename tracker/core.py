@@ -230,8 +230,8 @@ def set_types(request, proj):
             item.delete()
         else:
             add_to_changed = False
-            if data[field_o] != item.order:
-                item.order = data[field_o]
+            if int(data[field_o]) != item.order:
+                item.order = int(data[field_o])
                 add_to_changed = True
             if data[field_t] != item.title:
                 item.title = data[field_t]
@@ -263,13 +263,13 @@ def set_stats(request, proj):
             item.delete()
         else:
             add_to_changed = False
-            if data[field_o] != item.order:
-                item.order = data[field_o]
+            if int(data[field_o]) != item.order:
+                item.order = int(data[field_o])
                 add_to_changed = True
             if data[field_t] != item.title:
                 item.title = data[field_t]
                 add_to_changed = True
-            if data[field_v] != item.value:
+            if int(data[field_v]) != item.value:
                 item.value = data[field_v]
                 add_to_changed = True
             if add_to_changed:
@@ -393,6 +393,7 @@ def set_selection_for_user(project, user, data):
 
 def set_selection_for_description(project, user, data):
     "create selection items for project/user/description fields"
+    extra = ''
     txtabout = data.get("txtabout", "")
     if txtabout:
         my.Selection.objects.create(project=project, user=user.id, veldnm="about",
@@ -693,7 +694,7 @@ def build_pagedata_for_tekstpage(request, proj, actie, page="", msg=''):
         page_text = actie.oorzaak
     elif page == "opl":
         page_text = actie.oplossing
-    elif page == "verv":
+    else:  # if page == "verv":  -- geen andere mogelijkheid
         page_text = actie.vervolg
 
     page_data["page"] = page
@@ -743,7 +744,7 @@ def wijzig_tekstpage(request, proj, actie, page=""):
     elif page == "opl" and actie.oplossing != orig:
         msg = "Beschrijving oplossing aangepast"
         store_event(msg, actie, request.user)
-    elif page == "verv" and actie.vervolg != orig:
+    else:  # if page == "verv" and actie.vervolg != orig:  - enige mogelijkheid
         msg = "Beschrijving vervolgactie aangepast"
         store_event(msg, actie, request.user)
 
@@ -944,7 +945,7 @@ def filter_data_on_description(data, seltest):
             if filter:
                 if filtered[0].extra.upper() in ("EN", "AND"):
                     filter += " & "
-                elif filtered[0].extra.upper() in ("OF", "OR"):
+                else:  # if filtered[0].extra.upper() in ("OF", "OR"):  # geen andere mogelijkheid
                     filter += " | "
             filter += f'Q(title__icontains="{test}")'
     if filter:

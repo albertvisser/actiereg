@@ -97,10 +97,15 @@ def test_is_admin():
     project = my.Project.objects.create(name='first')
     assert not list(user.groups.all())
     assert not testee.is_admin(project, user)
-    group = auth.Group.objects.create(name=f'{project}_admin')
+    group = auth.Group.objects.create(name=f'{project}_user')
     user.groups.add(group)
     assert len(list(user.groups.all())) == 1
     assert user.groups.all()[0] == group
+    assert not testee.is_admin(project, user)
+    group = auth.Group.objects.create(name=f'{project}_admin')
+    user.groups.add(group)
+    assert len(list(user.groups.all())) == 2
+    assert user.groups.all()[1] == group
     assert testee.is_admin(project, user)
 
 @pytest.mark.django_db
@@ -173,6 +178,9 @@ def test_filter_data_on_soort():
                             soort=soort, status=status, behandelaar=user)
     my.Actie.objects.create(project=project, nummer='0004', starter=user, lasteditor=user,
                             soort=soort3, status=status, behandelaar=user)
+    my.Selection.objects.create(user=user.id, project=project, veldnm="qqqqq", value='x')
+    data = testee.filter_data_on_soort(my.Actie.objects.all(), my.Selection.objects.all())
+    assert [x.nummer for x in data] == ['0001', '0002', '0003', '0004']
     my.Selection.objects.create(user=user.id, project=project, veldnm="soort", value='x')
     data = testee.filter_data_on_soort(my.Actie.objects.all(), my.Selection.objects.all())
     assert [x.nummer for x in data] == ['0001', '0003']
@@ -199,7 +207,10 @@ def test_filter_data_on_status():
                             soort=soort, status=status, behandelaar=user)
     my.Actie.objects.create(project=project, nummer='0004', starter=user, lasteditor=user,
                             soort=soort, status=status3, behandelaar=user)
-    my.Selection.objects.create(user=user.id, project=project, veldnm="status", value=0)
+    my.Selection.objects.create(user=user.id, project=project, veldnm="qqqqq", value=1)
+    data = testee.filter_data_on_status(my.Actie.objects.all(), my.Selection.objects.all())
+    assert [x.nummer for x in data] == ['0001', '0002', '0003', '0004']
+    my.Selection.objects.create(user=user.id, project=project, veldnm="status", value='0')
     data = testee.filter_data_on_status(my.Actie.objects.all(), my.Selection.objects.all())
     assert [x.nummer for x in data] == ['0001', '0003']
 
@@ -224,10 +235,14 @@ def test_filter_data_on_user():
                             soort=soort, status=status, behandelaar=user)
     my.Actie.objects.create(project=project, nummer='0004', starter=user, lasteditor=user,
                             soort=soort, status=status, behandelaar=user2)
+    my.Selection.objects.create(user=user.id, project=project, veldnm="qqqq", value=user.id)
+    data = testee.filter_data_on_user(my.Actie.objects.all(), my.Selection.objects.all())
+    assert [x.nummer for x in data] == ['0001', '0002', '0003', '0004']
     my.Selection.objects.create(user=user.id, project=project, veldnm="user", value=user.id)
     data = testee.filter_data_on_user(my.Actie.objects.all(), my.Selection.objects.all())
     assert [x.nummer for x in data] == ['0001', '0003']
 
+# 948->950
 @pytest.mark.django_db
 def test_filter_data_on_description():
     """unittest for core.filter_data_on_description
@@ -250,6 +265,23 @@ def test_filter_data_on_description():
     my.Actie.objects.create(project=project, nummer='0004', starter=user, lasteditor=user,
                             soort=soort, status=status, behandelaar=user,
                             about='2222', title='dddddd')
+    data = testee.filter_data_on_description(my.Actie.objects.all(), my.Selection.objects.all())
+    assert [x.nummer for x in data] == ['0001', '0002', '0003', '0004']
+    my.Selection.objects.create(user=user.id, project=project, veldnm="about", value='')
+    data = testee.filter_data_on_description(my.Actie.objects.all(), my.Selection.objects.all())
+    assert [x.nummer for x in data] == ['0001', '0002', '0003', '0004']
+    my.Selection.objects.all().delete()
+    my.Selection.objects.create(user=user.id, project=project, veldnm="about", value='11')
+    my.Selection.objects.create(user=user.id, project=project, veldnm="title", value='',
+                                extra='of')
+    data = testee.filter_data_on_description(my.Actie.objects.all(), my.Selection.objects.all())
+    assert [x.nummer for x in data] == ['0001', '0003']
+    my.Selection.objects.all().delete()
+    my.Selection.objects.create(user=user.id, project=project, veldnm="title", value='bb',
+                                extra='of')
+    data = testee.filter_data_on_description(my.Actie.objects.all(), my.Selection.objects.all())
+    assert [x.nummer for x in data] == ['0002']
+    my.Selection.objects.all().delete()
     my.Selection.objects.create(user=user.id, project=project, veldnm="about", value='11')
     my.Selection.objects.create(user=user.id, project=project, veldnm="title", value='bb',
                                 extra='of')
@@ -284,6 +316,11 @@ def test_filter_data_on_arch():
     my.Selection.objects.create(user=user.id, project=project, veldnm="arch")
     data = testee.filter_data_on_arch(my.Actie.objects.all(), my.Selection.objects.all())
     assert [x.nummer for x in data] == ['0002', '0004']
+
+    # kan eigenlijk niet?
+    my.Selection.objects.create(user=user.id, project=project, veldnm="arch")
+    data = testee.filter_data_on_arch(my.Actie.objects.all(), my.Selection.objects.all())
+    assert [x.nummer for x in data] == ['0001', '0002', '0003', '0004']
 
 @pytest.mark.django_db
 def test_apply_sorters():
@@ -658,6 +695,10 @@ def test_set_users():
     request = types.SimpleNamespace(user=myuser, POST={'result': f'{myuser.id}$#${myuser2.id}'})
     testee.set_users(request, myproject.id)
     assert [x.assigned.username for x in myproject.workers.all()] == ['me', 'another']
+    # nog een keer voor full branch coverage
+    request = types.SimpleNamespace(user=myuser, POST={'result': f'{myuser.id}$#${myuser2.id}'})
+    testee.set_users(request, myproject.id)
+    assert [x.assigned.username for x in myproject.workers.all()] == ['me', 'another']
 
 @pytest.mark.django_db
 def test_set_admins():
@@ -679,15 +720,31 @@ def test_set_admins():
     assert list(myuser2.groups.all()) == [mygroup]
 
 @pytest.mark.django_db
-def test_set_tabs():
+def test_set_tabs(monkeypatch, capsys):
     """unittest for core.set_tabs
     """
+    old_save = my.Page.save
+    def mock_save(*args, **kwargs):
+        print('called Page.save with args', args, kwargs)
+        old_save(*args, **kwargs)
+    monkeypatch.setattr(my.Page, 'save', mock_save)
     myuser = auth.User.objects.create(username='me')
     my.Page.objects.create(title='Page1', order=0)
     my.Page.objects.create(title='Page2', order=1)
+    assert capsys.readouterr().out == ("called Page.save with args (<Page: Page1>,)"
+                                       " {'force_insert': True, 'using': 'default'}\n"
+                                       "called Page.save with args (<Page: Page2>,)"
+                                       " {'force_insert': True, 'using': 'default'}\n")
     request = types.SimpleNamespace(user=myuser, POST={'page1': 'Eerste', 'page2': 'Tweede'})
     testee.set_tabs(request)
     assert [x.title for x in my.Page.objects.all().order_by('order')] == ['Eerste', 'Tweede']
+    assert capsys.readouterr().out == ("called Page.save with args (<Page: Eerste>,) {}\n"
+                                       "called Page.save with args (<Page: Tweede>,) {}\n")
+    # nog een keer voor full branch coverage
+    request = types.SimpleNamespace(user=myuser, POST={'page1': 'Eerste', 'page2': 'Tweede'})
+    testee.set_tabs(request)
+    assert [x.title for x in my.Page.objects.all().order_by('order')] == ['Eerste', 'Tweede']
+    assert capsys.readouterr().out == ""
 
 @pytest.mark.django_db
 def test_set_types():
@@ -766,6 +823,20 @@ def test_set_stats():
     data = myproject.status.all().order_by('order')
     assert [x.value for x in data] == [1, 3, 0]
     assert [x.title for x in data] == ['b', 'w', 'z']
+    # tbv full branch coverage
+    myproject.status.all().delete()
+    mysoort = my.Status.objects.create(project=myproject, order=0, value='0', title='z')
+    mysoort2 = my.Status.objects.create(project=myproject, order=1, value='1', title='b')
+    mysoort3 = my.Status.objects.create(project=myproject, order=2, value='2', title='r')
+    request = types.SimpleNamespace(user=myuser, POST={'order1': '0', 'value1': '0', 'title1': 'z',
+                                                       'order2': '1', 'value2': '1', 'title2': 'b',
+                                                       'order3': '2', 'value3': '3', 'title3': 'w',
+                                                       'order0': '', 'value0': '', 'title0': '',
+                                                       })
+    testee.set_stats(request, myproject.id)
+    data = myproject.status.all().order_by('order')
+    assert [x.value for x in data] == [0, 1, 3]
+    assert [x.title for x in data] == ['z', 'b', 'w']
 
 @pytest.mark.django_db
 def test_build_pagedata_for_selection():
@@ -851,6 +922,11 @@ def test_setselection(monkeypatch, capsys):
     myproject = my.Project.objects.create(name='first')
     myselection = my.Selection.objects.create(user=myuser.id, project=myproject)
     postdict = QueryDict(mutable=True)
+    postdict.setlist('select', [])
+    request = types.SimpleNamespace(user=myuser, POST=postdict)
+    testee.setselection(request, myproject.id)
+    assert len(myproject.selections.filter(user=request.user.id)) == 0
+    assert capsys.readouterr().out == ''
     postdict.setlist('select', ['act', 'srt', 'stat', 'user', 'txt', 'arch'])
     request = types.SimpleNamespace(user=myuser, POST=postdict)
     testee.setselection(request, myproject.id)
@@ -876,6 +952,29 @@ def test_set_selection_for_nummer():
                                                                                 '', '100')
     assert (data[1].veldnm, data[1].operator, data[1].extra, data[1].value) == ('nummer', 'LT',
                                                                                 'EN', '1000')
+    data.delete()
+    data = {'txtgt': '100', 'enof': 'of', 'txtlt': '1000'}
+    testee.set_selection_for_nummer(myproject, myuser, data)
+    data = myproject.selections.filter(user=myuser.id)
+    assert len(data) == len(['GT', 'LT'])  # 2
+    assert (data[0].veldnm, data[0].operator, data[0].extra, data[0].value) == ('nummer', 'GT',
+                                                                                '', '100')
+    assert (data[1].veldnm, data[1].operator, data[1].extra, data[1].value) == ('nummer', 'LT',
+                                                                                'OF', '1000')
+    data.delete()
+    data = {'txtgt': '100', 'enof': 'en'}
+    testee.set_selection_for_nummer(myproject, myuser, data)
+    data = myproject.selections.filter(user=myuser.id)
+    assert len(data) == len(['GT'])  # 1
+    assert (data[0].veldnm, data[0].operator, data[0].extra, data[0].value) == ('nummer', 'GT',
+                                                                                '', '100')
+    data.delete()
+    data = {'enof': 'of', 'txtlt': '1000'}
+    testee.set_selection_for_nummer(myproject, myuser, data)
+    data = myproject.selections.filter(user=myuser.id)
+    assert len(data) == len(['LT'])  # 1
+    assert (data[0].veldnm, data[0].operator, data[0].extra, data[0].value) == ('nummer', 'LT',
+                                                                                '', '1000')
 
 @pytest.mark.django_db
 def test_set_selection_for_soort():
@@ -942,6 +1041,30 @@ def test_set_selection_for_description():
                                                                                 '', '100')
     assert (data[1].veldnm, data[1].operator, data[1].extra, data[1].value) == ('title', 'INCL',
                                                                                 'EN', '1000')
+    data.delete()
+    data = {'txtabout': '100', 'enof2': 'or', 'txttitle': '1000'}
+    testee.set_selection_for_description(myproject, myuser, data)
+    data = myproject.selections.filter(user=myuser.id)
+    assert len(data) == len(['about', 'title'])  # 2
+    assert (data[0].veldnm, data[0].operator, data[0].extra, data[0].value) == ('about', 'INCL',
+                                                                                '', '100')
+    assert (data[1].veldnm, data[1].operator, data[1].extra, data[1].value) == ('title', 'INCL',
+                                                                                'OR', '1000')
+    data.delete()
+    data = {'txtabout': '100', 'enof2': 'en'}
+    testee.set_selection_for_description(myproject, myuser, data)
+    data = myproject.selections.filter(user=myuser.id)
+    assert len(data) == len(['about']) # 1
+    assert (data[0].veldnm, data[0].operator, data[0].extra, data[0].value) == ('about', 'INCL',
+                                                                                '', '100')
+    data.delete()
+    data = {'enof2': 'of', 'txttitle': '1000'}
+    testee.set_selection_for_description(myproject, myuser, data)
+    data = myproject.selections.filter(user=myuser.id)
+    assert len(data) == len(['title'])  # 1
+    assert (data[0].veldnm, data[0].operator, data[0].extra, data[0].value) == ('title', 'INCL',
+                                                                                '', '1000')
+    data.delete()
 
 @pytest.mark.django_db
 def test_set_selection_for_arch():
@@ -1075,6 +1198,18 @@ def test_build_pagedata_for_detail(monkeypatch):
     assert (list(data['stats']), data['title']) == ([mystatus], 'Nieuwe actie')
     assert (list(data['users']), data['nieuw'], data['start']) == ([myuser], myname, FIXDATE)
 
+    # t.b.v. full branch coverage: nog geen acties aanwezig bij project
+    myproject = my.Project.objects.create(name='second')
+    mysoort = my.Soort.objects.create(project=myproject, order=0, value='y', title='z')
+    mystatus = my.Status.objects.create(project=myproject, order=0, value=0, title='z')
+    myworker = my.Worker.objects.create(project=myproject, assigned=myuser)
+    data = testee.build_pagedata_for_detail(MockRequest2(), myproject.id, 'new')
+    assert (data['msg'], data['name'], data['nummer']) == ('login_message', 'second', '2020-0001')
+    assert (data['page_titel'], list(data['pages'])) == ('', [mypage])
+    assert (data['readonly'], data['root'], list(data['soorten'])) == (True, 2, [mysoort])
+    assert (list(data['stats']), data['title']) == ([mystatus], 'Nieuwe actie')
+    assert (list(data['users']), data['nieuw'], data['start']) == ([myuser], myname, FIXDATE)
+
 @pytest.mark.django_db
 def test_wijzig_detail():
     """unittest for core.wijzig_detail
@@ -1109,8 +1244,6 @@ def test_wijzig_detail():
                                                       'behandelaar gewijzigd in "myname"',
                                                       'categorie gewijzigd in "new"',
                                                       'status gewijzigd in "new"']
-    with pytest.raises(IndexError):
-        myactie.events.all()[5]
 
     request = types.SimpleNamespace(POST={'nummer': 'y', 'about': 'a', 'title': 't', 'user': "1",
                                           'soort': 'P', 'status': '1', 'archstat': 'False'},
@@ -1128,8 +1261,20 @@ def test_wijzig_detail():
     assert [x.text for x in myactie2.events.all()] == ['Actie opgevoerd',
                                                        'categorie gewijzigd in "new"',
                                                        'status gewijzigd in "new"']
+
+    request = types.SimpleNamespace(POST={'nummer': 'y', 'about': 'a', 'title': 't', 'user': "1",
+                                          'soort': 'P', 'status': '1', 'archstat': 'True'},
+                                    user=myuser)
+    assert testee.wijzig_detail(request, myproject, myactie2.id) == '/1/2/mld/Actie gearchiveerd/'
+    # assert len(myproject.acties.all()) == 2
+    myactie2 = myproject.acties.all()[1]
     with pytest.raises(IndexError):
-        myactie2.events.all()[3]
+        myproject.acties.all()[2]
+    assert myactie2.arch
+    assert [x.text for x in myactie2.events.all()] == ['Actie opgevoerd',
+                                                       'categorie gewijzigd in "new"',
+                                                       'status gewijzigd in "new"',
+                                                       'Actie gearchiveerd']
 
     myactie3 = my.Actie.objects.create(project=myproject, nummer='z', starter=myuser,
                                       lasteditor=myuser,
@@ -1182,11 +1327,11 @@ def test_copy_existing_action_from_here(monkeypatch, capsys):
     assert myactie_v2.lasteditor == myuser
     newuser = auth.User.objects.create(username='mwah')
     assert testee.copy_existing_action_from_here(
-            myproject.id, myactie.id, 'mwah', '/doctool/koppel/{}/{}/') == (
+            myproject.id, myactie.id, '', '/doctool/koppel/{}/{}/') == (
                     f'/doctool/koppel/{myactie.id}/{myactie.nummer}/')
     myactie_v3 = my.Actie.objects.get(pk=myactie.id)
     assert myactie_v3.behandelaar == myuser
-    assert myactie_v3.lasteditor == newuser
+    assert myactie_v3.lasteditor == myuser
     events = myactie_v3.events.all()
     assert len(events) == len([events[0]])
     assert (events[0].text, events[0].starter) == (f'{testee.UIT_DOCTOOL} /doctool/', myuser)
@@ -1197,7 +1342,7 @@ def test_copy_existing_action_from_here(monkeypatch, capsys):
     events = myactie_v3.events.all()  # even controleren
     assert len(events) == len([events[0], myevent2])
     assert (events[0].text, events[1].text) == ('text1', 'text2')
-    # nu dan de test
+    # en de test hiervoor
     assert testee.copy_existing_action_from_here(
             myproject.id, myactie.id, 'mwah', '/doctool/koppel/{}/{}/') == (
                     f'/doctool/koppel/{myactie.id}/{myactie.nummer}/')

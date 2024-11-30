@@ -140,6 +140,8 @@ def test_show_project(monkeypatch):
     request = types.SimpleNamespace(user=auth.AnonymousUser())
     assert views.show_project(request, 'proj') == (request, 'tracker/index.html',
                                                    (request, 'proj', 'login_message'))
+    assert views.show_project(request, 'proj', 'ahum') == (request, 'tracker/index.html',
+                                                   (request, 'proj', 'ahum'))
     myuser = auth.User.objects.create(username='me')
     request = types.SimpleNamespace(user=myuser)
     assert views.show_project(request, 'proj') == (request, 'tracker/index.html',
