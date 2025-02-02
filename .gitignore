@@ -5,12 +5,10 @@ __pycache__/
 
 # development stuff
 logs/
-*.swp
-*.swo
+.coverage
+projdocs*
 
 # live site files and directories
 actiereg/settings*
-.coverage
 static/admin
-projdocs*
 secret_key
