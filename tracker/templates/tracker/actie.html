@@ -78,27 +78,27 @@ function setarch() {
     {% if actie %} door: {{actie.starter}}{% endif %}</div>
   <div class="clear">&nbsp;</div>
   <div class="col_lbl"><label for = "about">betreft: </label></div>
-  <div class="col_inp"><input type="text" {% if actie.arch %}readonly="readonly"{% endif %}
+  <div class="col_inp"><input type="text" {% if actie.arch or readonly %}readonly="readonly"{% endif %}
     name="about" id="about" value="{{actie.about}}" /></div>
   <div class="clear">&nbsp;</div>
   <div class="col_lbl"><label for = "title">omschrijving:</label></div>
-  <div class="col_inp"><input  type="text" {% if actie.arch %}readonly="readonly"{% endif %}
+  <div class="col_inp"><input  type="text" {% if actie.arch or readonly %}readonly="readonly"{% endif %}
     name="title" id="title" value="{{actie.title}}" size="60"/></div>
   <div class="clear">&nbsp;</div>
   <div class="col_lbl"><label for = "soort">soort:</label></div>
-  <div class="col_inp"><select name="soort" {% if actie.arch %}readonly="readonly"{% endif %}>
+  <div class="col_inp"><select name="soort" {% if actie.arch or readonly %}disabled="disabled"{% endif %}>
      {% for soort in soorten %}<option value="{{soort.value}}"
         {% if soort == actie.soort %}selected="selected"{% endif %}>
         {{soort.title}}</option>{% endfor %}</select></div>
   <div class="clear">&nbsp;</div>
   <div class="col_lbl"><label for = "status">status:</label></div>
-  <div class="col_inp"><select name="status" {% if actie.arch %}readonly="readonly"{% endif %}>
+  <div class="col_inp"><select name="status" {% if actie.arch or readonly %}disabled="disabled"{% endif %}>
     {% for stat in stats %}<option value="{{stat.value}}"
     {% if stat == actie.status %}selected="selected"{% endif %}>
     {{stat.title}}</option>{% endfor %}</select></div>
   <div class="clear">&nbsp;</div>
   <div class="col_lbl"><label for="user">In behandeling bij:</label></div>
-  <div class="col_inp"><select name="user" {% if actie.arch %}readonly="readonly"{% endif %}>
+  <div class="col_inp"><select name="user" {% if actie.arch or readonly %}disabled="disabled"{% endif %}>
     {% for user in users %}<option value="{{user.id}}"
     {% if nieuw %} {% if user == nieuw %}selected="selected"{% endif %}
     {%else %}{% if user == actie.behandelaar %}selected="selected"{% endif %}

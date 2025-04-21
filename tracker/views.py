@@ -198,7 +198,7 @@ def new_action(request, proj, msg=''):
                   core.build_pagedata_for_detail(request, proj, 'new', msg))
 
 
-@login_required
+# @login_required
 def show_action(request, proj, actie, msg=''):
     "toon scherm met gegevens van bestaande actie"
     return render(request, 'tracker/actie.html',
@@ -238,28 +238,28 @@ def update_action(request, proj, actie):
     return HttpResponseRedirect(core.wijzig_detail(request, project, actie))
 
 
-@login_required
+# @login_required
 def show_meld(request, proj, actie, msg=""):
     "toon scherm voor wijzigen melding"
     return render(request, 'tracker/tekst.html',
                   core.build_pagedata_for_tekstpage(request, proj, actie, 'meld', msg))
 
 
-@login_required
+# @login_required
 def show_oorz(request, proj, actie, msg=""):
     "toon scherm voor wijzigen oorzaak"
     return render(request, 'tracker/tekst.html',
                   core.build_pagedata_for_tekstpage(request, proj, actie, 'oorz', msg))
 
 
-@login_required
+# @login_required
 def show_opl(request, proj, actie, msg=""):
     "toon scherm voor wijzigen oplossing"
     return render(request, 'tracker/tekst.html',
                   core.build_pagedata_for_tekstpage(request, proj, actie, 'opl', msg))
 
 
-@login_required
+# @login_required
 def show_verv(request, proj, actie, msg=""):
     "toon scherm voor wijzigen vervolg"
     return render(request, 'tracker/tekst.html',
@@ -290,7 +290,7 @@ def update_verv(request, proj, actie):
     return HttpResponseRedirect(core.wijzig_tekstpage(request, proj, actie, 'verv'))
 
 
-@login_required
+# @login_required
 def show_events(request, proj, actie, msg=""):
     "toon scherm voor (wijzigen/toevoegen) events"
     return render(request, 'tracker/voortgang.html',
@@ -304,7 +304,7 @@ def new_event(request, proj, actie):
                   core.build_pagedata_for_events(request, proj, actie, event='nieuw'))
 
 
-@login_required
+# @login_required
 def edit_event(request, proj, actie, event):
     "Rzet scherm open voor wijzigen"
     return render(request, 'tracker/voortgang.html',
