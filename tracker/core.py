@@ -21,7 +21,7 @@ def build_pagedata_for_newproj():
     return {'all_users': list(auth.User.objects.all().order_by('username'))}
 
 
-def add_project(name, desc, admins):
+def add_project(name, desc, admins, users):
     "nieuw project aanmaken"
     newproj = my.Project.objects.create(name=name, description=desc)
     if my.Page.objects.count() == 0:
@@ -30,6 +30,7 @@ def add_project(name, desc, admins):
     add_default_statussen(newproj)
     add_auth_for_project(newproj)
     add_admins(newproj, admins)
+    add_users(newproj, users)
     return newproj.id
 
 
@@ -91,6 +92,18 @@ def add_admins(project, admin_list):
         user = auth.User.objects.get(pk=entry)
         group = auth.Group.objects.get(name=f'{project.name}_admin')
         user.groups.add(group.id)
+
+
+def add_users(project, user_list):
+    """add initial admin(s)
+    """
+    for entry in user_list:
+        if entry == '0':
+            continue
+        user = auth.User.objects.get(pk=entry)
+        group = auth.Group.objects.get(name=f'{project.name}_user')
+        user.groups.add(group.id)
+        my.Worker.objects.create(project=project, assigned=user)
 
 
 def build_pagedata_for_project(request, proj, msg):
@@ -174,14 +187,17 @@ def set_users(request, proj):
     test = data.get("result", '')
     users = [auth.User.objects.get(pk=x) for x in test.split("$#$")] if test else []
     project = my.Project.objects.get(pk=proj)
+    group = auth.Group.objects.get(name=f'{project.name}_user')
     current = project.workers.all()
     old_users = [x.assigned for x in current]
     for user in users:
         if user not in old_users:
             my.Worker.objects.create(project=project, assigned=user)
+            user.groups.add(group.id)
     for user in old_users:
         if user not in users:
             my.Worker.objects.get(project=project, assigned=user).delete()
+            user.groups.remove(group.id)
 
 
 def set_admins(request, proj):

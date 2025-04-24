@@ -109,10 +109,10 @@ def test_add_project(monkeypatch, capsys):
     monkeypatch.setattr(views, 'HttpResponseRedirect', lambda x: x)
     myuser = auth.User.objects.create(username='me')
     request = types.SimpleNamespace(user=myuser, POST={'name': 'new', 'desc': 'project',
-                                                       'admin': ['xxx']})
+                                                       'admin': ['xxx'], 'user': ['yyy']})
     assert views.add_project(request) == '/msg/project aangemaakt/'
     assert capsys.readouterr().out == (
-            "called core.add_project with args ('new', 'project', ['xxx'])\n")
+            "called core.add_project with args ('new', 'project', ['xxx'], ['yyy'])\n")
 
 def test_add_from_doctool(monkeypatch, capsys):
     """unittest for views.add_from_doctool

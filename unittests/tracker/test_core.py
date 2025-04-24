@@ -242,7 +242,6 @@ def test_filter_data_on_user():
     data = testee.filter_data_on_user(my.Actie.objects.all(), my.Selection.objects.all())
     assert [x.nummer for x in data] == ['0001', '0003']
 
-# 948->950
 @pytest.mark.django_db
 def test_filter_data_on_description():
     """unittest for core.filter_data_on_description
@@ -440,31 +439,38 @@ def test_add_project(monkeypatch, capsys):
         """stub
         """
         print(f'called add_admins() for project {proj} with arg {admins}')
+    def mock_add_users(proj, users):
+        """stub
+        """
+        print(f'called add_users() for project {proj} with arg {users}')
     monkeypatch.setattr(testee, 'add_default_pages', mock_add_default_pages)
     monkeypatch.setattr(testee, 'add_default_soorten', mock_add_default_soorten)
     monkeypatch.setattr(testee, 'add_default_statussen', mock_add_default_statussen)
     monkeypatch.setattr(testee, 'add_auth_for_project', mock_add_auth_for_project)
     monkeypatch.setattr(testee, 'add_admins', mock_add_admins)
+    monkeypatch.setattr(testee, 'add_users', mock_add_users)
     start_id = my.Project.objects.create(name='dummy').id
     assert my.Page.objects.count() == 0
     new_id = start_id + 1
-    assert testee.add_project('name', 'desc', []) == new_id
+    assert testee.add_project('name', 'desc', [], []) == new_id
     proj = my.Project.objects.get(pk=new_id)
     assert proj.name, proj.desc == ('name', 'desc')
     assert capsys.readouterr().out == ('called add_default_pages()\n'
                                        'called add_default_soorten() for project name\n'
                                        'called add_default_statussen() for project name\n'
                                        'called add_auth_for_project() for project name\n'
-                                       'called add_admins() for project name with arg []\n')
+                                       'called add_admins() for project name with arg []\n'
+                                       'called add_users() for project name with arg []\n')
     new_id += 1
     my.Page.objects.create(link='x', order=0, title='y')
-    assert testee.add_project('name2', 'desc2', ['1']) == new_id
+    assert testee.add_project('name2', 'desc2', ['1'], ['2']) == new_id
     dproj = my.Project.objects.get(pk=new_id)
     assert proj.name, proj.desc == ('name2', 'desc2')
     assert capsys.readouterr().out == ('called add_default_soorten() for project name2\n'
                                        'called add_default_statussen() for project name2\n'
                                        'called add_auth_for_project() for project name2\n'
-                                       "called add_admins() for project name2 with arg ['1']\n")
+                                       "called add_admins() for project name2 with arg ['1']\n"
+                                       "called add_users() for project name2 with arg ['2']\n")
 
 @pytest.mark.django_db
 def test_add_default_pages():
@@ -546,6 +552,24 @@ def test_add_admins():
     assert len(myuser.groups.all()) == 1
     assert myuser.groups.all()[0] == mygroup
     assert myuser.groups.all()[0].name == 'first_admin'
+
+@pytest.mark.django_db
+def test_add_users():
+    """unittest for core.add_admins
+    """
+    myuser = auth.User.objects.create(username='me')
+    myproject = my.Project.objects.create(name='first')
+    mygroup = auth.Group.objects.create(name='first_user')
+    assert len(myuser.groups.all()) == 0
+    assert len(my.Worker.objects.all()) == 0
+    testee.add_users(myproject, ['0', mygroup.id])
+    assert len(myuser.groups.all()) == 1
+    assert myuser.groups.all()[0] == mygroup
+    assert myuser.groups.all()[0].name == 'first_user'
+    assert len(my.Worker.objects.all()) == 1
+    assert my.Worker.objects.all()[0].project == myproject
+    assert my.Worker.objects.all()[0].assigned == myuser
+
 
 @pytest.mark.django_db
 def test_build_pagedata_for_project(monkeypatch):
@@ -687,14 +711,22 @@ def test_set_users():
     myuser = auth.User.objects.create(username='me')
     myuser2 = auth.User.objects.create(username='another')
     myproject = my.Project.objects.create(name='first')
+    mygroup = auth.Group.objects.create(name='first_user')
     myworker = my.Worker.objects.create(project=myproject, assigned=myuser)
+    myuser.groups.add(mygroup)
     assert [x.assigned.username for x in myproject.workers.all()] == ['me']
+    assert [x.name for x in myuser.groups.all()] == ['first_user']
+    assert [x.name for x in myuser2.groups.all()] == []
     request = types.SimpleNamespace(user=myuser, POST={})
     testee.set_users(request, myproject.id)
     assert len(myproject.workers.all()) == 0
+    assert [x.name for x in myuser.groups.all()] == []
+    assert [x.name for x in myuser2.groups.all()] == []
     request = types.SimpleNamespace(user=myuser, POST={'result': f'{myuser.id}$#${myuser2.id}'})
     testee.set_users(request, myproject.id)
     assert [x.assigned.username for x in myproject.workers.all()] == ['me', 'another']
+    assert [x.name for x in myuser.groups.all()] == ['first_user']
+    assert [x.name for x in myuser.groups.all()] == ['first_user']
     # nog een keer voor full branch coverage
     request = types.SimpleNamespace(user=myuser, POST={'result': f'{myuser.id}$#${myuser2.id}'})
     testee.set_users(request, myproject.id)

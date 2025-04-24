@@ -130,4 +130,4 @@ class Worker(models.Model):
     assigned = models.ForeignKey(User, on_delete=models.CASCADE)
 
     def __str__(self):
-        return self.assigned.username
+        return f'{self.assigned.username} for {self.project.name}'

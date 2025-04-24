@@ -61,7 +61,8 @@ def add_project(request):
     name = data.get("name", "")
     desc = data.get("desc", "")
     admins = data.get("admin", [])
-    core.add_project(name, desc, admins)
+    users = data.get("user", [])
+    core.add_project(name, desc, admins, users)
     return HttpResponseRedirect('/msg/project aangemaakt/')
 
 
@@ -169,7 +170,7 @@ def show_selection(request, proj):
 
 @login_required
 def setselection(request, proj):
-    "leg de selecite vast"
+    "leg de selectie vast"
     core.setselection(request, proj)
     return HttpResponseRedirect(f"/{proj}/meld/De selectie is gewijzigd./")
 
@@ -299,14 +300,14 @@ def show_events(request, proj, actie, msg=""):
 
 @login_required
 def new_event(request, proj, actie):
-    "Rzet scherm open voor toevoegen"
+    "Zet scherm open voor toevoegen"
     return render(request, 'tracker/voortgang.html',
                   core.build_pagedata_for_events(request, proj, actie, event='nieuw'))
 
 
 # @login_required
 def edit_event(request, proj, actie, event):
-    "Rzet scherm open voor wijzigen"
+    "Zet scherm open voor wijzigen"
     return render(request, 'tracker/voortgang.html',
                   core.build_pagedata_for_events(request, proj, actie, event=event))
 
