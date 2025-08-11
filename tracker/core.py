@@ -366,6 +366,55 @@ def setselection(request, proj):  # nog verdelen tussen views en hier
         set_selection_for_arch(project, request.user, data)
 
 
+def build_pagedata_for_search(request, proj, msg):
+    "bouw het scherm op voor uitvoeren van een zoekactie"
+    # msg = 'under construction'
+    project = my.Project.objects.get(pk=proj)
+    page_data = {"title": "Zoek op tekst",
+                 "name": project.name,
+                 "root": project.id,
+                 "msg": msg,
+                 "pages": my.Page.objects.all().order_by('order'),
+                 'search': '',
+                 'results': []}
+    return page_data
+
+
+def build_pagedata_for_results(request, proj, msg):
+    "bouw het scherm op om het resultaat te tonen"
+    data = request.POST
+    search = data.get('search', '')
+    project = my.Project.objects.get(pk=proj)
+    results = search_for(project, search)
+    page_data = {"title": "Zoekresultaten",
+                 "name": project.name,
+                 "root": project.id,
+                 "msg": msg,
+                 "pages": my.Page.objects.all().order_by('order'),
+                 'search': search,
+                 'results': results}
+    return page_data
+
+
+def search_for(project, search):
+    "voer de zoekactie uit"
+    results = []
+    acties = my.Actie.objects.filter(project=project)
+    # if acties:
+    #     results.extend(acties)
+    results.extend([(x, 'about', x.about) for x in acties.filter(about__contains=search)])
+    results.extend([(x, 'title', x.title) for x in acties.filter(title__contains=search)])
+    results.extend([(x, 'melding', x.melding) for x in acties.filter(melding__contains=search)])
+    results.extend([(x, 'oorzaak', x.oorzaak) for x in acties.filter(oorzaak__contains=search)])
+    results.extend([(x, 'oplossing', x.oplossing)
+                    for x in acties.filter(oplossing__contains=search)])
+    results.extend([(x, 'vervolg', x.vervolg) for x in acties.filter(vervolg__contains=search)])
+    for actie in acties:
+        results.extend([(actie, f'event {str(x.start)[:19]}', x.text)
+                        for x in actie.events.filter(text__contains=search)])
+    return results
+
+
 def set_selection_for_nummer(project, user, data):
     "create selection items for project/user/actienummer"
     extra = ''

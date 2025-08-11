@@ -22,6 +22,8 @@ urlpatterns = [
         path('setsel/', views.setselection),
         path('order/', views.show_ordering),
         path('setorder/', views.setordering),
+        path('search/', views.show_search),
+        path('results/', views.show_results),
         path('settings/', views.show_settings),
         path('wijzigusers/', views.setusers),
         path('wijzigadmins/', views.setadmins),

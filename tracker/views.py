@@ -10,6 +10,7 @@ from tracker import core
 from actiereg.settings import SITES
 default_admin = my.User.objects.get(username='avisser')
 
+
 def index(request, msg=""):
     """Start pagina voor ActieReg
     """
@@ -182,14 +183,29 @@ def show_ordering(request, proj):
     msg = core.logged_in_message(request, proj)
     # else:
     #     core.not_logged_in_message('de sortering voor dit scherm te mogen wijzigen', proj)
-    return render(request, 'tracker/order.html', core.build_pagedata_for_ordering(request, proj, msg))
+    return render(request, 'tracker/order.html',
+                  core.build_pagedata_for_ordering(request, proj, msg))
 
 
 @login_required
 def setordering(request, proj):
-    "leg de soertering vast"
+    "leg de sortering vast"
     core.setordering(request, proj)
     return HttpResponseRedirect(f"/{proj}/meld/De sortering is gewijzigd./")
+
+
+def show_search(request, proj, msg=''):
+    "zoek naar..."
+    msg = core.logged_in_message(request, proj)
+    return render(request, 'tracker/search.html',
+                  core.build_pagedata_for_search(request, proj, msg))
+
+
+def show_results(request, proj, msg=''):
+    "Resultatenscherm"
+    msg = core.logged_in_message(request, proj)
+    return render(request, 'tracker/search.html',
+                  core.build_pagedata_for_results(request, proj, msg))
 
 
 @login_required

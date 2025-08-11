@@ -331,6 +331,32 @@ def test_setordering(monkeypatch, capsys):
     assert capsys.readouterr().out == f"called core.setordering with args ({request}, {myproj.id})\n"
 
 @pytest.mark.django_db
+def test_show_search(monkeypatch):
+    """unittest for views.show_search
+    """
+    monkeypatch.setattr(views.core, 'logged_in_message', lambda *x: 'logged in')
+    monkeypatch.setattr(views, 'render', lambda *x: x)
+    myproj = my.Project.objects.create(name='first')
+    myuser = auth.User.objects.create(username='me')
+    request = types.SimpleNamespace(user=myuser)
+    monkeypatch.setattr(views.core, 'build_pagedata_for_search', lambda *x: x)
+    assert views.show_search(request, myproj.id) == (
+            request, 'tracker/search.html', (request, myproj.id, 'logged in'))
+
+@pytest.mark.django_db
+def test_show_results(monkeypatch):
+    """unittest for views.show_results
+    """
+    monkeypatch.setattr(views.core, 'logged_in_message', lambda *x: 'logged in')
+    monkeypatch.setattr(views, 'render', lambda *x: x)
+    myproj = my.Project.objects.create(name='first')
+    myuser = auth.User.objects.create(username='me')
+    request = types.SimpleNamespace(user=myuser)
+    monkeypatch.setattr(views.core, 'build_pagedata_for_results', lambda *x: x)
+    assert views.show_results(request, myproj.id) == (
+            request, 'tracker/search.html', (request, myproj.id, 'logged in'))
+
+@pytest.mark.django_db
 def test_new_action(monkeypatch):
     """unittest for views.new_action
     """

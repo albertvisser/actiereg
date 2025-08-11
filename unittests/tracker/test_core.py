@@ -1086,7 +1086,7 @@ def test_set_selection_for_description():
     data = {'txtabout': '100', 'enof2': 'en'}
     testee.set_selection_for_description(myproject, myuser, data)
     data = myproject.selections.filter(user=myuser.id)
-    assert len(data) == len(['about']) # 1
+    assert len(data) == len(['about'])  # 1
     assert (data[0].veldnm, data[0].operator, data[0].extra, data[0].value) == ('about', 'INCL',
                                                                                 '', '100')
     data.delete()
@@ -1162,6 +1162,235 @@ def test_setordering():
     assert len(data) == len(('field1', 'field2'))
     assert (data[0].volgnr, data[0].veldnm, data[0].richting) == (1, 'nummer', 'asc')
     assert (data[1].volgnr, data[1].veldnm, data[1].richting) == (2, 'gewijzigd', 'desc')
+
+@pytest.mark.django_db
+def test_build_pagedata_for_search(monkeypatch):
+    """unittest for core.build_pagedata_for_search
+    """
+    myproject = my.Project.objects.create(name='first')
+    mypage = my.Page.objects.create(link='x/', order=1, title='z')
+    result = testee.build_pagedata_for_search('request', myproject.id, 'xxx')
+    assert result['title'] == 'Zoek op tekst'
+    assert result['name'] == myproject.name
+    assert result['root'] == myproject.id
+    assert result['msg'] == 'xxx'
+    assert result['search'] == ''
+    assert list(result['pages']) == [mypage]
+    assert result['results'] == []
+
+@pytest.mark.django_db
+def test_build_pagedata_for_results(monkeypatch):
+    """unittest for core.build_pagedata_for_results
+    """
+    def mock_search(*args):
+        print('called search_for with args', args)
+        return 'search results'
+    monkeypatch.setattr(testee, 'search_for', mock_search)
+    myproject = my.Project.objects.create(name='first')
+    mypage = my.Page.objects.create(link='x/', order=1, title='z')
+    postdict = QueryDict(mutable=True)
+    request = types.SimpleNamespace(POST=postdict)
+    result = testee.build_pagedata_for_results(request, myproject.id, 'xxx')
+    assert result['title'] == 'Zoekresultaten'
+    assert result['name'] == myproject.name
+    assert result['root'] == myproject.id
+    assert result['msg'] == 'xxx'
+    assert result['search'] == ''
+    assert list(result['pages']) == [mypage]
+    assert result['results'] == 'search results'
+
+    postdict = QueryDict(mutable=True)
+    postdict.setdefault('search', 'yyy')
+    request = types.SimpleNamespace(POST=postdict)
+    result = testee.build_pagedata_for_results(request, myproject.id, 'xxx')
+    assert result['title'] == 'Zoekresultaten'
+    assert result['name'] == myproject.name
+    assert result['root'] == myproject.id
+    assert result['msg'] == 'xxx'
+    assert result['search'] == 'yyy'
+    assert list(result['pages']) == [mypage]
+    assert result['results'] == 'search results'
+
+@pytest.mark.django_db
+def test_search_for(monkeypatch):
+    """unittest vor core.search_for
+    """
+    myproject = my.Project.objects.create(name='first')
+    myuser = auth.User.objects.create(username='me')
+    mysoort = my.Soort.objects.create(project=myproject, order=0, value='y', title='z')
+    mystatus = my.Status.objects.create(project=myproject, order=0, value=0, title='z')
+    myactie = my.Actie.objects.create(project=myproject, nummer='x', starter=myuser,
+                                      lasteditor=myuser, soort=mysoort, status=mystatus,
+                                      about='abcde', title='fghij', melding='ffjhoij',
+                                      oorzaak='hgttfgv', oplossing='xcvbnm', vervolg='ertyuiop',
+                                      behandelaar=myuser)
+    myactie2 = my.Actie.objects.create(project=myproject, nummer='y', starter=myuser,
+                                       lasteditor=myuser, soort=mysoort, status=mystatus,
+                                       behandelaar=myuser)
+    myevent = my.Event.objects.create(actie=myactie, starter=myuser, text='lkjygfvbn')
+    myevent2 = my.Event.objects.create(actie=myactie2, starter=myuser, text='lkjygfvbn')
+    assert testee.search_for(myproject, 'xxx') == []
+
+@pytest.mark.django_db
+def test_search_for_2(monkeypatch):
+    """unittest vor core.search_for
+    """
+    myproject = my.Project.objects.create(name='first')
+    myuser = auth.User.objects.create(username='me')
+    mysoort = my.Soort.objects.create(project=myproject, order=0, value='y', title='z')
+    mystatus = my.Status.objects.create(project=myproject, order=0, value=0, title='z')
+    myactie = my.Actie.objects.create(project=myproject, nummer='x', starter=myuser,
+                                      lasteditor=myuser, soort=mysoort, status=mystatus,
+                                      about='axxxe', title='fghij', melding='ffjhoij',
+                                      oorzaak='hgttfgv', oplossing='xcvbnm', vervolg='ertyuiop',
+                                      behandelaar=myuser)
+    myactie2 = my.Actie.objects.create(project=myproject, nummer='y', starter=myuser,
+                                       lasteditor=myuser, soort=mysoort, status=mystatus,
+                                       about='abcde', behandelaar=myuser)
+    myevent = my.Event.objects.create(actie=myactie, starter=myuser, text='lkjygfvbn')
+    myevent2 = my.Event.objects.create(actie=myactie2, starter=myuser, text='lkjygfvbn')
+    result = testee.search_for(myproject, 'xxx')
+    assert len(result) == 1
+    assert result[0][0] == myactie
+    assert result[0][1:] == ('about', 'axxxe')
+
+@pytest.mark.django_db
+def test_search_for_3(monkeypatch):
+    """unittest vor core.search_for
+    """
+    myproject = my.Project.objects.create(name='first')
+    myuser = auth.User.objects.create(username='me')
+    mysoort = my.Soort.objects.create(project=myproject, order=0, value='y', title='z')
+    mystatus = my.Status.objects.create(project=myproject, order=0, value=0, title='z')
+    myactie = my.Actie.objects.create(project=myproject, nummer='x', starter=myuser,
+                                      lasteditor=myuser, soort=mysoort, status=mystatus,
+                                      about='abcde', title='fxxxj', melding='ffjhoij',
+                                      oorzaak='hgttfgv', oplossing='xcvbnm', vervolg='ertyuiop',
+                                      behandelaar=myuser)
+    myactie2 = my.Actie.objects.create(project=myproject, nummer='y', starter=myuser,
+                                       lasteditor=myuser, soort=mysoort, status=mystatus,
+                                       title='fghij', behandelaar=myuser)
+    myevent = my.Event.objects.create(actie=myactie, starter=myuser, text='lkjygfvbn')
+    myevent2 = my.Event.objects.create(actie=myactie2, starter=myuser, text='lkjygfvbn')
+    result = testee.search_for(myproject, 'xxx')
+    assert len(result) == 1
+    assert result[0][0] == myactie
+    assert result[0][1:] == ('title', 'fxxxj')
+
+@pytest.mark.django_db
+def test_search_for_4(monkeypatch):
+    """unittest vor core.search_for
+    """
+    myproject = my.Project.objects.create(name='first')
+    myuser = auth.User.objects.create(username='me')
+    mysoort = my.Soort.objects.create(project=myproject, order=0, value='y', title='z')
+    mystatus = my.Status.objects.create(project=myproject, order=0, value=0, title='z')
+    myactie = my.Actie.objects.create(project=myproject, nummer='x', starter=myuser,
+                                      lasteditor=myuser, soort=mysoort, status=mystatus,
+                                      about='abcde', title='fghij', melding='ffxxxij',
+                                      oorzaak='hgttfgv', oplossing='xcvbnm', vervolg='ertyuiop',
+                                      behandelaar=myuser)
+    myactie2 = my.Actie.objects.create(project=myproject, nummer='y', starter=myuser,
+                                       lasteditor=myuser, soort=mysoort, status=mystatus,
+                                       melding='ffjhoij', behandelaar=myuser)
+    myevent = my.Event.objects.create(actie=myactie, starter=myuser, text='lkjygfvbn')
+    myevent2 = my.Event.objects.create(actie=myactie2, starter=myuser, text='lkjygfvbn')
+    result = testee.search_for(myproject, 'xxx')
+    assert len(result) == 1
+    assert result[0][0] == myactie
+    assert result[0][1:] == ('melding', 'ffxxxij')
+
+@pytest.mark.django_db
+def test_search_for_5(monkeypatch):
+    """unittest vor core.search_for
+    """
+    myproject = my.Project.objects.create(name='first')
+    myuser = auth.User.objects.create(username='me')
+    mysoort = my.Soort.objects.create(project=myproject, order=0, value='y', title='z')
+    mystatus = my.Status.objects.create(project=myproject, order=0, value=0, title='z')
+    myactie = my.Actie.objects.create(project=myproject, nummer='x', starter=myuser,
+                                      lasteditor=myuser, soort=mysoort, status=mystatus,
+                                      about='abcde', title='fghij', melding='ffjhoij',
+                                      oorzaak='hgxxxgv', oplossing='xcvbnm', vervolg='ertyuiop',
+                                      behandelaar=myuser)
+    myactie2 = my.Actie.objects.create(project=myproject, nummer='y', starter=myuser,
+                                       lasteditor=myuser, soort=mysoort, status=mystatus,
+                                       oorzaak='hgttfgv', behandelaar=myuser)
+    myevent = my.Event.objects.create(actie=myactie, starter=myuser, text='lkjygfvbn')
+    myevent2 = my.Event.objects.create(actie=myactie2, starter=myuser, text='lkjygfvbn')
+    result = testee.search_for(myproject, 'xxx')
+    assert len(result) == 1
+    assert result[0][0] == myactie
+    assert result[0][1:] == ('oorzaak', 'hgxxxgv')
+
+@pytest.mark.django_db
+def test_search_for_6(monkeypatch):
+    """unittest vor core.search_for
+    """
+    myproject = my.Project.objects.create(name='first')
+    myuser = auth.User.objects.create(username='me')
+    mysoort = my.Soort.objects.create(project=myproject, order=0, value='y', title='z')
+    mystatus = my.Status.objects.create(project=myproject, order=0, value=0, title='z')
+    myactie = my.Actie.objects.create(project=myproject, nummer='x', starter=myuser,
+                                      lasteditor=myuser, soort=mysoort, status=mystatus,
+                                      about='abcde', title='fghij', melding='ffjhoij',
+                                      oorzaak='hgttfgv', oplossing='xxxbnm', vervolg='ertyuiop',
+                                      behandelaar=myuser)
+    myactie2 = my.Actie.objects.create(project=myproject, nummer='y', starter=myuser,
+                                       lasteditor=myuser, soort=mysoort, status=mystatus,
+                                       oplossing='xcvbnm', behandelaar=myuser)
+    myevent = my.Event.objects.create(actie=myactie, starter=myuser, text='lkjygfvbn')
+    myevent2 = my.Event.objects.create(actie=myactie2, starter=myuser, text='lkjygfvbn')
+    result = testee.search_for(myproject, 'xxx')
+    assert len(result) == 1
+    assert result[0][0] == myactie
+    assert result[0][1:] == ('oplossing', 'xxxbnm')
+
+@pytest.mark.django_db
+def test_search_for_7(monkeypatch):
+    """unittest vor core.search_for
+    """
+    myproject = my.Project.objects.create(name='first')
+    myuser = auth.User.objects.create(username='me')
+    mysoort = my.Soort.objects.create(project=myproject, order=0, value='y', title='z')
+    mystatus = my.Status.objects.create(project=myproject, order=0, value=0, title='z')
+    myactie = my.Actie.objects.create(project=myproject, nummer='x', starter=myuser,
+                                      lasteditor=myuser, soort=mysoort, status=mystatus,
+                                      about='abcde', title='fghij', melding='ffjhoij',
+                                      oorzaak='hgttfgv', oplossing='xcvbnm', vervolg='ertxxxop',
+                                      behandelaar=myuser)
+    myactie2 = my.Actie.objects.create(project=myproject, nummer='y', starter=myuser,
+                                       lasteditor=myuser, soort=mysoort, status=mystatus,
+                                       vervolg='ertyuiop', behandelaar=myuser)
+    myevent = my.Event.objects.create(actie=myactie, starter=myuser, text='lkjygfvbn')
+    myevent2 = my.Event.objects.create(actie=myactie2, starter=myuser, text='lkjygfvbn')
+    result = testee.search_for(myproject, 'xxx')
+    assert len(result) == 1
+    assert result[0][0] == myactie
+    assert result[0][1:] == ('vervolg', 'ertxxxop')
+
+@pytest.mark.django_db
+def test_search_for_8(monkeypatch):
+    """unittest vor core.search_for
+    """
+    myproject = my.Project.objects.create(name='first')
+    myuser = auth.User.objects.create(username='me')
+    mysoort = my.Soort.objects.create(project=myproject, order=0, value='y', title='z')
+    mystatus = my.Status.objects.create(project=myproject, order=0, value=0, title='z')
+    myactie = my.Actie.objects.create(project=myproject, nummer='x', starter=myuser,
+                                      lasteditor=myuser, soort=mysoort, status=mystatus,
+                                      about='abcde', title='fghij', melding='ffjhoij',
+                                      oorzaak='hgttfgv', oplossing='xcvbnm', vervolg='ertyuiop',
+                                      behandelaar=myuser)
+    myactie2 = my.Actie.objects.create(project=myproject, nummer='y', starter=myuser,
+                                       lasteditor=myuser, soort=mysoort, status=mystatus,
+                                       behandelaar=myuser)
+    myevent = my.Event.objects.create(actie=myactie, starter=myuser, text='lkjxxxvbn')
+    myevent2 = my.Event.objects.create(actie=myactie2, starter=myuser, text='lkjygfvbn')
+    result = testee.search_for(myproject, 'xxx')
+    assert len(result) == 1
+    assert result[0][0] == myactie
+    assert result[0][1:] == (f'event {str(myevent.start)[:19]}', 'lkjxxxvbn')
 
 @pytest.mark.django_db
 def test_build_pagedata_for_detail(monkeypatch):
@@ -1690,10 +1919,9 @@ def test_wijzig_events(monkeypatch):
     mysoort = my.Soort.objects.create(project=myproject, order=0, value='y', title='z')
     mystatus = my.Status.objects.create(project=myproject, order=0, value=0, title='z')
     myactie = my.Actie.objects.create(project=myproject, nummer='x', starter=myuser,
-                                             lasteditor=myuser,
-                                             soort=mysoort, status=mystatus, behandelaar=myuser,
-                                             melding='dit', oorzaak='dat', oplossing='iets',
-                                             vervolg='en verder...')
+                                      lasteditor=myuser, soort=mysoort, status=mystatus,
+                                      melding='dit', oorzaak='dat', oplossing='iets',
+                                      vervolg='en verder...', behandelaar=myuser)
     assert not list(myactie.events.all())
 
     # eerst zonder dat user aan het project zit
