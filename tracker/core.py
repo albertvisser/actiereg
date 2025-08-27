@@ -7,7 +7,7 @@ from django.http import HttpResponse  # , HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.core.exceptions import ObjectDoesNotExist
 from django.http import Http404
-from django.db.models import Q  # wordt gebruikt bij samenstellen filterstring (get_acties)
+# from django.db.models import Q  # wordt gebruikt bij samenstellen filterstring (get_acties)
 # from django.contrib import admin
 import django.contrib.auth.models as auth
 import tracker.models as my
@@ -298,7 +298,7 @@ def set_stats(request, proj):
                                  value=data["value0"])
 
 
-def build_pagedata_for_selection(request, proj, msg):  # nog niet uitgeprobeerd
+def build_pagedata_for_selection(request, proj, msg):
     """bouw het scherm op aan de hand van de huidige selectiegegevens
     bij de gebruiker
     """
@@ -326,7 +326,12 @@ def build_pagedata_for_selection(request, proj, msg):  # nog niet uitgeprobeerd
         elif sel.veldnm in ("status", "user"):
             page_data["selected"][sel.veldnm].append(int(sel.value))
         elif sel.veldnm == "arch":
-            page_data["selected"][sel.veldnm] += 1
+            if sel.value == 'False':
+                page_data["selected"][sel.veldnm] += 1
+            elif sel.value == 'True':
+                page_data["selected"][sel.veldnm] += 2
+            else:
+                raise ValueError(f'Unknown value for arch: {sel.value}')
         elif sel.veldnm == "nummer":
             page_data["selected"]["nummer"] = True
             if sel.extra.strip():
@@ -342,28 +347,26 @@ def build_pagedata_for_selection(request, proj, msg):  # nog niet uitgeprobeerd
     return page_data, ''
 
 
-def setselection(request, proj):  # nog verdelen tussen views en hier
+def setselection(request, proj):
     """verwerk de aanpassingen en koppel door naar tonen van de lijst met acties
     de huidige selectiegegevens voor de user worden verwijderd
     daarna worden nieuwe selectiegegevens bepaald en opgeslagen
     """
     data = request.POST
-    selact = data.getlist("select")    # aangekruiste selecties: "act" "srt" "stat" "txt" of "arch"
     project = my.Project.objects.get(pk=proj)
-    project.selections.filter(user=request.user.id).delete()
-    # extra = "  "
-    if "act" in selact:
-        set_selection_for_nummer(project, request.user, data)
-    if "srt" in selact:
-        set_selection_for_soort(project, request.user, data)
-    if "stat" in selact:
-        set_selection_for_status(project, request.user, data)
-    if "user" in selact:
-        set_selection_for_user(project, request.user, data)
-    if "txt" in selact:
-        set_selection_for_description(project, request.user, data)
-    if "arch" in selact:
-        set_selection_for_arch(project, request.user, data)
+    option1 = set_selection_for_nummer(project, request.user, data)
+    option2 = set_selection_for_soort(project, request.user, data)
+    option3 = set_selection_for_status(project, request.user, data)
+    option4 = set_selection_for_user(project, request.user, data)
+    option5 = set_selection_for_description(project, request.user, data)
+    option6 = set_selection_for_arch(project, request.user, data)
+    if any((option1, option2, option3, option4, option5, option6)):
+        msg = 'De selectie is gewijzigd.'
+        back = True
+    else:
+        msg = 'Er is niks gewijzigd'
+        back = False
+    return msg, back
 
 
 def build_pagedata_for_search(request, proj, msg):
@@ -416,72 +419,199 @@ def search_for(project, search):
 
 
 def set_selection_for_nummer(project, user, data):
-    "create selection items for project/user/actienummer"
-    extra = ''
-    txtgt = data.get("txtgt", "")
+    "create selection items for :project/user/actienummer"
+    oldsel = my.Selection.objects.filter(project=project, user=user.id, veldnm="nummer")
+    clear_all = oldsel and 'act' not in data.getlist('select')
+    oldgt = oldsel.filter(operator='GT') or ''
+    oldlt = oldsel.filter(operator='LT') or ''
+    oldgtvalue = oldgt[0].value if oldgt else ''
+    oldltvalue = oldlt[0].value if oldlt else ''
+    oldextra = oldgt[0].extra if oldgt else oldlt[0].extra if oldlt else 'OF'
+    extra = data.get("enof", "of").upper() if not clear_all else "of"       # "en" of "of"
+    txtgt = data.get("txtgt", "") if not clear_all else ""
+    txtlt = data.get("txtlt", "") if not clear_all else ""
+    if all((txtgt == oldgtvalue, txtlt == oldltvalue, extra == oldextra)):
+        return False  # niks gewijzigd
     if txtgt:
-        my.Selection.objects.create(project=project, user=user.id, veldnm="nummer",
-                                    operator="GT", extra=extra, value=txtgt)
-        extra = data.get("enof", "").upper()       # "en" of "of"
-    txtlt = data.get("txtlt", "")
+        if oldgt:
+            oldgt.update(value=txtgt, extra=extra)
+        else:
+            my.Selection.objects.create(project=project, user=user.id, veldnm="nummer",
+                                        operator="GT", extra=extra, value=txtgt)
+    elif oldgt:
+        oldgt.delete()
     if txtlt:
-        my.Selection.objects.create(project=project, user=user.id, veldnm="nummer",
-                                    operator="LT", extra=extra, value=txtlt)
+        if oldlt:
+            oldlt.update(value=txtlt, extra=extra)
+        else:
+            my.Selection.objects.create(project=project, user=user.id, veldnm="nummer",
+                                        operator="LT", extra=extra, value=txtlt)
+    elif oldlt:
+        oldlt.delete()
+    return True  # any((txtgt, txtlt))
 
 
 def set_selection_for_soort(project, user, data):
     "create selection items for project/user/actiesoort"
-    extra = ''
-    for srt in data.getlist("srtval"):    # aangekruiste soorten
-        my.Selection.objects.create(project=project, user=user.id, veldnm="soort",
-                                    operator="EQ", extra=extra, value=srt)
-        extra = "OR"
+    newsel = data.getlist("srtval")    # aangekruiste soorten
+    oldsel = my.Selection.objects.filter(project=project, user=user.id, veldnm="soort")
+    if oldsel and 'srt' not in data.getlist('select'):
+        newsel = []
+    if sorted(newsel) == sorted(x.value for x in oldsel):
+        return False  # niks gewijzigd
+    for obj in oldsel:
+        if obj.value not in newsel:
+            obj.delete()
+    for srt in newsel:
+        if not oldsel.filter(value=srt):
+            my.Selection.objects.create(project=project, user=user.id, veldnm="soort",
+                                        operator="EQ", extra="OR", value=srt)
+    return True
 
 
 def set_selection_for_status(project, user, data):
     "create selection items for project/user/actiestatus"
-    extra = ''
-    for stat in data.getlist("statval"):  # aangekruiste statussen
-        my.Selection.objects.create(project=project, user=user.id, veldnm="status",
-                                    operator="EQ", extra=extra, value=stat)
-        extra = "OR"
+    newsel = data.getlist("statval")  # aangekruiste statussen
+    oldsel = my.Selection.objects.filter(project=project, user=user.id, veldnm="status")
+    if oldsel and 'stat' not in data.getlist('select'):
+        newsel = []
+    if sorted(newsel) == sorted(x.value for x in oldsel):
+        return False  # niks gewijzigd
+    for obj in oldsel:
+        if obj.value not in newsel:
+            obj.delete()
+    for stat in newsel:
+        if not oldsel.filter(value=stat):
+            my.Selection.objects.create(project=project, user=user.id, veldnm="status",
+                                        operator="EQ", extra="OR", value=stat)
+    return True
 
 
 def set_selection_for_user(project, user, data):
     "create selection items for project/user/behandelaar"
-    extra = ''
-    for seluser in data.getlist("userval"):  # geselecteerde medewerkers
-        my.Selection.objects.create(project=project, user=user.id, veldnm="user",
-                                    operator="EQ", extra=extra, value=seluser)
-        extra = "OR"
+    newsel = data.getlist("userval")  # geselecteerde medewerkers
+    oldsel = my.Selection.objects.filter(project=project, user=user.id, veldnm="user")
+    if oldsel and 'user' not in data.getlist('select'):
+        newsel = []
+    if sorted(newsel) == sorted(x.value for x in oldsel):
+        return False  # niks gewijzigd
+    for obj in oldsel:
+        if obj.value not in newsel:
+            obj.delete()
+    for seluser in newsel:
+        if not oldsel.filter(value=seluser):
+            my.Selection.objects.create(project=project, user=user.id, veldnm="user",
+                                        operator="EQ", extra="OR", value=seluser)
+    return True
 
 
 def set_selection_for_description(project, user, data):
     "create selection items for project/user/description fields"
-    extra = ''
-    txtabout = data.get("txtabout", "")
+    oldabout = my.Selection.objects.filter(project=project, user=user.id, veldnm="about")
+    oldtitle = my.Selection.objects.filter(project=project, user=user.id, veldnm="title")
+    clear_all = any((oldabout, oldtitle)) and 'txt' not in data.getlist('select')
+    oldaboutval = oldabout[0].value if oldabout else ''
+    oldtitleval = oldtitle[0].value if oldtitle else ''
+    oldextra = oldabout[0].extra if oldabout else oldtitle[0].extra if oldtitle else 'OF'
+    extra = data.get("enof2", "of").upper() if not clear_all else 'of'    # "en" of "of"
+    txtabout = data.get("txtabout", "") if not clear_all else ''
+    txttitle = data.get("txttitle", "") if not clear_all else ''
+    if all((txtabout == oldaboutval, txttitle == oldtitleval, extra == oldextra)):
+        return False  # niks gewijzigd
     if txtabout:
-        my.Selection.objects.create(project=project, user=user.id, veldnm="about",
-                                    operator="INCL", extra='', value=txtabout)
-        extra = data.get("enof2", "").upper()     # "en" of "of"
-    txttitle = data.get("txttitle", "")
+        if oldabout:
+            oldabout.update(value=txtabout, extra=extra)
+        else:
+            my.Selection.objects.create(project=project, user=user.id, veldnm="about",
+                                        operator="INCL", extra=extra, value=txtabout)
+    elif oldabout:
+        oldabout.delete()
     if txttitle:
-        my.Selection.objects.create(project=project, user=user.id, veldnm="title",
-                                    operator="INCL", extra=extra, value=txttitle)
+        if oldtitle:
+            oldtitle.update(value=txttitle, extra=extra)
+        else:
+            my.Selection.objects.create(project=project, user=user.id, veldnm="title",
+                                        operator="INCL", extra=extra, value=txttitle)
+    elif oldtitle:
+        oldtitle.delete()
+    return True  # any((txtabout, txttitle))
 
 
 def set_selection_for_arch(project, user, data):
     "create selection items for project/user/archive status"
     arch = data.getlist("archall", "")  # "arch" of "all"
-    if 'arch' in arch:
-        my.Selection.objects.create(project=project, user=user.id, veldnm="arch",
-                                    operator="EQ", extra='', value=False)
-    elif not arch:
-        my.Selection.objects.create(project=project, user=user.id, veldnm="arch",
-                                    operator="EQ", extra='', value=True)
+    oldarch = my.Selection.objects.filter(project=project, user=user.id, veldnm="arch")
+    modified = True
+    # if not oldarch:                     # van o3
+    #     if 'all' in arch:               # naar n3
+    #         modified = False
+    #     else:
+    #         value = 'True' if 'arch' in arch else 'False'        # naar n2 resp. n1
+    #         my.Selection.objects.create(project=project, user=user.id, veldnm="arch",
+    #                                     operator="EQ", extra='', value=value)
+    # elif oldarch[0].value == 'False':   # van o1
+    #     if not 'arch' in 'select':      # naar n1
+    #         modified = False
+    #     elif 'arch' in arch:            # naar n2
+    #         oldarch.update(value='True')
+    #     elif 'all' in arch:             # naar n3
+    #         oldarch.delete()
+    # else:  # oldarch and oldarch[0].value == 'True' - van o2
+    #     if not 'arch' in 'select':      # naar n1
+    #         oldarch.update(value='False')
+    #     elif 'arch' in arch:            # naar n2
+    #         modified = False
+    #     elif 'all' in arch:             # naar n3
+    #         oldarch.delete()
+
+    if 'arch' not in data.getlist('select'):
+        if not oldarch:
+            my.Selection.objects.create(project=project, user=user.id, veldnm="arch",
+                                        operator="EQ", extra='', value='False')
+        elif oldarch[0].value == 'False':
+            modified = False
+        else:  # if oldarch[0].value == 'True':
+            oldarch.update(value='False')
+    elif 'arch' in arch:
+        if not oldarch:
+            my.Selection.objects.create(project=project, user=user.id, veldnm="arch",
+                                        operator="EQ", extra='', value='True')
+        elif oldarch[0].value == 'False':
+            oldarch.update(value='True')
+        else:  # if oldarch[0].value == 'True':
+            modified = False
+    else:  # elif 'all' in arch:
+        if not oldarch:
+            modified = False
+        elif oldarch[0].value == 'False':
+            oldarch.delete()
+        else:  # if oldarch[0].value == 'True':
+            oldarch.delete()
+
+    # if 'all' in arch:
+    #     # breakpoint()
+    #     if oldarch:
+    #         oldarch.delete()
+    #         modified = True
+    #     else:
+    #         modified = False
+    # else:
+    #     value = str('arch' in arch)
+    #     # breakpoint()
+    #     if not oldarch:
+    #         my.Selection.objects.create(project=project, user=user.id, veldnm="arch",
+    #                                     operator="EQ", extra='', value=value)
+    #         modified = True
+    #     elif oldarch[0].value == value:
+    #         modified = False
+    #     else:
+    #         modified = True
+    #         oldarch.update(value=value)
+    # raise ValueError(f'{oldarch[0].value=}, {value=}, {modified=}')
+    return modified
 
 
-def build_pagedata_for_ordering(request, proj, msg):  # msg arg unused
+def build_pagedata_for_ordering(request, proj, msg):
     """bouw het scherm op aan de hand van de huidige sorteringsgegevens
     bij de gebruiker
     """
@@ -490,6 +620,7 @@ def build_pagedata_for_ordering(request, proj, msg):  # msg arg unused
                  "name": project.name,
                  "root": proj,
                  "pages": my.Page.objects.all().order_by('order'),
+                 "msg": msg,
                  "fields": [("nummer", "nummer"),
                             ("gewijzigd", "laatst gewijzigd"),
                             ("soort", "soort"),
@@ -955,23 +1086,29 @@ def is_admin(project, user):
 def filter_data_on_nummer(data, seltest):
     "apply filter on 'nummer' to the data"
     filtered = seltest.filter(veldnm="nummer")
-    if filtered:
-        filter = ""
-        for f in filtered:
-            if f.extra.upper() in ("EN", 'AND'):
-                filter += " & "
-            elif f.extra.upper() in ("OF", 'OR'):
-                filter += " | "
-            filter += f'Q(nummer__{f.operator.lower()}="{f.value}")'
-        with contextlib.suppress(SyntaxError):
-            data = eval(f'data.filter({filter})')
+    if len(filtered) > 0:
+        if filtered[0].operator.upper() == 'GT':
+            query1 = data.filter(nummer__gt=filtered[0].value)
+        else:
+            query1 = data.filter(nummer__lt=filtered[0].value)
+        if len(filtered) > 1:
+            if filtered[1].operator.upper() == 'GT':
+                query2 = data.filter(nummer__gt=filtered[1].value)
+            else:
+                query2 = data.filter(nummer__lt=filtered[1].value)
+            if filtered[1].extra.upper() in ('EN', 'AND'):
+                data = query1 & query2
+            else:
+                data = query1 | query2
+        else:
+            data = query1
     return data
 
 
 def filter_data_on_soort(data, seltest):
     "apply filter on 'soort' to the data"
     filtered = seltest.filter(veldnm="soort")
-    sel = [my.Soort.objects.get(value=x.value).id for x in filtered]
+    sel = [my.Soort.objects.get(project=x.project, value=x.value).id for x in filtered]
     if sel:
         data = data.filter(soort__in=sel)
     return data
@@ -980,7 +1117,7 @@ def filter_data_on_soort(data, seltest):
 def filter_data_on_status(data, seltest):
     "apply filter on 'status' to the data"
     filtered = seltest.filter(veldnm="status")
-    sel = [my.Status.objects.get(value=int(x.value)).id for x in filtered]
+    sel = [my.Status.objects.get(project=x.project, value=int(x.value)).id for x in filtered]
     if sel:
         data = data.filter(status__in=sel)
     return data
@@ -997,25 +1134,21 @@ def filter_data_on_user(data, seltest):
 
 def filter_data_on_description(data, seltest):
     "apply filter on descriptive fields to the data"
-    filtered = seltest.filter(veldnm="about")
-    filter = ''
-    if filtered:
-        test = filtered[0].value
-        if test:
-            filter = f'Q(about__icontains="{test}")'
-    filtered = seltest.filter(veldnm="title")
-    if filtered:
-        test = filtered[0].value
-        if test:
-            if filter:
-                if filtered[0].extra.upper() in ("EN", "AND"):
-                    filter += " & "
-                else:  # if filtered[0].extra.upper() in ("OF", "OR"):  # geen andere mogelijkheid
-                    filter += " | "
-            filter += f'Q(title__icontains="{test}")'
-    if filter:
-        with contextlib.suppress(SyntaxError):
-            data = eval(f'data.filter({filter})')
+    filtered1 = seltest.filter(veldnm="about")
+    filtered2 = seltest.filter(veldnm="title")
+    if filtered1:
+        query1 = data.filter(about__icontains=filtered1[0].value)
+    if filtered2:
+        query2 = data.filter(title__icontains=filtered2[0].value)
+    if filtered1 and filtered2:
+        if filtered2[0].extra.upper() in ('AND', 'EN'):
+            data = query1 & query2
+        else:
+            data = query1 | query2
+    elif filtered1:
+        data = query1
+    elif filtered2:
+        data = query2
     return data
 
 

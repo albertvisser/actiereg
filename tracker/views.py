@@ -156,13 +156,10 @@ def setstats(request, proj):
 
 
 @login_required
-def show_selection(request, proj):
+def show_selection(request, proj, msg=''):
     "presenteer selectie mogelijkheden"
-    # if request.user.is_authenticated:  # niet nodig met die decorator?
-    msg = core.logged_in_message(request, proj)
-    # else:
-    #     core.not_logged_in_message('de selectie voor dit scherm te mogen wijzigen', proj)
-    # project = my.Project.objects.get(pk=proj)
+    if not msg:
+        msg = core.logged_in_message(request, proj)
     page_data, msg = core.build_pagedata_for_selection(request, proj, msg)
     if msg:
         return HttpResponse(msg)
@@ -172,8 +169,8 @@ def show_selection(request, proj):
 @login_required
 def setselection(request, proj):
     "leg de selectie vast"
-    core.setselection(request, proj)
-    return HttpResponseRedirect(f"/{proj}/meld/De selectie is gewijzigd./")
+    msg, back = core.setselection(request, proj)
+    return HttpResponseRedirect(f"/{proj}/{'meld' if back else 'select'}/{msg}/")
 
 
 @login_required

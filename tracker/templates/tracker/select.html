@@ -131,14 +131,14 @@ function tick_two(field1, field2,box) {
 <div class="clear">&nbsp;</div>
 
 <div class="col_left"><input type="checkbox" name="select" value="arch" id="selarch"
-    {% if selected.arch %}checked="checked"{% endif %}>archiefstatus:</input>
+    {% if selected.arch != 1 %}checked="checked"{% endif %}>archiefstatus:</input>
 </div>
 <div class="col_right">
     <input name="archall" type="radio" value="arch"  onclick="tick_tick(this,selarch)"
-        {% if selected.arch == 1 %}checked="checked"{% endif %}>
+        {% if selected.arch == 2 %}checked="checked"{% endif %}>
         alleen gearchiveerd</input>
     <input name="archall" type="radio" value="all"  onclick="tick_tick(this,selarch)"
-        {% if selected.arch == 2 %}checked="checked"{% endif %}>
+        {% if selected.arch == 0 %}checked="checked"{% endif %}>
         gearchiveerd en lopend</input>
 </div>
 <div class="clear">&nbsp;</div>

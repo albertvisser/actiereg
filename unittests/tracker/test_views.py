@@ -26,20 +26,20 @@ def test_index(monkeypatch):
     request3 = types.SimpleNamespace(user=myuser, GET={'msg': 'massage'})
     monkeypatch.setattr(views.core, 'get_appropriate_login_message', lambda *x: 'login_message')
     myproject = my.Project.objects.create(name='first', description='a project')
-    mypage = my.Page.objects.create(link='x/', order=1, title='z')
+    my.Page.objects.create(link='x/', order=1, title='z')
     mysoort = my.Soort.objects.create(project=myproject, order=0, value='y', title='z')
     mystatus = my.Status.objects.create(project=myproject, order=0, value=0, title='z')
     mystatus2 = my.Status.objects.create(project=myproject, order=2, value=2, title='z!')
-    myworker = my.Worker.objects.create(project=myproject, assigned=myuser)
-    myactie1 = my.Actie.objects.create(project=myproject, nummer='x', starter=myuser,
-                                      lasteditor=myuser,
-                                      soort=mysoort, status=mystatus, behandelaar=myuser)
-    myactie2 = my.Actie.objects.create(project=myproject, nummer='y', starter=myuser,
-                                      lasteditor=myuser,
-                                      soort=mysoort, status=mystatus2, behandelaar=myuser)
-    myactie3 = my.Actie.objects.create(project=myproject, nummer='z', starter=myuser,
-                                      lasteditor=myuser, arch=True,
-                                      soort=mysoort, status=mystatus2, behandelaar=myuser)
+    my.Worker.objects.create(project=myproject, assigned=myuser)
+    my.Actie.objects.create(project=myproject, nummer='x', starter=myuser,
+                           lasteditor=myuser,
+                           soort=mysoort, status=mystatus, behandelaar=myuser)
+    my.Actie.objects.create(project=myproject, nummer='y', starter=myuser,
+                           lasteditor=myuser,
+                           soort=mysoort, status=mystatus2, behandelaar=myuser)
+    my.Actie.objects.create(project=myproject, nummer='z', starter=myuser,
+                           lasteditor=myuser, arch=True,
+                           soort=mysoort, status=mystatus2, behandelaar=myuser)
     myproject = my.Project.objects.create(name='ahem', description='another project')
     assert views.index(request, 'message') == (
             request, 'index.html',
@@ -268,14 +268,10 @@ def test_setstats(monkeypatch, capsys):
 def test_show_selection(monkeypatch):
     """unittest for views.show_selection
     """
-    # noauth = types.SimpleNamespace(username='MyName', is_authenticated=False)
     monkeypatch.setattr(views.core, 'logged_in_message', lambda *x: 'logged in')
     # monkeypatch.setattr(views.core, 'not_logged_in_message', lambda *x: x)
     monkeypatch.setattr(views, 'HttpResponse', lambda x: x)
     monkeypatch.setattr(views, 'render', lambda *x: x)
-    # request = types.SimpleNamespace(user=auth.AnonymousUser())
-    # assert views.show_selection(request, 'proj') == (
-    #         'de selectie voor dit scherm te mogen wijzigen')
     myproj = my.Project.objects.create(name='first')
     myuser = auth.User.objects.create(username='me')
     request = types.SimpleNamespace(user=myuser)
@@ -284,6 +280,8 @@ def test_show_selection(monkeypatch):
     monkeypatch.setattr(views.core, 'build_pagedata_for_selection', lambda *x: (x, ''))
     assert views.show_selection(request, myproj.id) == (
             request, 'tracker/select.html', (request, myproj.id, 'logged in'))
+    assert views.show_selection(request, myproj.id, 'xxx') == (
+            request, 'tracker/select.html', (request, myproj.id, 'xxx'))
 
 @pytest.mark.django_db
 def test_setselection(monkeypatch, capsys):
@@ -293,13 +291,23 @@ def test_setselection(monkeypatch, capsys):
         """stub
         """
         print('called core.setselection with args', args)
+        return 'message', True
+    def mock_setselection2(*args):
+        """stub
+        """
+        print('called core.setselection with args', args)
+        return 'message', False
     monkeypatch.setattr(views.core, 'setselection', mock_setselection)
     monkeypatch.setattr(views, 'HttpResponseRedirect', lambda x: x)
     myproj = my.Project.objects.create(name='first')
     myuser = auth.User.objects.create(username='me')
     request = types.SimpleNamespace(user=myuser)
-    assert views.setselection(request, myproj.id) == f'/{myproj.id}/meld/De selectie is gewijzigd./'
+    assert views.setselection(request, myproj.id) == f'/{myproj.id}/meld/message/'
     assert capsys.readouterr().out == f"called core.setselection with args ({request}, {myproj.id})\n"
+    monkeypatch.setattr(views.core, 'setselection', mock_setselection2)
+    assert views.setselection(request, myproj.id) == f'/{myproj.id}/select/message/'
+    assert capsys.readouterr().out == f"called core.setselection with args ({request}, {myproj.id})\n"
+
 
 @pytest.mark.django_db
 def test_show_ordering(monkeypatch):

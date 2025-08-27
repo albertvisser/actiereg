@@ -30,6 +30,7 @@ def test_get_appropriate_login_message():
             'U bent ingelogd als <i>MyName</i>.'
             ' Klik <a href="/logout/?next=/1/actie/">hier</a> om uit te loggen. ')
 
+
 def test_no_authorization_message(monkeypatch):
     """unittest for core.no_authorization_message
     """
@@ -40,6 +41,7 @@ def test_no_authorization_message(monkeypatch):
     assert testee.no_authorization_message('iets te doen', 1) == (
             "U bent niet geautoriseerd om iets te doen<br>"
             'Klik <a href="/1/">hier</a> om door te gaan')
+
 
 def test_logged_in_message():
     """unittest for core.logged_in_message
@@ -55,6 +57,7 @@ def test_logged_in_message():
             'Klik <a href="/logout/?next=/1/select/">hier</a> om uit te loggen.'
             'Klik <a href="/1/">hier</a> om door te gaan')
 
+
 def test_not_logged_in_message(monkeypatch):
     """unittest for core.not_logged_in_message
     """
@@ -68,6 +71,7 @@ def test_not_logged_in_message(monkeypatch):
             '<br/><br/>Klik <a href="/accounts/login/?next=/1/select/">hier</a> om in te loggen'
             ', <a href="/1/">hier</a> om terug te gaan.<body></html>')
 
+
 def test_determine_readonly(monkeypatch):
     """unittest for core.determine_readonly
     """
@@ -75,6 +79,7 @@ def test_determine_readonly(monkeypatch):
     assert testee.determine_readonly('project', 'user')
     monkeypatch.setattr(testee, 'is_user', lambda *x: True)
     assert not testee.determine_readonly('project', 'user')
+
 
 @pytest.mark.django_db
 def test_is_user():
@@ -84,10 +89,11 @@ def test_is_user():
     project = my.Project.objects.create(name='first')
     assert not list(project.workers.all())
     assert not testee.is_user(project, user)
-    worker = my.Worker.objects.create(project=project, assigned=user)
+    my.Worker.objects.create(project=project, assigned=user)
     assert len(list(project.workers.all())) == 1
     assert list(project.workers.all())[0].assigned == user
     assert testee.is_user(project, user)
+
 
 @pytest.mark.django_db
 def test_is_admin():
@@ -107,6 +113,7 @@ def test_is_admin():
     assert len(list(user.groups.all())) == 2
     assert user.groups.all()[1] == group
     assert testee.is_admin(project, user)
+
 
 @pytest.mark.django_db
 def test_filter_data_on_nummer():
@@ -160,6 +167,19 @@ def test_filter_data_on_nummer():
     data = testee.filter_data_on_nummer(my.Actie.objects.all(), my.Selection.objects.all())
     assert [x.nummer for x in data] == ['0001', '0004']
 
+    my.Selection.objects.all().delete()
+    my.Selection.objects.create(user=user.id, project=project, veldnm="nummer", value='0002',
+                                operator='LT')
+    data = testee.filter_data_on_nummer(my.Actie.objects.all(), my.Selection.objects.all())
+    assert [x.nummer for x in data] == ['0001']
+
+    my.Selection.objects.all().delete()
+    my.Selection.objects.create(user=user.id, project=project, veldnm="nummer", value='0003',
+                                operator='GT')
+    data = testee.filter_data_on_nummer(my.Actie.objects.all(), my.Selection.objects.all())
+    assert [x.nummer for x in data] == ['0004']
+
+
 @pytest.mark.django_db
 def test_filter_data_on_soort():
     """unittest for core.filter_data_on_soort
@@ -188,6 +208,7 @@ def test_filter_data_on_soort():
     my.Selection.objects.create(user=user.id, project=project, veldnm="soort", value='y')
     data = testee.filter_data_on_soort(my.Actie.objects.all(), my.Selection.objects.all())
     assert [x.nummer for x in data] == ['0001', '0003', '0002']
+
 
 @pytest.mark.django_db
 def test_filter_data_on_status():
@@ -218,6 +239,7 @@ def test_filter_data_on_status():
     data = testee.filter_data_on_status(my.Actie.objects.all(), my.Selection.objects.all())
     assert [x.nummer for x in data] == ['0001', '0003', '0002']
 
+
 @pytest.mark.django_db
 def test_filter_data_on_user():
     """unittest for core.filter_data_on_user
@@ -241,6 +263,7 @@ def test_filter_data_on_user():
     my.Selection.objects.create(user=user.id, project=project, veldnm="user", value=user.id)
     data = testee.filter_data_on_user(my.Actie.objects.all(), my.Selection.objects.all())
     assert [x.nummer for x in data] == ['0001', '0003']
+
 
 @pytest.mark.django_db
 def test_filter_data_on_description():
@@ -274,7 +297,7 @@ def test_filter_data_on_description():
     my.Selection.objects.create(user=user.id, project=project, veldnm="title", value='',
                                 extra='of')
     data = testee.filter_data_on_description(my.Actie.objects.all(), my.Selection.objects.all())
-    assert [x.nummer for x in data] == ['0001', '0003']
+    assert [x.nummer for x in data] == ['0001', '0002', '0003', '0004']
     my.Selection.objects.all().delete()
     my.Selection.objects.create(user=user.id, project=project, veldnm="title", value='bb',
                                 extra='of')
@@ -293,6 +316,7 @@ def test_filter_data_on_description():
     data = testee.filter_data_on_description(my.Actie.objects.all(), my.Selection.objects.all())
     assert [x.nummer for x in data] == ['0003']
 
+
 @pytest.mark.django_db
 def test_filter_data_on_arch():
     """unittest for core.filter_data_on_arch
@@ -301,14 +325,14 @@ def test_filter_data_on_arch():
     project = my.Project.objects.create(name='first')
     soort = my.Soort.objects.create(project=project, title='x', order=0, value='x')
     status = my.Status.objects.create(project=project, title='x', order=0, value=0)
-    actie = my.Actie.objects.create(project=project, nummer='0001', starter=user, lasteditor=user,
-                                    soort=soort, status=status, behandelaar=user)
-    actie = my.Actie.objects.create(project=project, nummer='0002', starter=user, lasteditor=user,
-                                    soort=soort, status=status, behandelaar=user, arch=True)
-    actie = my.Actie.objects.create(project=project, nummer='0003', starter=user, lasteditor=user,
-                                    soort=soort, status=status, behandelaar=user, arch=False)
-    actie = my.Actie.objects.create(project=project, nummer='0004', starter=user, lasteditor=user,
-                                    soort=soort, status=status, behandelaar=user, arch=True)
+    my.Actie.objects.create(project=project, nummer='0001', starter=user, lasteditor=user,
+                            soort=soort, status=status, behandelaar=user)
+    my.Actie.objects.create(project=project, nummer='0002', starter=user, lasteditor=user,
+                            soort=soort, status=status, behandelaar=user, arch=True)
+    my.Actie.objects.create(project=project, nummer='0003', starter=user, lasteditor=user,
+                            soort=soort, status=status, behandelaar=user, arch=False)
+    my.Actie.objects.create(project=project, nummer='0004', starter=user, lasteditor=user,
+                            soort=soort, status=status, behandelaar=user, arch=True)
     data = testee.filter_data_on_arch(my.Actie.objects.all(), my.Selection.objects.all())
     assert [x.nummer for x in data] == ['0001', '0003']
 
@@ -321,6 +345,7 @@ def test_filter_data_on_arch():
     data = testee.filter_data_on_arch(my.Actie.objects.all(), my.Selection.objects.all())
     assert [x.nummer for x in data] == ['0001', '0002', '0003', '0004']
 
+
 @pytest.mark.django_db
 def test_apply_sorters():
     """unittest for core.apply_sorters
@@ -330,18 +355,18 @@ def test_apply_sorters():
     project = my.Project.objects.create(name='first')
     soort = my.Soort.objects.create(project=project, title='x', order=0, value='x')
     status = my.Status.objects.create(project=project, title='x', order=0, value=0)
-    actie = my.Actie.objects.create(project=project, nummer='0001', starter=user, lasteditor=user,
-                                    soort=soort, status=status, behandelaar=user,
-                                    about='aa', title='22')
-    actie = my.Actie.objects.create(project=project, nummer='0002', starter=user, lasteditor=user,
-                                    soort=soort, status=status, behandelaar=user2, arch=True,
-                                    about='bb', title='11')
-    actie = my.Actie.objects.create(project=project, nummer='0003', starter=user, lasteditor=user,
-                                    soort=soort, status=status, behandelaar=user, arch=False,
-                                    about='aa', title='11')
-    actie = my.Actie.objects.create(project=project, nummer='0004', starter=user, lasteditor=user,
-                                    soort=soort, status=status, behandelaar=user2, arch=True,
-                                    about='bb', title='02')
+    my.Actie.objects.create(project=project, nummer='0001', starter=user, lasteditor=user,
+                            soort=soort, status=status, behandelaar=user,
+                            about='aa', title='22')
+    my.Actie.objects.create(project=project, nummer='0002', starter=user, lasteditor=user,
+                            soort=soort, status=status, behandelaar=user2, arch=True,
+                            about='bb', title='11')
+    my.Actie.objects.create(project=project, nummer='0003', starter=user, lasteditor=user,
+                            soort=soort, status=status, behandelaar=user, arch=False,
+                            about='aa', title='11')
+    my.Actie.objects.create(project=project, nummer='0004', starter=user, lasteditor=user,
+                            soort=soort, status=status, behandelaar=user2, arch=True,
+                            about='bb', title='02')
 
     my.SortOrder.objects.create(user=user.id, project=project, volgnr=1, veldnm='title',
                                 richting='asc')
@@ -370,6 +395,7 @@ def test_apply_sorters():
     data = testee.apply_sorters(my.Actie.objects.all(), my.SortOrder.objects.all())
     assert [x.nummer for x in data] == ['0001', '0003', '0002', '0004']
 
+
 @pytest.mark.django_db
 def test_store_event():
     """unittest for core.store_event
@@ -387,6 +413,7 @@ def test_store_event():
     assert event.actie == actie
     assert event.starter == user
     assert event.text == 'hallo'
+
 
 @pytest.mark.django_db
 def test_store_gewijzigd():
@@ -406,6 +433,7 @@ def test_store_gewijzigd():
     assert event.starter == user
     assert event.text == 'rubriek gewijzigd in "waarde"'
 
+
 @pytest.mark.django_db
 def test_build_pagedata_for_newproj():
     """unittest for core.build_pagedata_for_newproj
@@ -414,6 +442,7 @@ def test_build_pagedata_for_newproj():
     user2 = auth.User.objects.create(username='also me')
     user3 = auth.User.objects.create(username='me too')
     assert testee.build_pagedata_for_newproj() == {'all_users': [user2, user1, user3]}
+
 
 @pytest.mark.django_db
 def test_add_project(monkeypatch, capsys):
@@ -464,13 +493,14 @@ def test_add_project(monkeypatch, capsys):
     new_id += 1
     my.Page.objects.create(link='x', order=0, title='y')
     assert testee.add_project('name2', 'desc2', ['1'], ['2']) == new_id
-    dproj = my.Project.objects.get(pk=new_id)
+    my.Project.objects.get(pk=new_id)
     assert proj.name, proj.desc == ('name2', 'desc2')
     assert capsys.readouterr().out == ('called add_default_soorten() for project name2\n'
                                        'called add_default_statussen() for project name2\n'
                                        'called add_auth_for_project() for project name2\n'
                                        "called add_admins() for project name2 with arg ['1']\n"
                                        "called add_users() for project name2 with arg ['2']\n")
+
 
 @pytest.mark.django_db
 def test_add_default_pages():
@@ -491,6 +521,7 @@ def test_add_default_pages():
         count += 1
     assert count == len(expected)
 
+
 @pytest.mark.django_db
 def test_add_default_soorten():
     """unittest for core.add_default_soorten
@@ -509,6 +540,7 @@ def test_add_default_soorten():
         assert (item.order, item.value, item.title) == expected[count]
         count += 1
     assert count == len(expected)  # 6
+
 
 @pytest.mark.django_db
 def test_add_default_statussen():
@@ -529,6 +561,7 @@ def test_add_default_statussen():
         count += 1
     assert count == len(expected)
 
+
 @pytest.mark.django_db
 def test_add_auth_for_project():
     """unittest for core.add_auth_for_project
@@ -539,6 +572,7 @@ def test_add_auth_for_project():
     assert len(grp1.permissions.all()) == 36
     grp2 = auth.Group.objects.get(name='first_user')
     assert len(grp2.permissions.all()) == 16
+
 
 @pytest.mark.django_db
 def test_add_admins():
@@ -552,6 +586,7 @@ def test_add_admins():
     assert len(myuser.groups.all()) == 1
     assert myuser.groups.all()[0] == mygroup
     assert myuser.groups.all()[0].name == 'first_admin'
+
 
 @pytest.mark.django_db
 def test_add_users():
@@ -591,7 +626,7 @@ def test_build_pagedata_for_project(monkeypatch):
                                   'Let op: aan dit project moeten eerst nog medewerkers en '
                                   'bevoegdheden voor die medewerkers worden toegevoegd')
 
-    myworker = my.Worker.objects.create(project=myproject, assigned=myuser)
+    my.Worker.objects.create(project=myproject, assigned=myuser)
     data = testee.build_pagedata_for_project(request, myproject.id, 'message')
     assert (data['admin'], data['msg'], data['name']) == (False, 'message', 'first')
     assert (data['page_titel'], list(data['pages']), data['readonly']) == ('lijst', [mypage], True)
@@ -606,6 +641,7 @@ def test_build_pagedata_for_project(monkeypatch):
     assert (data['admin'], data['msg'], data['name']) == (False, 'message', 'first')
     assert (data['page_titel'], list(data['pages']), data['readonly']) == ('lijst', [mypage], True)
     assert (data['root'], data['title'], list(data['acties'])) == (1, 'Actielijst', [myactie])
+
 
 @pytest.mark.django_db
 def test_get_acties(monkeypatch, capsys):
@@ -660,8 +696,8 @@ def test_get_acties(monkeypatch, capsys):
     mystatus = my.Status.objects.create(project=myproject, order=0, value=0, title='z')
     assert not list(testee.get_acties(myproject, myuser.id))
 
-    myselect = my.Selection.objects.create(user=myuser.id, project=myproject)
-    mysorter = my.SortOrder.objects.create(user=myuser.id, project=myproject, volgnr=0)
+    my.Selection.objects.create(user=myuser.id, project=myproject)
+    my.SortOrder.objects.create(user=myuser.id, project=myproject, volgnr=0)
     myactie = my.Actie.objects.create(project=myproject, nummer='1', starter=myuser,
                                       lasteditor=myuser,
                                       soort=mysoort, status=mystatus, behandelaar=myuser)
@@ -676,6 +712,7 @@ def test_get_acties(monkeypatch, capsys):
             'called testee.filter_data_on_description() with args [<Actie: 1>] [<Selection:    >]\n'
             'called testee.filter_data_on_arch() with args [<Actie: 1>] [<Selection:    >]\n'
             'called testee.apply_sorters() with args [<Actie: 1>] [<SortOrder: 0  >]\n')
+
 
 @pytest.mark.django_db
 def test_build_pagedata_for_settings():
@@ -704,6 +741,7 @@ def test_build_pagedata_for_settings():
     assert list(data['admin_users']) == [myuser4, myuser2, myuser]
     assert list(data['proj_admins']) == [myuser3]
 
+
 @pytest.mark.django_db
 def test_set_users():
     """unittest for core.set_users
@@ -712,7 +750,7 @@ def test_set_users():
     myuser2 = auth.User.objects.create(username='another')
     myproject = my.Project.objects.create(name='first')
     mygroup = auth.Group.objects.create(name='first_user')
-    myworker = my.Worker.objects.create(project=myproject, assigned=myuser)
+    my.Worker.objects.create(project=myproject, assigned=myuser)
     myuser.groups.add(mygroup)
     assert [x.assigned.username for x in myproject.workers.all()] == ['me']
     assert [x.name for x in myuser.groups.all()] == ['first_user']
@@ -732,6 +770,7 @@ def test_set_users():
     testee.set_users(request, myproject.id)
     assert [x.assigned.username for x in myproject.workers.all()] == ['me', 'another']
 
+
 @pytest.mark.django_db
 def test_set_admins():
     """unittest for core.set_users
@@ -750,6 +789,7 @@ def test_set_admins():
     testee.set_admins(request, myproject.id)
     assert list(myuser.groups.all()) == [mygroup]
     assert list(myuser2.groups.all()) == [mygroup]
+
 
 @pytest.mark.django_db
 def test_set_tabs(monkeypatch, capsys):
@@ -778,15 +818,16 @@ def test_set_tabs(monkeypatch, capsys):
     assert [x.title for x in my.Page.objects.all().order_by('order')] == ['Eerste', 'Tweede']
     assert capsys.readouterr().out == ""
 
+
 @pytest.mark.django_db
 def test_set_types():
     """unittest for core.set_types
     """
     myuser = auth.User.objects.create(username='me')
     myproject = my.Project.objects.create(name='first')
-    mysoort = my.Soort.objects.create(project=myproject, order=0, value='y', title='z')
-    mysoort2 = my.Soort.objects.create(project=myproject, order=1, value='a', title='b')
-    mysoort3 = my.Soort.objects.create(project=myproject, order=2, value='q', title='r')
+    my.Soort.objects.create(project=myproject, order=0, value='y', title='z')
+    my.Soort.objects.create(project=myproject, order=1, value='a', title='b')
+    my.Soort.objects.create(project=myproject, order=2, value='q', title='r')
     request = types.SimpleNamespace(user=myuser, POST={'order1': '0', 'value1': 'y', 'title1': 'z',
                                                        'order2': '1', 'value2': 'a', 'title2': 'b',
                                                        'del2': 'true',
@@ -801,12 +842,12 @@ def test_set_types():
     assert [x.value for x in data] == ['y', 'v', 'k']
     assert [x.title for x in data] == ['z', 'w', 'l']
     myproject.soort.all().delete()
-    mysoort = my.Soort.objects.create(project=myproject, order=0, value='', title='onbekend')
-    mysoort2 = my.Soort.objects.create(project=myproject, order=1, value='P', title='probleem')
-    mysoort3 = my.Soort.objects.create(project=myproject, order=2, value='W', title='wens')
-    mysoort3 = my.Soort.objects.create(project=myproject, order=3, value='V', title='vraag')
-    mysoort3 = my.Soort.objects.create(project=myproject, order=4, value='I', title='idee')
-    mysoort3 = my.Soort.objects.create(project=myproject, order=5, value='F', title='info')
+    my.Soort.objects.create(project=myproject, order=0, value='', title='onbekend')
+    my.Soort.objects.create(project=myproject, order=1, value='P', title='probleem')
+    my.Soort.objects.create(project=myproject, order=2, value='W', title='wens')
+    my.Soort.objects.create(project=myproject, order=3, value='V', title='vraag')
+    my.Soort.objects.create(project=myproject, order=4, value='I', title='idee')
+    my.Soort.objects.create(project=myproject, order=5, value='F', title='info')
     request = types.SimpleNamespace(user=myuser, POST={
         'order1': '0', 'value1': '', 'title1': 'onbekend',
         'order2': '1', 'value2': 'P', 'title2': 'probleem',
@@ -820,15 +861,16 @@ def test_set_types():
     assert [x.value for x in data] == ['', 'P', 'W', 'I', 'F', 'V']
     assert [x.title for x in data] == ['onbekend', 'probleem', 'wens', 'idee', 'info', 'vraag']
 
+
 @pytest.mark.django_db
 def test_set_stats():
     """unittest for core.set_stats
     """
     myuser = auth.User.objects.create(username='me')
     myproject = my.Project.objects.create(name='first')
-    mysoort = my.Status.objects.create(project=myproject, order=0, value=0, title='z')
-    mysoort2 = my.Status.objects.create(project=myproject, order=1, value=1, title='b')
-    mysoort3 = my.Status.objects.create(project=myproject, order=2, value=2, title='r')
+    my.Status.objects.create(project=myproject, order=0, value=0, title='z')
+    my.Status.objects.create(project=myproject, order=1, value=1, title='b')
+    my.Status.objects.create(project=myproject, order=2, value=2, title='r')
     request = types.SimpleNamespace(user=myuser, POST={'order1': '0', 'value1': '0', 'title1': 'z',
                                                        'order2': '1', 'value2': '1', 'title2': 'b',
                                                        'del2': 'true',
@@ -843,9 +885,9 @@ def test_set_stats():
     assert [x.value for x in data] == [0, 3, 4]
     assert [x.title for x in data] == ['z', 'w', 'l']
     myproject.status.all().delete()
-    mysoort = my.Status.objects.create(project=myproject, order=0, value=0, title='z')
-    mysoort2 = my.Status.objects.create(project=myproject, order=1, value=1, title='b')
-    mysoort3 = my.Status.objects.create(project=myproject, order=2, value=2, title='r')
+    my.Status.objects.create(project=myproject, order=0, value=0, title='z')
+    my.Status.objects.create(project=myproject, order=1, value=1, title='b')
+    my.Status.objects.create(project=myproject, order=2, value=2, title='r')
     request = types.SimpleNamespace(user=myuser, POST={'order1': '2', 'value1': '0', 'title1': 'z',
                                                        'order2': '0', 'value2': '1', 'title2': 'b',
                                                        'order3': '1', 'value3': '3', 'title3': 'w',
@@ -857,9 +899,9 @@ def test_set_stats():
     assert [x.title for x in data] == ['b', 'w', 'z']
     # tbv full branch coverage
     myproject.status.all().delete()
-    mysoort = my.Status.objects.create(project=myproject, order=0, value='0', title='z')
-    mysoort2 = my.Status.objects.create(project=myproject, order=1, value='1', title='b')
-    mysoort3 = my.Status.objects.create(project=myproject, order=2, value='2', title='r')
+    my.Status.objects.create(project=myproject, order=0, value='0', title='z')
+    my.Status.objects.create(project=myproject, order=1, value='1', title='b')
+    my.Status.objects.create(project=myproject, order=2, value='2', title='r')
     request = types.SimpleNamespace(user=myuser, POST={'order1': '0', 'value1': '0', 'title1': 'z',
                                                        'order2': '1', 'value2': '1', 'title2': 'b',
                                                        'order3': '2', 'value3': '3', 'title3': 'w',
@@ -869,6 +911,7 @@ def test_set_stats():
     data = myproject.status.all().order_by('order')
     assert [x.value for x in data] == [0, 1, 3]
     assert [x.title for x in data] == ['z', 'b', 'w']
+
 
 @pytest.mark.django_db
 def test_build_pagedata_for_selection():
@@ -880,32 +923,32 @@ def test_build_pagedata_for_selection():
     mypage = my.Page.objects.create(link='x/', order=1, title='z')
     mysoort = my.Soort.objects.create(project=myproject, order=0, value='y', title='z')
     mystatus = my.Status.objects.create(project=myproject, order=0, value=0, title='z')
-    myworker = my.Worker.objects.create(project=myproject, assigned=myuser)
+    my.Worker.objects.create(project=myproject, assigned=myuser)
     mysel = my.Selection.objects.create(user=myuser.id, project=myproject, veldnm='xxx',
                                         operator='', extra='', value='')
     assert testee.build_pagedata_for_selection(request, myproject.id, 'message') == (
             {}, 'Unknown search argument: xxx')
     mysel.delete()
-    mysel1 = my.Selection.objects.create(user=myuser.id, project=myproject, veldnm='soort',
-                                         operator='', extra='', value='P')
-    mysel2 = my.Selection.objects.create(user=myuser.id, project=myproject, veldnm='status',
-                                         operator='', extra='', value='0')
-    mysel3 = my.Selection.objects.create(user=myuser.id, project=myproject, veldnm='user',
-                                         operator='', extra='', value='1')
-    mysel3 = my.Selection.objects.create(user=myuser.id, project=myproject, veldnm='arch',
-                                         operator='', extra='', value='1')
-    mysel4 = my.Selection.objects.create(user=myuser.id, project=myproject, veldnm='nummer',
-                                         operator='GT', extra='EN', value='2010')
-    mysel4 = my.Selection.objects.create(user=myuser.id, project=myproject, veldnm='nummer',
-                                         operator='LT', extra='', value='2020')
-    mysel5 = my.Selection.objects.create(user=myuser.id, project=myproject, veldnm='about',
-                                         operator='', extra='OR', value='xxx')
-    mysel5 = my.Selection.objects.create(user=myuser.id, project=myproject, veldnm='about',
-                                         operator='', extra='', value='yyy')
-    mysel6 = my.Selection.objects.create(user=myuser.id, project=myproject, veldnm='title',
-                                         operator='', extra='OR', value='aaa')
-    mysel6 = my.Selection.objects.create(user=myuser.id, project=myproject, veldnm='title',
-                                         operator='', extra='', value='bbb')
+    my.Selection.objects.create(user=myuser.id, project=myproject, veldnm='soort',
+                                operator='', extra='', value='P')
+    my.Selection.objects.create(user=myuser.id, project=myproject, veldnm='status',
+                                operator='', extra='', value='0')
+    my.Selection.objects.create(user=myuser.id, project=myproject, veldnm='user',
+                                operator='', extra='', value='1')
+    my.Selection.objects.create(user=myuser.id, project=myproject, veldnm='arch',
+                                operator='', extra='', value='False')
+    my.Selection.objects.create(user=myuser.id, project=myproject, veldnm='nummer',
+                                operator='GT', extra='EN', value='2010')
+    my.Selection.objects.create(user=myuser.id, project=myproject, veldnm='nummer',
+                                operator='LT', extra='', value='2020')
+    my.Selection.objects.create(user=myuser.id, project=myproject, veldnm='about',
+                                operator='', extra='OR', value='xxx')
+    my.Selection.objects.create(user=myuser.id, project=myproject, veldnm='about',
+                                operator='', extra='', value='yyy')
+    my.Selection.objects.create(user=myuser.id, project=myproject, veldnm='title',
+                                operator='', extra='OR', value='aaa')
+    my.Selection.objects.create(user=myuser.id, project=myproject, veldnm='title',
+                                operator='', extra='', value='bbb')
     data, msg = testee.build_pagedata_for_selection(request, myproject.id, 'message')
     assert (data['msg'], data['name'], list(data['pages'])) == ('message', 'first', [mypage])
     assert (data['root'], list(data['soorten']), list(data['stats'])) == (1, [mysoort], [mystatus])
@@ -914,6 +957,29 @@ def test_build_pagedata_for_selection():
                                 'gewijzigd': [], 'gt': '2010', 'lt': '2020', 'nummer': True,
                                 'soort': ['P'], 'status': [0], 'title': 'bbb', 'user': [1],
                                 'zoek': True}
+    my.Selection.objects.all().delete()
+    my.Selection.objects.create(user=myuser.id, project=myproject, veldnm='arch',
+                                operator='', extra='', value='True')
+    data, msg = testee.build_pagedata_for_selection(request, myproject.id, 'message')
+    assert (data['msg'], data['name'], list(data['pages'])) == ('message', 'first', [mypage])
+    assert (data['root'], list(data['soorten']), list(data['stats'])) == (1, [mysoort], [mystatus])
+    assert (data['title'], list(data['users'])) == ('Actielijst - selectie', [myuser])
+    assert data['selected'] == {'arch': 2, 'enof1': 'of', 'enof2': 'of', 'gewijzigd': [],
+                                'nummer': [], 'soort': [], 'status': [], 'user': []}
+    my.Selection.objects.create(user=myuser.id, project=myproject, veldnm='arch',
+                                operator='', extra='', value='False')
+    data, msg = testee.build_pagedata_for_selection(request, myproject.id, 'message')
+    assert (data['msg'], data['name'], list(data['pages'])) == ('message', 'first', [mypage])
+    assert (data['root'], list(data['soorten']), list(data['stats'])) == (1, [mysoort], [mystatus])
+    assert (data['title'], list(data['users'])) == ('Actielijst - selectie', [myuser])
+    assert data['selected'] == {'arch': 3, 'enof1': 'of', 'enof2': 'of', 'gewijzigd': [],
+                                'nummer': [], 'soort': [], 'status': [], 'user': []}
+    my.Selection.objects.create(user=myuser.id, project=myproject, veldnm='arch',
+                                operator='', extra='', value=1)
+    with pytest.raises(ValueError) as exc:
+        testee.build_pagedata_for_selection(request, myproject.id, 'message')
+    assert str(exc.value) == 'Unknown value for arch: 1'
+
 
 @pytest.mark.django_db
 def test_setselection(monkeypatch, capsys):
@@ -923,26 +989,62 @@ def test_setselection(monkeypatch, capsys):
         """stub
         """
         print('called testee.set_selection_for_nummer()')
+        return False
     def mock_set_selection_for_soort(*args):
         """stub
         """
         print('called testee.set_selection_for_soort()')
+        return False
     def mock_set_selection_for_status(*args):
         """stub
         """
         print('called testee.set_selection_for_status()')
+        return False
     def mock_set_selection_for_user(*args):
         """stub
         """
         print('called testee.set_selection_for_user()')
+        return False
     def mock_set_selection_for_description(*args):
         """stub
         """
         print('called testee.set_selection_for_description()')
+        return False
     def mock_set_selection_for_arch(*args):
         """stub
         """
         print('called testee.set_selection_for_arch()')
+        return False
+    def mock_set_selection_for_nummer_2(*args):
+        """stub
+        """
+        print('called testee.set_selection_for_nummer()')
+        return True
+    def mock_set_selection_for_soort_2(*args):
+        """stub
+        """
+        print('called testee.set_selection_for_soort()')
+        return True
+    def mock_set_selection_for_status_2(*args):
+        """stub
+        """
+        print('called testee.set_selection_for_status()')
+        return True
+    def mock_set_selection_for_user_2(*args):
+        """stub
+        """
+        print('called testee.set_selection_for_user()')
+        return True
+    def mock_set_selection_for_description_2(*args):
+        """stub
+        """
+        print('called testee.set_selection_for_description()')
+        return True
+    def mock_set_selection_for_arch_2(*args):
+        """stub
+        """
+        print('called testee.set_selection_for_arch()')
+        return True
     monkeypatch.setattr(testee, 'set_selection_for_nummer', mock_set_selection_for_nummer)
     monkeypatch.setattr(testee, 'set_selection_for_soort', mock_set_selection_for_soort)
     monkeypatch.setattr(testee, 'set_selection_for_status', mock_set_selection_for_status)
@@ -952,16 +1054,9 @@ def test_setselection(monkeypatch, capsys):
 
     myuser = auth.User.objects.create(username='me')
     myproject = my.Project.objects.create(name='first')
-    myselection = my.Selection.objects.create(user=myuser.id, project=myproject)
     postdict = QueryDict(mutable=True)
-    postdict.setlist('select', [])
     request = types.SimpleNamespace(user=myuser, POST=postdict)
-    testee.setselection(request, myproject.id)
-    assert len(myproject.selections.filter(user=request.user.id)) == 0
-    assert capsys.readouterr().out == ''
-    postdict.setlist('select', ['act', 'srt', 'stat', 'user', 'txt', 'arch'])
-    request = types.SimpleNamespace(user=myuser, POST=postdict)
-    testee.setselection(request, myproject.id)
+    assert testee.setselection(request, myproject.id) == ('Er is niks gewijzigd', False)
     assert len(myproject.selections.filter(user=request.user.id)) == 0
     assert capsys.readouterr().out == ('called testee.set_selection_for_nummer()\n'
                                        'called testee.set_selection_for_soort()\n'
@@ -969,6 +1064,88 @@ def test_setselection(monkeypatch, capsys):
                                        'called testee.set_selection_for_user()\n'
                                        'called testee.set_selection_for_description()\n'
                                        'called testee.set_selection_for_arch()\n')
+    my.Selection.objects.create(user=myuser.id, project=myproject)
+    request = types.SimpleNamespace(user=myuser, POST=postdict)
+    assert testee.setselection(request, myproject.id) == ('Er is niks gewijzigd', False)
+    assert len(myproject.selections.filter(user=request.user.id)) == 1
+    assert capsys.readouterr().out == ('called testee.set_selection_for_nummer()\n'
+                                       'called testee.set_selection_for_soort()\n'
+                                       'called testee.set_selection_for_status()\n'
+                                       'called testee.set_selection_for_user()\n'
+                                       'called testee.set_selection_for_description()\n'
+                                       'called testee.set_selection_for_arch()\n')
+    my.Selection.objects.create(user=myuser.id, project=myproject)
+    monkeypatch.setattr(testee, 'set_selection_for_nummer', mock_set_selection_for_nummer_2)
+    request = types.SimpleNamespace(user=myuser, POST=postdict)
+    assert testee.setselection(request, myproject.id) == ('De selectie is gewijzigd.', True)
+    # assert len(myproject.selections.filter(user=request.user.id)) == 1
+    assert capsys.readouterr().out == ('called testee.set_selection_for_nummer()\n'
+                                       'called testee.set_selection_for_soort()\n'
+                                       'called testee.set_selection_for_status()\n'
+                                       'called testee.set_selection_for_user()\n'
+                                       'called testee.set_selection_for_description()\n'
+                                       'called testee.set_selection_for_arch()\n')
+
+    monkeypatch.setattr(testee, 'set_selection_for_nummer', mock_set_selection_for_nummer)
+    monkeypatch.setattr(testee, 'set_selection_for_soort', mock_set_selection_for_soort_2)
+    request = types.SimpleNamespace(user=myuser, POST=postdict)
+    assert testee.setselection(request, myproject.id) == ('De selectie is gewijzigd.', True)
+    # assert len(myproject.selections.filter(user=request.user.id)) == 1
+    assert capsys.readouterr().out == ('called testee.set_selection_for_nummer()\n'
+                                       'called testee.set_selection_for_soort()\n'
+                                       'called testee.set_selection_for_status()\n'
+                                       'called testee.set_selection_for_user()\n'
+                                       'called testee.set_selection_for_description()\n'
+                                       'called testee.set_selection_for_arch()\n')
+
+    monkeypatch.setattr(testee, 'set_selection_for_soort', mock_set_selection_for_soort)
+    monkeypatch.setattr(testee, 'set_selection_for_status', mock_set_selection_for_status_2)
+    request = types.SimpleNamespace(user=myuser, POST=postdict)
+    assert testee.setselection(request, myproject.id) == ('De selectie is gewijzigd.', True)
+    # assert len(myproject.selections.filter(user=request.user.id)) == 1
+    assert capsys.readouterr().out == ('called testee.set_selection_for_nummer()\n'
+                                       'called testee.set_selection_for_soort()\n'
+                                       'called testee.set_selection_for_status()\n'
+                                       'called testee.set_selection_for_user()\n'
+                                       'called testee.set_selection_for_description()\n'
+                                       'called testee.set_selection_for_arch()\n')
+
+    monkeypatch.setattr(testee, 'set_selection_for_status', mock_set_selection_for_status)
+    monkeypatch.setattr(testee, 'set_selection_for_user', mock_set_selection_for_user_2)
+    request = types.SimpleNamespace(user=myuser, POST=postdict)
+    assert testee.setselection(request, myproject.id) == ('De selectie is gewijzigd.', True)
+    # assert len(myproject.selections.filter(user=request.user.id)) == 1
+    assert capsys.readouterr().out == ('called testee.set_selection_for_nummer()\n'
+                                       'called testee.set_selection_for_soort()\n'
+                                       'called testee.set_selection_for_status()\n'
+                                       'called testee.set_selection_for_user()\n'
+                                       'called testee.set_selection_for_description()\n'
+                                       'called testee.set_selection_for_arch()\n')
+
+    monkeypatch.setattr(testee, 'set_selection_for_user', mock_set_selection_for_user)
+    monkeypatch.setattr(testee, 'set_selection_for_description', mock_set_selection_for_description_2)
+    request = types.SimpleNamespace(user=myuser, POST=postdict)
+    assert testee.setselection(request, myproject.id) == ('De selectie is gewijzigd.', True)
+    # assert len(myproject.selections.filter(user=request.user.id)) == 1
+    assert capsys.readouterr().out == ('called testee.set_selection_for_nummer()\n'
+                                       'called testee.set_selection_for_soort()\n'
+                                       'called testee.set_selection_for_status()\n'
+                                       'called testee.set_selection_for_user()\n'
+                                       'called testee.set_selection_for_description()\n'
+                                       'called testee.set_selection_for_arch()\n')
+
+    monkeypatch.setattr(testee, 'set_selection_for_description', mock_set_selection_for_description)
+    monkeypatch.setattr(testee, 'set_selection_for_arch', mock_set_selection_for_arch_2)
+    request = types.SimpleNamespace(user=myuser, POST=postdict)
+    assert testee.setselection(request, myproject.id) == ('De selectie is gewijzigd.', True)
+    # assert len(myproject.selections.filter(user=request.user.id)) == 1
+    assert capsys.readouterr().out == ('called testee.set_selection_for_nummer()\n'
+                                       'called testee.set_selection_for_soort()\n'
+                                       'called testee.set_selection_for_status()\n'
+                                       'called testee.set_selection_for_user()\n'
+                                       'called testee.set_selection_for_description()\n'
+                                       'called testee.set_selection_for_arch()\n')
+
 
 @pytest.mark.django_db
 def test_set_selection_for_nummer():
@@ -976,37 +1153,70 @@ def test_set_selection_for_nummer():
     """
     myuser = auth.User.objects.create(username='me')
     myproject = my.Project.objects.create(name='first')
-    data = {'txtgt': '100', 'enof': 'en', 'txtlt': '1000'}
-    testee.set_selection_for_nummer(myproject, myuser, data)
-    data = myproject.selections.filter(user=myuser.id)
+    data = QueryDict('enof=of')
+    assert not testee.set_selection_for_nummer(myproject, myuser, data)
+    assert not myproject.selections.filter(user=myuser.id, veldnm='nummer')
+
+    data = QueryDict(mutable=True)
+    data.update({'txtgt': '100', 'enof': 'en', 'txtlt': '1000'})
+    assert testee.set_selection_for_nummer(myproject, myuser, data)
+    data = myproject.selections.filter(user=myuser.id, veldnm='nummer')
     assert len(data) == len(['GT', 'LT'])  # 2
-    assert (data[0].veldnm, data[0].operator, data[0].extra, data[0].value) == ('nummer', 'GT',
-                                                                                '', '100')
-    assert (data[1].veldnm, data[1].operator, data[1].extra, data[1].value) == ('nummer', 'LT',
-                                                                                'EN', '1000')
-    data.delete()
-    data = {'txtgt': '100', 'enof': 'of', 'txtlt': '1000'}
-    testee.set_selection_for_nummer(myproject, myuser, data)
-    data = myproject.selections.filter(user=myuser.id)
+    assert (data[0].operator, data[0].extra, data[0].value) == ('GT', 'EN', '100')
+    assert (data[1].operator, data[1].extra, data[1].value) == ('LT', 'EN', '1000')
+    # nog een keer voor de "er is niks gewijzigd" situatie
+    data = QueryDict(mutable=True)
+    data.update({'txtgt': '100', 'enof': 'en', 'txtlt': '1000'})
+    data.setlist('select', ['act'])
+    assert not testee.set_selection_for_nummer(myproject, myuser, data)
+    data = myproject.selections.filter(user=myuser.id, veldnm='nummer')
     assert len(data) == len(['GT', 'LT'])  # 2
-    assert (data[0].veldnm, data[0].operator, data[0].extra, data[0].value) == ('nummer', 'GT',
-                                                                                '', '100')
-    assert (data[1].veldnm, data[1].operator, data[1].extra, data[1].value) == ('nummer', 'LT',
-                                                                                'OF', '1000')
-    data.delete()
-    data = {'txtgt': '100', 'enof': 'en'}
-    testee.set_selection_for_nummer(myproject, myuser, data)
-    data = myproject.selections.filter(user=myuser.id)
+    assert (data[0].operator, data[0].extra, data[0].value) == ('GT', 'EN', '100')
+    assert (data[1].operator, data[1].extra, data[1].value) == ('LT', 'EN', '1000')
+    # in 1 keer leegmaken
+    data = QueryDict(mutable=True)
+    assert testee.set_selection_for_nummer(myproject, myuser, data)
+    data = myproject.selections.filter(user=myuser.id, veldnm='nummer')
+    assert not data
+
+    # allebei nog een keer nieuw opvoeren
+    data = QueryDict(mutable=True)
+    data.update({'txtgt': '110', 'enof': 'of', 'txtlt': '1010'})
+    assert testee.set_selection_for_nummer(myproject, myuser, data)
+    data = myproject.selections.filter(user=myuser.id, veldnm='nummer')
+    assert len(data) == len(['GT', 'LT'])  # 2
+    assert (data[0].operator, data[0].extra, data[0].value) == ('GT', 'OF', '110')
+    assert (data[1].operator, data[1].extra, data[1].value) == ('LT', 'OF', '1010')
+
+    data = QueryDict(mutable=True)
+    data.update({'txtgt': '100', 'enof': 'en'})
+    data.setlist('select', ['act'])
+    assert testee.set_selection_for_nummer(myproject, myuser, data)
+    data = myproject.selections.filter(user=myuser.id, veldnm='nummer')
     assert len(data) == len(['GT'])  # 1
-    assert (data[0].veldnm, data[0].operator, data[0].extra, data[0].value) == ('nummer', 'GT',
-                                                                                '', '100')
-    data.delete()
-    data = {'enof': 'of', 'txtlt': '1000'}
-    testee.set_selection_for_nummer(myproject, myuser, data)
-    data = myproject.selections.filter(user=myuser.id)
+    assert (data[0].operator, data[0].extra, data[0].value) == ('GT', 'EN', '100')
+    data = QueryDict(mutable=True)
+    data.update({'txtgt': '110', 'enof': 'en'})
+    data.setlist('select', ['act'])
+    assert testee.set_selection_for_nummer(myproject, myuser, data)
+    data = myproject.selections.filter(user=myuser.id, veldnm='nummer')
+    assert len(data) == len(['GT'])  # 1
+    assert (data[0].operator, data[0].extra, data[0].value) == ('GT', 'EN', '110')
+    data = QueryDict(mutable=True)
+    data.update({'enof': 'of', 'txtlt': '1000'})
+    data.setlist('select', ['act'])
+    assert testee.set_selection_for_nummer(myproject, myuser, data)
+    data = myproject.selections.filter(user=myuser.id, veldnm='nummer')
     assert len(data) == len(['LT'])  # 1
-    assert (data[0].veldnm, data[0].operator, data[0].extra, data[0].value) == ('nummer', 'LT',
-                                                                                '', '1000')
+    assert (data[0].operator, data[0].extra, data[0].value) == ('LT', 'OF', '1000')
+    data = QueryDict(mutable=True)
+    data.update({'enof': 'of', 'txtlt': '1010'})
+    data.setlist('select', ['act'])
+    assert testee.set_selection_for_nummer(myproject, myuser, data)
+    data = myproject.selections.filter(user=myuser.id, veldnm='nummer')
+    assert len(data) == len(['LT'])  # 1
+    assert (data[0].operator, data[0].extra, data[0].value) == ('LT', 'OF', '1010')
+
 
 @pytest.mark.django_db
 def test_set_selection_for_soort():
@@ -1014,16 +1224,40 @@ def test_set_selection_for_soort():
     """
     myuser = auth.User.objects.create(username='me')
     myproject = my.Project.objects.create(name='first')
+
+    data = QueryDict(mutable=True)
+    assert not testee.set_selection_for_soort(myproject, myuser, data)
+    assert not myproject.selections.filter(user=myuser.id, veldnm='soort')
+
     data = QueryDict(mutable=True)
     selitems = ['1', '2']
     data.setlist('srtval', selitems)
-    testee.set_selection_for_soort(myproject, myuser, data)
-    data = myproject.selections.filter(user=myuser.id)
+    assert testee.set_selection_for_soort(myproject, myuser, data)
+    data = myproject.selections.filter(user=myuser.id, veldnm='soort')
     assert len(data) == len(selitems)  # 2
-    assert (data[0].veldnm, data[0].operator, data[0].extra, data[0].value) == ('soort', 'EQ',
-                                                                                '', '1')
-    assert (data[1].veldnm, data[1].operator, data[1].extra, data[1].value) == ('soort', 'EQ',
-                                                                                'OR', '2')
+    assert (data[0].operator, data[0].extra, data[0].value) == ('EQ', 'OR', '1')
+    assert (data[1].operator, data[1].extra, data[1].value) == ('EQ', 'OR', '2')
+    # nog een keer voor de "er is niks gewijzigd" situatie
+    data = QueryDict(mutable=True)
+    data.setlist('srtval', ['1', '2'])
+    data.setlist('select', ['srt'])
+    assert not testee.set_selection_for_soort(myproject, myuser, data)
+
+    data = QueryDict(mutable=True)
+    selitems = ['2', '3']
+    data.setlist('srtval', selitems)
+    data.setlist('select', ['srt'])
+    assert testee.set_selection_for_soort(myproject, myuser, data)
+    data = myproject.selections.filter(user=myuser.id, veldnm='soort')
+    assert len(data) == len(selitems)  # 1
+    assert (data[0].operator, data[0].extra, data[0].value) == ('EQ', 'OR', '2')
+    assert (data[1].operator, data[1].extra, data[1].value) == ('EQ', 'OR', '3')
+    # nog een keer voor alles leegmaken
+    data = QueryDict(mutable=True)
+    data.setlist('srtval', ['2', '3'])
+    assert testee.set_selection_for_soort(myproject, myuser, data)
+    assert not myproject.selections.filter(user=myuser.id, veldnm='soort')
+
 
 @pytest.mark.django_db
 def test_set_selection_for_status():
@@ -1032,15 +1266,38 @@ def test_set_selection_for_status():
     myuser = auth.User.objects.create(username='me')
     myproject = my.Project.objects.create(name='first')
     data = QueryDict(mutable=True)
+    assert not testee.set_selection_for_status(myproject, myuser, data)
+    assert not myproject.selections.filter(user=myuser.id, veldnm='status')
+
+    data = QueryDict(mutable=True)
     selitems = ['1', '2']
     data.setlist('statval', selitems)
-    testee.set_selection_for_status(myproject, myuser, data)
-    data = myproject.selections.filter(user=myuser.id)
+    assert testee.set_selection_for_status(myproject, myuser, data)
+    data = myproject.selections.filter(user=myuser.id, veldnm='status')
     assert len(data) == len(selitems)  # 2
-    assert (data[0].veldnm, data[0].operator, data[0].extra, data[0].value) == ('status', 'EQ',
-                                                                                '', '1')
-    assert (data[1].veldnm, data[1].operator, data[1].extra, data[1].value) == ('status', 'EQ',
-                                                                                'OR', '2')
+    assert (data[0].operator, data[0].extra, data[0].value) == ('EQ', 'OR', '1')
+    assert (data[1].operator, data[1].extra, data[1].value) == ('EQ', 'OR', '2')
+    # nog een keer voor de "er is niks gewijzigd" situatie
+    data = QueryDict(mutable=True)
+    data.setlist('statval', ['1', '2'])
+    data.setlist('select', ['stat'])
+    assert not testee.set_selection_for_status(myproject, myuser, data)
+
+    data = QueryDict(mutable=True)
+    selitems = ['2', '3']
+    data.setlist('statval', selitems)
+    data.setlist('select', ['stat'])
+    assert testee.set_selection_for_status(myproject, myuser, data)
+    data = myproject.selections.filter(user=myuser.id, veldnm='status')
+    assert len(data) == len(selitems)  # 2
+    assert (data[0].operator, data[0].extra, data[0].value) == ('EQ', 'OR', '2')
+    assert (data[1].operator, data[1].extra, data[1].value) == ('EQ', 'OR', '3')
+    # nog een keer voor alles leegmaken
+    data = QueryDict(mutable=True)
+    data.setlist('srtval', ['2', '3'])
+    assert testee.set_selection_for_status(myproject, myuser, data)
+    assert not myproject.selections.filter(user=myuser.id, veldnm='status')
+
 
 @pytest.mark.django_db
 def test_set_selection_for_user():
@@ -1049,54 +1306,108 @@ def test_set_selection_for_user():
     myuser = auth.User.objects.create(username='me')
     myproject = my.Project.objects.create(name='first')
     data = QueryDict(mutable=True)
+    assert not testee.set_selection_for_user(myproject, myuser, data)
+    assert not myproject.selections.filter(user=myuser.id, veldnm='user')
+
+    data = QueryDict(mutable=True)
     selitems = ['1', '2']
     data.setlist('userval', selitems)
-    testee.set_selection_for_user(myproject, myuser, data)
-    data = myproject.selections.filter(user=myuser.id)
+    assert testee.set_selection_for_user(myproject, myuser, data)
+    data = myproject.selections.filter(user=myuser.id, veldnm='user')
     assert len(data) == len(selitems)  # 2
-    assert (data[0].veldnm, data[0].operator, data[0].extra, data[0].value) == ('user', 'EQ',
-                                                                                '', '1')
-    assert (data[1].veldnm, data[1].operator, data[1].extra, data[1].value) == ('user', 'EQ',
-                                                                                'OR', '2')
+    assert (data[0].operator, data[0].extra, data[0].value) == ('EQ', 'OR', '1')
+    assert (data[1].operator, data[1].extra, data[1].value) == ('EQ', 'OR', '2')
+    # nog een keer voor de "er is niks gewijzigd" situatie
+    data = QueryDict(mutable=True)
+    data.setlist('userval', ['1', '2'])
+    data.setlist('select', ['user'])
+    assert not testee.set_selection_for_user(myproject, myuser, data)
 
+    data = QueryDict(mutable=True)
+    selitems = ['2', '3']
+    data.setlist('userval', selitems)
+    data.setlist('select', ['user'])
+    assert testee.set_selection_for_user(myproject, myuser, data)
+    data = myproject.selections.filter(user=myuser.id, veldnm='user')
+    assert len(data) == len(selitems)  # 2
+    assert (data[0].operator, data[0].extra, data[0].value) == ('EQ', 'OR', '2')
+    assert (data[1].operator, data[1].extra, data[1].value) == ('EQ', 'OR', '3')
+    # nog een keer voor alles leegmaken
+    data = QueryDict(mutable=True)
+    data.setlist('srtval', ['2', '3'])
+    assert testee.set_selection_for_user(myproject, myuser, data)
+    assert not myproject.selections.filter(user=myuser.id, veldnm='user')
+
+
+# 528->530, 536->538
 @pytest.mark.django_db
 def test_set_selection_for_description():
     """unittest for core.set_selection_for_description
     """
     myuser = auth.User.objects.create(username='me')
     myproject = my.Project.objects.create(name='first')
-    data = {'txtabout': '100', 'enof2': 'en', 'txttitle': '1000'}
-    testee.set_selection_for_description(myproject, myuser, data)
+    data = QueryDict('enof=of')
+    assert not testee.set_selection_for_description(myproject, myuser, data)
+    assert not myproject.selections.filter(user=myuser.id)
+
+    data = QueryDict(mutable=True)
+    data.update({'txtabout': '100', 'enof2': 'en', 'txttitle': '1000'})
+    assert testee.set_selection_for_description(myproject, myuser, data)
     data = myproject.selections.filter(user=myuser.id)
     assert len(data) == len(['about', 'title'])  # 2
     assert (data[0].veldnm, data[0].operator, data[0].extra, data[0].value) == ('about', 'INCL',
-                                                                                '', '100')
+                                                                                'EN', '100')
     assert (data[1].veldnm, data[1].operator, data[1].extra, data[1].value) == ('title', 'INCL',
                                                                                 'EN', '1000')
-    data.delete()
-    data = {'txtabout': '100', 'enof2': 'or', 'txttitle': '1000'}
-    testee.set_selection_for_description(myproject, myuser, data)
+    # nog een keer voor de "er is niks gewijzigd" situatie
+    data = QueryDict(mutable=True)
+    data.setlist('select', ['txt'])
+    data.update({'txtabout': '100', 'enof2': 'en', 'txttitle': '1000'})
+    assert not testee.set_selection_for_description(myproject, myuser, data)
+
+    data = QueryDict(mutable=True)
+    data.update({'txtabout': '110', 'enof2': 'or', 'txttitle': '1010'})
+    data.setlist('select', ['txt'])
+    assert testee.set_selection_for_description(myproject, myuser, data)
     data = myproject.selections.filter(user=myuser.id)
     assert len(data) == len(['about', 'title'])  # 2
     assert (data[0].veldnm, data[0].operator, data[0].extra, data[0].value) == ('about', 'INCL',
-                                                                                '', '100')
+                                                                                'OR', '110')
     assert (data[1].veldnm, data[1].operator, data[1].extra, data[1].value) == ('title', 'INCL',
-                                                                                'OR', '1000')
-    data.delete()
-    data = {'txtabout': '100', 'enof2': 'en'}
-    testee.set_selection_for_description(myproject, myuser, data)
+                                                                                'OR', '1010')
+    data = QueryDict(mutable=True)
+    data.update({'txtabout': '100', 'enof2': 'en'})
+    data.setlist('select', ['txt'])
+    assert testee.set_selection_for_description(myproject, myuser, data)
     data = myproject.selections.filter(user=myuser.id)
     assert len(data) == len(['about'])  # 1
     assert (data[0].veldnm, data[0].operator, data[0].extra, data[0].value) == ('about', 'INCL',
-                                                                                '', '100')
-    data.delete()
-    data = {'enof2': 'of', 'txttitle': '1000'}
-    testee.set_selection_for_description(myproject, myuser, data)
+                                                                                'EN', '100')
+    data = QueryDict(mutable=True)
+    data.update({'txtabout': '110', 'enof2': 'en'})
+    data.setlist('select', ['txt'])
+    assert testee.set_selection_for_description(myproject, myuser, data)
+    data = myproject.selections.filter(user=myuser.id)
+    assert len(data) == len(['about'])  # 1
+    assert (data[0].veldnm, data[0].operator, data[0].extra, data[0].value) == ('about', 'INCL',
+                                                                                'EN', '110')
+    data = QueryDict(mutable=True)
+    data.update({'enof2': 'of', 'txttitle': '1000'})
+    data.setlist('select', ['txt'])
+    assert testee.set_selection_for_description(myproject, myuser, data)
     data = myproject.selections.filter(user=myuser.id)
     assert len(data) == len(['title'])  # 1
     assert (data[0].veldnm, data[0].operator, data[0].extra, data[0].value) == ('title', 'INCL',
-                                                                                '', '1000')
-    data.delete()
+                                                                                'OF', '1000')
+    data = QueryDict(mutable=True)
+    data.update({'enof2': 'of', 'txttitle': '1010'})
+    data.setlist('select', ['txt'])
+    assert testee.set_selection_for_description(myproject, myuser, data)
+    data = myproject.selections.filter(user=myuser.id)
+    assert len(data) == len(['title'])  # 1
+    assert (data[0].veldnm, data[0].operator, data[0].extra, data[0].value) == ('title', 'INCL',
+                                                                                'OF', '1010')
+
 
 @pytest.mark.django_db
 def test_set_selection_for_arch():
@@ -1104,27 +1415,71 @@ def test_set_selection_for_arch():
     """
     myuser = auth.User.objects.create(username='me')
     myproject = my.Project.objects.create(name='first')
+
+    # van "laat alles zien" naar "alleen gearchiveerd"
     data = QueryDict(mutable=True)
     data.setlist('archall', ['arch'])
-    testee.set_selection_for_arch(myproject, myuser, data)
-    data = myproject.selections.filter(user=myuser.id)
-    assert len(data) == 1
-    assert (data[0].veldnm, data[0].operator, data[0].extra, data[0].value) == ('arch', 'EQ',
-                                                                                '', 'False')
-    data = QueryDict(mutable=True)
-    # data.setlist('archall', [''])
-    myproject.selections.filter(user=myuser.id).delete()
-    testee.set_selection_for_arch(myproject, myuser, data)
+    data.setlist('select', ['arch'])
+    assert testee.set_selection_for_arch(myproject, myuser, data)
     data = myproject.selections.filter(user=myuser.id)
     assert len(data) == 1
     assert (data[0].veldnm, data[0].operator, data[0].extra, data[0].value) == ('arch', 'EQ',
                                                                                 '', 'True')
+    # nog een keer voor de "er is niks gewijzigd" situatie
+    data = QueryDict(mutable=True)
+    data.setlist('archall', ['arch'])
+    data.setlist('select', ['arch'])
+    assert not testee.set_selection_for_arch(myproject, myuser, data)
+
+    # van "alleen gearchiveerd" naar "alleen lopend"
+    data = QueryDict(mutable=True)
+    assert testee.set_selection_for_arch(myproject, myuser, data)
+    data = myproject.selections.filter(user=myuser.id)
+    assert len(data) == 1
+    assert (data[0].veldnm, data[0].operator, data[0].extra, data[0].value) == ('arch', 'EQ',
+                                                                                '', 'False')
+    # van "alleen lopend" naar "laat alles zien"
     data = QueryDict(mutable=True)
     data.setlist('archall', ['all'])
-    myproject.selections.filter(user=myuser.id).delete()
-    testee.set_selection_for_arch(myproject, myuser, data)
+    data.setlist('select', ['arch'])
+    assert testee.set_selection_for_arch(myproject, myuser, data)
     data = myproject.selections.filter(user=myuser.id)
-    assert len(data) == 0
+    assert not data
+
+    # nog een keer voor de "er is niks gewijzigd" situatie
+    data = QueryDict(mutable=True)
+    data.setlist('archall', ['all'])
+    data.setlist('select', ['arch'])
+    assert not testee.set_selection_for_arch(myproject, myuser, data)
+
+    # van "laat alles zien"  naar "alleen lopend"
+    data = QueryDict(mutable=True)
+    assert testee.set_selection_for_arch(myproject, myuser, data)
+    data = myproject.selections.filter(user=myuser.id)
+    assert len(data) == 1
+    assert (data[0].veldnm, data[0].operator, data[0].extra, data[0].value) == ('arch', 'EQ',
+                                                                                '', 'False')
+    # nog een keer voor de "er is niks gewijzigd" situatie
+    data = QueryDict(mutable=True)
+    assert not testee.set_selection_for_arch(myproject, myuser, data)
+
+    # van alleen lopend naar alleen gearchiveerd
+    data = QueryDict(mutable=True)
+    data.setlist('archall', ['arch'])
+    data.setlist('select', ['arch'])
+    assert testee.set_selection_for_arch(myproject, myuser, data)
+    data = myproject.selections.filter(user=myuser.id)
+    assert len(data) == 1
+    assert (data[0].veldnm, data[0].operator, data[0].extra, data[0].value) == ('arch', 'EQ',
+                                                                                '', 'True')
+    # van alleen gearchiveerd naar alles
+    data = QueryDict(mutable=True)
+    data.setlist('archall', ['all'])
+    data.setlist('select', ['arch'])
+    assert testee.set_selection_for_arch(myproject, myuser, data)
+    data = myproject.selections.filter(user=myuser.id)
+    assert not data
+
 
 @pytest.mark.django_db
 def test_build_pagedata_for_ordering():
@@ -1164,7 +1519,7 @@ def test_setordering():
     assert (data[1].volgnr, data[1].veldnm, data[1].richting) == (2, 'gewijzigd', 'desc')
 
 @pytest.mark.django_db
-def test_build_pagedata_for_search(monkeypatch):
+def test_build_pagedata_for_search():
     """unittest for core.build_pagedata_for_search
     """
     myproject = my.Project.objects.create(name='first')
@@ -1212,7 +1567,7 @@ def test_build_pagedata_for_results(monkeypatch):
     assert result['results'] == 'search results'
 
 @pytest.mark.django_db
-def test_search_for(monkeypatch):
+def test_search_for():
     """unittest vor core.search_for
     """
     myproject = my.Project.objects.create(name='first')
@@ -1227,12 +1582,12 @@ def test_search_for(monkeypatch):
     myactie2 = my.Actie.objects.create(project=myproject, nummer='y', starter=myuser,
                                        lasteditor=myuser, soort=mysoort, status=mystatus,
                                        behandelaar=myuser)
-    myevent = my.Event.objects.create(actie=myactie, starter=myuser, text='lkjygfvbn')
-    myevent2 = my.Event.objects.create(actie=myactie2, starter=myuser, text='lkjygfvbn')
+    my.Event.objects.create(actie=myactie, starter=myuser, text='lkjygfvbn')
+    my.Event.objects.create(actie=myactie2, starter=myuser, text='lkjygfvbn')
     assert testee.search_for(myproject, 'xxx') == []
 
 @pytest.mark.django_db
-def test_search_for_2(monkeypatch):
+def test_search_for_2():
     """unittest vor core.search_for
     """
     myproject = my.Project.objects.create(name='first')
@@ -1247,15 +1602,15 @@ def test_search_for_2(monkeypatch):
     myactie2 = my.Actie.objects.create(project=myproject, nummer='y', starter=myuser,
                                        lasteditor=myuser, soort=mysoort, status=mystatus,
                                        about='abcde', behandelaar=myuser)
-    myevent = my.Event.objects.create(actie=myactie, starter=myuser, text='lkjygfvbn')
-    myevent2 = my.Event.objects.create(actie=myactie2, starter=myuser, text='lkjygfvbn')
+    my.Event.objects.create(actie=myactie, starter=myuser, text='lkjygfvbn')
+    my.Event.objects.create(actie=myactie2, starter=myuser, text='lkjygfvbn')
     result = testee.search_for(myproject, 'xxx')
     assert len(result) == 1
     assert result[0][0] == myactie
     assert result[0][1:] == ('about', 'axxxe')
 
 @pytest.mark.django_db
-def test_search_for_3(monkeypatch):
+def test_search_for_3():
     """unittest vor core.search_for
     """
     myproject = my.Project.objects.create(name='first')
@@ -1270,15 +1625,15 @@ def test_search_for_3(monkeypatch):
     myactie2 = my.Actie.objects.create(project=myproject, nummer='y', starter=myuser,
                                        lasteditor=myuser, soort=mysoort, status=mystatus,
                                        title='fghij', behandelaar=myuser)
-    myevent = my.Event.objects.create(actie=myactie, starter=myuser, text='lkjygfvbn')
-    myevent2 = my.Event.objects.create(actie=myactie2, starter=myuser, text='lkjygfvbn')
+    my.Event.objects.create(actie=myactie, starter=myuser, text='lkjygfvbn')
+    my.Event.objects.create(actie=myactie2, starter=myuser, text='lkjygfvbn')
     result = testee.search_for(myproject, 'xxx')
     assert len(result) == 1
     assert result[0][0] == myactie
     assert result[0][1:] == ('title', 'fxxxj')
 
 @pytest.mark.django_db
-def test_search_for_4(monkeypatch):
+def test_search_for_4():
     """unittest vor core.search_for
     """
     myproject = my.Project.objects.create(name='first')
@@ -1293,15 +1648,15 @@ def test_search_for_4(monkeypatch):
     myactie2 = my.Actie.objects.create(project=myproject, nummer='y', starter=myuser,
                                        lasteditor=myuser, soort=mysoort, status=mystatus,
                                        melding='ffjhoij', behandelaar=myuser)
-    myevent = my.Event.objects.create(actie=myactie, starter=myuser, text='lkjygfvbn')
-    myevent2 = my.Event.objects.create(actie=myactie2, starter=myuser, text='lkjygfvbn')
+    my.Event.objects.create(actie=myactie, starter=myuser, text='lkjygfvbn')
+    my.Event.objects.create(actie=myactie2, starter=myuser, text='lkjygfvbn')
     result = testee.search_for(myproject, 'xxx')
     assert len(result) == 1
     assert result[0][0] == myactie
     assert result[0][1:] == ('melding', 'ffxxxij')
 
 @pytest.mark.django_db
-def test_search_for_5(monkeypatch):
+def test_search_for_5():
     """unittest vor core.search_for
     """
     myproject = my.Project.objects.create(name='first')
@@ -1316,15 +1671,15 @@ def test_search_for_5(monkeypatch):
     myactie2 = my.Actie.objects.create(project=myproject, nummer='y', starter=myuser,
                                        lasteditor=myuser, soort=mysoort, status=mystatus,
                                        oorzaak='hgttfgv', behandelaar=myuser)
-    myevent = my.Event.objects.create(actie=myactie, starter=myuser, text='lkjygfvbn')
-    myevent2 = my.Event.objects.create(actie=myactie2, starter=myuser, text='lkjygfvbn')
+    my.Event.objects.create(actie=myactie, starter=myuser, text='lkjygfvbn')
+    my.Event.objects.create(actie=myactie2, starter=myuser, text='lkjygfvbn')
     result = testee.search_for(myproject, 'xxx')
     assert len(result) == 1
     assert result[0][0] == myactie
     assert result[0][1:] == ('oorzaak', 'hgxxxgv')
 
 @pytest.mark.django_db
-def test_search_for_6(monkeypatch):
+def test_search_for_6():
     """unittest vor core.search_for
     """
     myproject = my.Project.objects.create(name='first')
@@ -1339,15 +1694,15 @@ def test_search_for_6(monkeypatch):
     myactie2 = my.Actie.objects.create(project=myproject, nummer='y', starter=myuser,
                                        lasteditor=myuser, soort=mysoort, status=mystatus,
                                        oplossing='xcvbnm', behandelaar=myuser)
-    myevent = my.Event.objects.create(actie=myactie, starter=myuser, text='lkjygfvbn')
-    myevent2 = my.Event.objects.create(actie=myactie2, starter=myuser, text='lkjygfvbn')
+    my.Event.objects.create(actie=myactie, starter=myuser, text='lkjygfvbn')
+    my.Event.objects.create(actie=myactie2, starter=myuser, text='lkjygfvbn')
     result = testee.search_for(myproject, 'xxx')
     assert len(result) == 1
     assert result[0][0] == myactie
     assert result[0][1:] == ('oplossing', 'xxxbnm')
 
 @pytest.mark.django_db
-def test_search_for_7(monkeypatch):
+def test_search_for_7():
     """unittest vor core.search_for
     """
     myproject = my.Project.objects.create(name='first')
@@ -1362,15 +1717,15 @@ def test_search_for_7(monkeypatch):
     myactie2 = my.Actie.objects.create(project=myproject, nummer='y', starter=myuser,
                                        lasteditor=myuser, soort=mysoort, status=mystatus,
                                        vervolg='ertyuiop', behandelaar=myuser)
-    myevent = my.Event.objects.create(actie=myactie, starter=myuser, text='lkjygfvbn')
-    myevent2 = my.Event.objects.create(actie=myactie2, starter=myuser, text='lkjygfvbn')
+    my.Event.objects.create(actie=myactie, starter=myuser, text='lkjygfvbn')
+    my.Event.objects.create(actie=myactie2, starter=myuser, text='lkjygfvbn')
     result = testee.search_for(myproject, 'xxx')
     assert len(result) == 1
     assert result[0][0] == myactie
     assert result[0][1:] == ('vervolg', 'ertxxxop')
 
 @pytest.mark.django_db
-def test_search_for_8(monkeypatch):
+def test_search_for_8():
     """unittest vor core.search_for
     """
     myproject = my.Project.objects.create(name='first')
@@ -1386,7 +1741,7 @@ def test_search_for_8(monkeypatch):
                                        lasteditor=myuser, soort=mysoort, status=mystatus,
                                        behandelaar=myuser)
     myevent = my.Event.objects.create(actie=myactie, starter=myuser, text='lkjxxxvbn')
-    myevent2 = my.Event.objects.create(actie=myactie2, starter=myuser, text='lkjygfvbn')
+    my.Event.objects.create(actie=myactie2, starter=myuser, text='lkjygfvbn')
     result = testee.search_for(myproject, 'xxx')
     assert len(result) == 1
     assert result[0][0] == myactie
@@ -1418,7 +1773,7 @@ def test_build_pagedata_for_detail(monkeypatch):
     mypage = my.Page.objects.create(link='x/', order=1, title='z')
     mysoort = my.Soort.objects.create(project=myproject, order=0, value='y', title='z')
     mystatus = my.Status.objects.create(project=myproject, order=0, value=0, title='z')
-    myworker = my.Worker.objects.create(project=myproject, assigned=myuser)
+    my.Worker.objects.create(project=myproject, assigned=myuser)
     myactie = my.Actie.objects.create(project=myproject, nummer='x', starter=myuser,
                                       lasteditor=myuser,
                                       soort=mysoort, status=mystatus, behandelaar=myuser)
@@ -1449,9 +1804,8 @@ def test_build_pagedata_for_detail(monkeypatch):
     assert (list(data['stats']), data['title']) == ([mystatus], 'Nieuwe actie')
     assert (list(data['users']), data['nieuw'], data['start']) == ([myuser], myname, FIXDATE)
 
-    myactie2 = my.Actie.objects.create(project=myproject, nummer='2020-0002', starter=myuser,
-                                      lasteditor=myuser,
-                                      soort=mysoort, status=mystatus, behandelaar=myuser)
+    my.Actie.objects.create(project=myproject, nummer='2020-0002', starter=myuser,
+                           lasteditor=myuser, soort=mysoort, status=mystatus, behandelaar=myuser)
     data = testee.build_pagedata_for_detail(MockRequest2(), myproject.id, 'new', 'a message')
     assert (data['msg'], data['name'], data['nummer']) == ('a message', 'first', '2020-0003')
     assert (data['page_titel'], list(data['pages'])) == ('', [mypage])
@@ -1463,7 +1817,7 @@ def test_build_pagedata_for_detail(monkeypatch):
     myproject = my.Project.objects.create(name='second')
     mysoort = my.Soort.objects.create(project=myproject, order=0, value='y', title='z')
     mystatus = my.Status.objects.create(project=myproject, order=0, value=0, title='z')
-    myworker = my.Worker.objects.create(project=myproject, assigned=myuser)
+    my.Worker.objects.create(project=myproject, assigned=myuser)
     data = testee.build_pagedata_for_detail(MockRequest2(), myproject.id, 'new')
     assert (data['msg'], data['name'], data['nummer']) == ('login_message', 'second', '2020-0001')
     assert (data['page_titel'], list(data['pages'])) == ('', [mypage])
@@ -1478,12 +1832,12 @@ def test_wijzig_detail():
     myuser = auth.User.objects.create(username='me')
     myuser2 = auth.User.objects.create(username='myname')
     myproject = my.Project.objects.create(name='first')
-    mypage = my.Page.objects.create(link='x/', order=1, title='z')
+    my.Page.objects.create(link='x/', order=1, title='z')
     mysoort = my.Soort.objects.create(project=myproject, order=0, value='y', title='old')
     mysoort2 = my.Soort.objects.create(project=myproject, order=1, value='P', title='new')
     mystatus = my.Status.objects.create(project=myproject, order=0, value=0, title='old')
     mystatus2 = my.Status.objects.create(project=myproject, order=1, value=1, title='new')
-    myworker = my.Worker.objects.create(project=myproject, assigned=myuser)
+    my.Worker.objects.create(project=myproject, assigned=myuser)
     myactie = my.Actie.objects.create(project=myproject, nummer='x', starter=myuser,
                                       lasteditor=myuser,
                                       soort=mysoort, status=mystatus, behandelaar=myuser)
@@ -1540,8 +1894,8 @@ def test_wijzig_detail():
     myactie3 = my.Actie.objects.create(project=myproject, nummer='z', starter=myuser,
                                       lasteditor=myuser,
                                       soort=mysoort, status=mystatus, behandelaar=myuser)
-    myevent = my.Event.objects.create(actie=myactie3, starter=myuser,
-                                      text=testee.UIT_DOCTOOL + ' http://doctl.org/9')
+    my.Event.objects.create(actie=myactie3, starter=myuser,
+                            text=testee.UIT_DOCTOOL + ' http://doctl.org/9')
     request = types.SimpleNamespace(POST={'nummer': 'z', 'about': 'a', 'title': 't', 'user': "1",
                                           'soort': 'P', 'status': '1', 'archstat': 'True'},
                                     user=myuser)
@@ -1565,7 +1919,7 @@ def test_wijzig_detail():
     assert list(myactie3.events.all())[-1].text == 'Actie herleefd'
 
 @pytest.mark.django_db
-def test_copy_existing_action_from_here(monkeypatch, capsys):
+def test_copy_existing_action_from_here():
     """unittest for core.copy_existing_action_from_here
     """
     myproject = my.Project.objects.create(name='first')
@@ -1718,18 +2072,13 @@ def test_build_full_message():
             'Hallo, goodbye en welkom gewijzigd')
 
 @pytest.mark.django_db
-def test_build_pagedata_for_tekstpage(monkeypatch, capsys):
+def test_build_pagedata_for_tekstpage(monkeypatch):
     """unittest for core.build_pagedata_for_tekstpage
     """
     class MockRequest:
         """stub
         """
         user = types.SimpleNamespace(username='NoAuth', is_authenticated=False)
-    myname = types.SimpleNamespace(username='MyName', is_authenticated=True)
-    class MockRequest2:
-        """stub
-        """
-        user = myname
     myuser = auth.User.objects.create(username='me')
     myproject = my.Project.objects.create(name='first')
     mypages = [my.Page.objects.create(link='meld', order=0, title='melding'),
@@ -1737,7 +2086,7 @@ def test_build_pagedata_for_tekstpage(monkeypatch, capsys):
                my.Page.objects.create(link='opl', order=2, title='oplossing'),
                my.Page.objects.create(link='verv', order=3, title='vervolg'),
                my.Page.objects.create(link='voortg', order=4, title='voortgang')]
-    myworker = my.Worker.objects.create(project=myproject, assigned=myuser)
+    my.Worker.objects.create(project=myproject, assigned=myuser)
     mysoort = my.Soort.objects.create(project=myproject, order=0, value='y', title='z')
     mystatus = my.Status.objects.create(project=myproject, order=0, value=0, title='z')
     myactie = my.Actie.objects.create(project=myproject, nummer='x', starter=myuser,
@@ -1782,11 +2131,11 @@ def test_wijzig_tekstpage(monkeypatch):
     """
     myuser = auth.User.objects.create(username='me')
     myproject = my.Project.objects.create(name='first')
-    mypages = [my.Page.objects.create(link='meld', order=0, title='melding'),
-               my.Page.objects.create(link='oorz', order=1, title='oorzaak'),
-               my.Page.objects.create(link='opl', order=2, title='oplossing'),
-               my.Page.objects.create(link='verv', order=3, title='vervolg'),
-               my.Page.objects.create(link='voortg', order=4, title='voortgang')]
+    my.Page.objects.create(link='meld', order=0, title='melding')
+    my.Page.objects.create(link='oorz', order=1, title='oorzaak')
+    my.Page.objects.create(link='opl', order=2, title='oplossing')
+    my.Page.objects.create(link='verv', order=3, title='vervolg')
+    my.Page.objects.create(link='voortg', order=4, title='voortgang')
     mysoort = my.Soort.objects.create(project=myproject, order=0, value='y', title='z')
     mystatus = my.Status.objects.create(project=myproject, order=0, value=0, title='z')
     myactie = my.Actie.objects.create(project=myproject, nummer='x', starter=myuser,
@@ -1803,7 +2152,7 @@ def test_wijzig_tekstpage(monkeypatch):
     assert result == 'acties te wijzigen (1)'
 
     # user aan het project koppelen, maar nog geen page meegeven
-    myworker = my.Worker.objects.create(project=myproject, assigned=myuser)
+    my.Worker.objects.create(project=myproject, assigned=myuser)
     with pytest.raises(ValueError) as exc:
         assert testee.wijzig_tekstpage(request, myproject.id, myactie.id) == ''
         assert str(exc.value) == 'missing/wrong page'
@@ -1834,7 +2183,7 @@ def test_wijzig_tekstpage(monkeypatch):
     assert list(myactie.events.all())[-1].text == 'Beschrijving oplossing aangepast'
 
     myuser2 = auth.User.objects.create(username='also me')
-    myworker2 = my.Worker.objects.create(project=myproject, assigned=myuser2)
+    my.Worker.objects.create(project=myproject, assigned=myuser2)
     request = types.SimpleNamespace(POST={'data': 'pagina tekst', 'vervolg': 'xxx'},
                                     user=myuser2)
     assert testee.wijzig_tekstpage(request, myproject.id, myactie.id, 'verv') == (
@@ -1869,7 +2218,7 @@ def test_build_pagedata_for_events(monkeypatch):
                my.Page.objects.create(link='opl', order=2, title='oplossing'),
                my.Page.objects.create(link='verv', order=3, title='vervolg'),
                my.Page.objects.create(link='voortg', order=4, title='voortgang')]
-    myworker = my.Worker.objects.create(project=myproject, assigned=myuser)
+    my.Worker.objects.create(project=myproject, assigned=myuser)
     mysoort = my.Soort.objects.create(project=myproject, order=0, value='y', title='z')
     mystatus = my.Status.objects.create(project=myproject, order=0, value=0, title='z')
     myactie = my.Actie.objects.create(project=myproject, nummer='x', starter=myuser,
@@ -1911,11 +2260,11 @@ def test_wijzig_events(monkeypatch):
     """
     myuser = auth.User.objects.create(username='me')
     myproject = my.Project.objects.create(name='first')
-    mypages = [my.Page.objects.create(link='meld', order=0, title='melding'),
-               my.Page.objects.create(link='oorz', order=1, title='oorzaak'),
-               my.Page.objects.create(link='opl', order=2, title='oplossing'),
-               my.Page.objects.create(link='verv', order=3, title='vervolg'),
-               my.Page.objects.create(link='voortg', order=4, title='voortgang')]
+    my.Page.objects.create(link='meld', order=0, title='melding')
+    my.Page.objects.create(link='oorz', order=1, title='oorzaak')
+    my.Page.objects.create(link='opl', order=2, title='oplossing')
+    my.Page.objects.create(link='verv', order=3, title='vervolg')
+    my.Page.objects.create(link='voortg', order=4, title='voortgang')
     mysoort = my.Soort.objects.create(project=myproject, order=0, value='y', title='z')
     mystatus = my.Status.objects.create(project=myproject, order=0, value=0, title='z')
     myactie = my.Actie.objects.create(project=myproject, nummer='x', starter=myuser,
@@ -1931,7 +2280,7 @@ def test_wijzig_events(monkeypatch):
     assert result == 'acties te wijzigen (1)'
 
     # user aan het project koppelen en verder testen
-    myworker = my.Worker.objects.create(project=myproject, assigned=myuser)
+    my.Worker.objects.create(project=myproject, assigned=myuser)
     with pytest.raises(testee.ObjectDoesNotExist):
         result = testee.wijzig_events(request, myproject.id + 1)
     with pytest.raises(testee.Http404):

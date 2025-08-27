@@ -19,6 +19,7 @@ urlpatterns = [
         path('index/', views.show_project),
         path('meld/<msg>/', views.show_project),
         path('select/', views.show_selection),
+        path('select/<msg>/', views.show_selection),
         path('setsel/', views.setselection),
         path('order/', views.show_ordering),
         path('setorder/', views.setordering),
