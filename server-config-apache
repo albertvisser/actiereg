@@ -1,0 +1,21 @@
+# DISCLAIMER: this is an unmaintained version that worked when I was using Apache on Windows
+# (and probably Lighttpd on Ubuntu) many, many years ago 
+# as you can see from the link to python 2.6 (!)
+<VirtualHost *:80>
+    ServerName <actiereg>.nl
+#    DocumentRoot "/home/albert/www/django"
+    ErrorLog /var/log/apache2/<actiereg>-error.log
+    CustomLog /var/log/apache2/<actiereg>-access.log common
+    <LocationMatch "^/favicon.ico">
+    SetHandler default
+    </LocationMatch>
+#    alias /favicon.ico <project-root>/static/wiu.ico
+    Alias /media "/usr/share/pyshared/django/contrib/admin/media"
+#    Alias /admin_media /usr/lib/python2.6/site-packages/django/contrib/admin/media
+    <Location /admin_media>
+      Order allow,deny
+      Allow from all
+    </Location>
+    WSGIScriptAlias / <projectroot>/actiereg/wsgi.py
+</VirtualHost>
+
