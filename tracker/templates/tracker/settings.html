@@ -99,6 +99,16 @@ function herbepaal(o,p)
 <hr/>
 <a name="usr"></a>
 <div><h3>Gebruikers</h3></div>
+<form action="/{{root}}/wijzigdesc/" method="post">{% csrf_token %}
+    <div>
+      <div class="col_title">Korte beschrijving: </div>
+      <div class="col_enter"><input type="text" name="desc" value="{{ desc }}" size="80"/></div>
+      <div class="clear">&nbsp;</div>
+    </div>
+    <input type="submit" value="aanpassen"/>
+    <a href="/{{root}}/" title="back"><input type="button" value="terug naar actielijst"/></a>
+    <a href="#top">terug naar het begin van de pagina</a>
+    </form>
 <form action="/{{root}}/wijzigusers/" method="post">{% csrf_token %}
 <div>
     <div class="col sel_left bold">Bekende gebruikers:</div>
@@ -180,8 +190,10 @@ function herbepaal(o,p)
         <input type="text" name="title{{forloop.counter}}" value="{{soort.title}}"/></div>
     <div class="col set_wrd">
         <input type="text" name="value{{forloop.counter}}" value="{{soort.value}}" size="2"/></div>
+    {% if forloop.counter > 1 %}
     <div class="col set_del">
         <input type="checkbox" name="del{{forloop.counter}}" value="X">verwijderen</input></div>
+    {% endif %}
     <div class="clear">&nbsp;</div>
     {% endfor %}
     <div class="col set_ord"><input type="text" name="order0" value="" size="2"/></div>
@@ -211,8 +223,10 @@ function herbepaal(o,p)
         <input type="text" name="title{{forloop.counter}}" value="{{stat.title}}"/></div>
     <div class="col set_wrd">
         <input type="text" name="value{{forloop.counter}}" value="{{stat.value}}" size="2"/></div>
+    {% if forloop.counter > 1 %}
     <div class="col set_del">
         <input type="checkbox" name="del{{forloop.counter}}" value="X">verwijderen</input></div>
+    {% endif %}
     <div class="clear">&nbsp;</div>
     {% endfor %}
     <div class="col set_ord"><input type="text" name="order0" value="" size="2"/></div>

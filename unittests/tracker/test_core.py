@@ -509,10 +509,10 @@ def test_add_default_pages():
     assert not list(my.Page.objects.all())
     expected = [("index", 0, "lijst"),
                 ("detail", 1, "titel/status"),
-                ("meld", 2, "probleem/wens"),
-                ("oorz", 3, "oorzaak/analyse"),
-                ("opl", 4, "oplossing"),
-                ("verv", 5, "vervolgactie"),
+                # ("meld", 2, "probleem/wens"),
+                # ("oorz", 3, "oorzaak/analyse"),
+                # ("opl", 4, "oplossing"),
+                # ("verv", 5, "vervolgactie"),
                 ("voortg", 6, "voortgang")]
     testee.add_default_pages()
     count = 0
@@ -606,10 +606,16 @@ def test_add_users():
     assert my.Worker.objects.all()[0].assigned == myuser
 
 
+def mock_get():
+    "stub"
+    return my.Page.objects.all().order_by('order')
+
+
 @pytest.mark.django_db
 def test_build_pagedata_for_project(monkeypatch):
     """unittest for core.build_pagedata_for_project
     """
+    monkeypatch.setattr(testee, 'get_pages', mock_get)
     myuser = auth.User.objects.create(username='me')
     myproject = my.Project.objects.create(name='first')
     mypage = my.Page.objects.create(link='x/', order=1, title='z')
@@ -715,9 +721,10 @@ def test_get_acties(monkeypatch, capsys):
 
 
 @pytest.mark.django_db
-def test_build_pagedata_for_settings():
+def test_build_pagedata_for_settings(monkeypatch):
     """unittest for core.build_pagedata_for_settings
     """
+    monkeypatch.setattr(testee, 'get_pages', mock_get)
     myuser = auth.User.objects.create(username='me')
     myuser2 = auth.User.objects.create(username='another_me')
     myuser3 = auth.User.objects.create(username='also_me')
@@ -740,6 +747,20 @@ def test_build_pagedata_for_settings():
     assert list(data['proj_users']) == [myworker2, myworker]
     assert list(data['admin_users']) == [myuser4, myuser2, myuser]
     assert list(data['proj_admins']) == [myuser3]
+
+
+@pytest.mark.django_db
+def test_set_desc():
+    """unittest for core.set_desc
+    """
+    myuser = auth.User.objects.create(username='me')
+    myproject = my.Project.objects.create(name='first')
+    request = types.SimpleNamespace(user=myuser, POST={})
+    testee.set_desc(request, myproject.id)
+    my.Project.objects.get(pk=myproject.id).description == ""
+    request = types.SimpleNamespace(user=myuser, POST={'desc': 'xxx'})
+    testee.set_desc(request, myproject.id)
+    my.Project.objects.get(pk=myproject.id).description == "xxx"
 
 
 @pytest.mark.django_db
@@ -795,6 +816,7 @@ def test_set_admins():
 def test_set_tabs(monkeypatch, capsys):
     """unittest for core.set_tabs
     """
+    monkeypatch.setattr(testee, 'get_pages', mock_get)
     old_save = my.Page.save
     def mock_save(*args, **kwargs):
         print('called Page.save with args', args, kwargs)
@@ -914,9 +936,10 @@ def test_set_stats():
 
 
 @pytest.mark.django_db
-def test_build_pagedata_for_selection():
+def test_build_pagedata_for_selection(monkeypatch):
     """unittest for core.build_pagedata_for_selection
     """
+    monkeypatch.setattr(testee, 'get_pages', mock_get)
     myuser = auth.User.objects.create(username='me')
     request = types.SimpleNamespace(user=myuser)
     myproject = my.Project.objects.create(name='first')
@@ -1519,9 +1542,10 @@ def test_setordering():
     assert (data[1].volgnr, data[1].veldnm, data[1].richting) == (2, 'gewijzigd', 'desc')
 
 @pytest.mark.django_db
-def test_build_pagedata_for_search():
+def test_build_pagedata_for_search(monkeypatch):
     """unittest for core.build_pagedata_for_search
     """
+    monkeypatch.setattr(testee, 'get_pages', mock_get)
     myproject = my.Project.objects.create(name='first')
     mypage = my.Page.objects.create(link='x/', order=1, title='z')
     result = testee.build_pagedata_for_search('request', myproject.id, 'xxx')
@@ -1540,6 +1564,7 @@ def test_build_pagedata_for_results(monkeypatch):
     def mock_search(*args):
         print('called search_for with args', args)
         return 'search results'
+    monkeypatch.setattr(testee, 'get_pages', mock_get)
     monkeypatch.setattr(testee, 'search_for', mock_search)
     myproject = my.Project.objects.create(name='first')
     mypage = my.Page.objects.create(link='x/', order=1, title='z')
@@ -1768,6 +1793,7 @@ def test_build_pagedata_for_detail(monkeypatch):
         """stub
         """
         user = myname
+    monkeypatch.setattr(testee, 'get_pages', mock_get)
     myuser = auth.User.objects.create(username='me')
     myproject = my.Project.objects.create(name='first')
     mypage = my.Page.objects.create(link='x/', order=1, title='z')
@@ -1825,6 +1851,7 @@ def test_build_pagedata_for_detail(monkeypatch):
     assert (list(data['stats']), data['title']) == ([mystatus], 'Nieuwe actie')
     assert (list(data['users']), data['nieuw'], data['start']) == ([myuser], myname, FIXDATE)
 
+# 754: nieuw met meldingtekst ingevuld
 @pytest.mark.django_db
 def test_wijzig_detail():
     """unittest for core.wijzig_detail
@@ -2079,6 +2106,7 @@ def test_build_pagedata_for_tekstpage(monkeypatch):
         """stub
         """
         user = types.SimpleNamespace(username='NoAuth', is_authenticated=False)
+    monkeypatch.setattr(testee, 'get_pages', mock_get)
     myuser = auth.User.objects.create(username='me')
     myproject = my.Project.objects.create(name='first')
     mypages = [my.Page.objects.create(link='meld', order=0, title='melding'),
@@ -2125,6 +2153,7 @@ def test_build_pagedata_for_tekstpage(monkeypatch):
     assert (data['next'], data['title'], data['page_titel']) == ('voortg', 'Actie x - ', 'vervolg')
     assert (data['page_text'], data['actie']) == ('en verder...', myactie)
 
+# 957->963 page tekstveld van betreffenbde pagina niet gewijzigd
 @pytest.mark.django_db
 def test_wijzig_tekstpage(monkeypatch):
     """unittest for core.wijzig_tekstpage
@@ -2156,26 +2185,38 @@ def test_wijzig_tekstpage(monkeypatch):
     with pytest.raises(ValueError) as exc:
         assert testee.wijzig_tekstpage(request, myproject.id, myactie.id) == ''
         assert str(exc.value) == 'missing/wrong page'
-
     assert not list(myactie.events.all())
+
+    request = types.SimpleNamespace(POST={'data1': 'dit'}, user=myuser)
     assert testee.wijzig_tekstpage(request, myproject.id, myactie.id, 'meld') == (
-            '/1/1/meld/meld/Meldingtekst aangepast')
+            '/1/1/mld/Er is niks gewijzigd')
+    request = types.SimpleNamespace(POST={'data1': 'pagina tekst'}, user=myuser)
+    assert testee.wijzig_tekstpage(request, myproject.id, myactie.id, 'meld') == (
+            '/1/1/mld/Meldingtekst aangepast')
     myactie_n = my.Actie.objects.get(pk=myactie.id)
     assert (myactie_n.melding, myactie_n.lasteditor) == ('pagina tekst', myuser)
     eventcount = 1
     assert len(list(myactie.events.all())) == eventcount
     assert list(myactie.events.all())[-1].text == 'Meldingtekst aangepast'
 
+    request = types.SimpleNamespace(POST={'data2': 'dat'}, user=myuser)
     assert testee.wijzig_tekstpage(request, myproject.id, myactie.id, 'oorz') == (
-            '/1/1/oorz/meld/Beschrijving oorzaak aangepast')
+            '/1/1/mld/Er is niks gewijzigd')
+    request = types.SimpleNamespace(POST={'data2': 'pagina tekst'}, user=myuser)
+    assert testee.wijzig_tekstpage(request, myproject.id, myactie.id, 'oorz') == (
+            '/1/1/mld/Beschrijving oorzaak aangepast')
     myactie_n2 = my.Actie.objects.get(pk=myactie.id)
     assert (myactie_n2.oorzaak, myactie_n2.lasteditor) == ('pagina tekst', myuser)
     eventcount += 1
     assert len(list(myactie.events.all())) == eventcount  # 2
     assert list(myactie.events.all())[-1].text == 'Beschrijving oorzaak aangepast'
 
+    request = types.SimpleNamespace(POST={'data3': 'iets'}, user=myuser)
     assert testee.wijzig_tekstpage(request, myproject.id, myactie.id, 'opl') == (
-            '/1/1/opl/meld/Beschrijving oplossing aangepast')
+            '/1/1/mld/Er is niks gewijzigd')
+    request = types.SimpleNamespace(POST={'data3': 'pagina tekst'}, user=myuser)
+    assert testee.wijzig_tekstpage(request, myproject.id, myactie.id, 'opl') == (
+            '/1/1/mld/Beschrijving oplossing aangepast')
     myactie_n3 = my.Actie.objects.get(pk=myactie.id)
     assert (myactie_n3.oplossing, myactie_n3.lasteditor) == ('pagina tekst', myuser)
     eventcount += 1
@@ -2184,10 +2225,12 @@ def test_wijzig_tekstpage(monkeypatch):
 
     myuser2 = auth.User.objects.create(username='also me')
     my.Worker.objects.create(project=myproject, assigned=myuser2)
-    request = types.SimpleNamespace(POST={'data': 'pagina tekst', 'vervolg': 'xxx'},
-                                    user=myuser2)
+    request = types.SimpleNamespace(POST={'data4': 'en verder...'}, user=myuser2)
     assert testee.wijzig_tekstpage(request, myproject.id, myactie.id, 'verv') == (
-            '/1/1/xxx/meld/Beschrijving vervolgactie aangepast')
+            '/1/1/mld/Er is niks gewijzigd')
+    request = types.SimpleNamespace(POST={'data4': 'pagina tekst'}, user=myuser2)
+    assert testee.wijzig_tekstpage(request, myproject.id, myactie.id, 'verv') == (
+            '/1/1/mld/Beschrijving vervolgactie aangepast')
     myactie_n4 = my.Actie.objects.get(pk=myactie.id)
     assert (myactie_n4.vervolg, myactie_n4.lasteditor) == ('pagina tekst', myuser2)
     eventcount += 1
@@ -2211,6 +2254,7 @@ def test_build_pagedata_for_events(monkeypatch):
         """stub
         """
         user = myname
+    monkeypatch.setattr(testee, 'get_pages', mock_get)
     myuser = auth.User.objects.create(username='me')
     myproject = my.Project.objects.create(name='first')
     mypages = [my.Page.objects.create(link='meld', order=0, title='melding'),

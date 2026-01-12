@@ -165,6 +165,26 @@ def test_show_settings(monkeypatch):
                                                     (request, myproj.id))
 
 @pytest.mark.django_db
+def test_setdesc(monkeypatch, capsys):
+    """unittest for views.setdesc
+    """
+    def mock_set_desc(*args):
+        """stub
+        """
+        print('called core.set_desc')
+    monkeypatch.setattr(views.core, 'no_authorization_message', lambda *x: x)
+    monkeypatch.setattr(views.core, 'set_desc', mock_set_desc)
+    monkeypatch.setattr(views, 'HttpResponseRedirect', lambda x: x)
+    myproj = my.Project.objects.create(name='first')
+    myuser = auth.User.objects.create(username='me')
+    request = types.SimpleNamespace(user=myuser)
+    monkeypatch.setattr(views.core, 'is_admin', lambda *x: False)
+    assert views.setdesc(request, myproj.id) == ('instellingen te wijzigen', myproj.id)
+    monkeypatch.setattr(views.core, 'is_admin', lambda *x: True)
+    assert views.setdesc(request, myproj.id) == f'/{myproj.id}/settings/'
+    assert capsys.readouterr().out == "called core.set_desc\n"
+
+@pytest.mark.django_db
 def test_setusers(monkeypatch, capsys):
     """unittest for views.setusers
     """
@@ -374,7 +394,7 @@ def test_new_action(monkeypatch):
     request = types.SimpleNamespace(user=myuser)
     monkeypatch.setattr(views.core, 'build_pagedata_for_detail', lambda *x: x)
     assert views.new_action(request, myproj.id, 'message') == (
-            request, 'tracker/actie.html', (request, myproj.id, 'new', 'message'))
+            request, 'tracker/details.html', (request, myproj.id, 'new', 'message'))
 
 @pytest.mark.django_db
 def test_show_action(monkeypatch):
@@ -386,7 +406,7 @@ def test_show_action(monkeypatch):
     request = types.SimpleNamespace(user=myuser)
     monkeypatch.setattr(views.core, 'build_pagedata_for_detail', lambda *x: x)
     assert views.show_action(request, myproj.id, 'actie', 'message') == (
-            request, 'tracker/actie.html', (request, myproj.id, 'actie', 'message'))
+            request, 'tracker/details.html', (request, myproj.id, 'actie', 'message'))
 
 @pytest.mark.django_db
 def test_add_action(monkeypatch):

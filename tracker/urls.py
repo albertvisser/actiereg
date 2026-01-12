@@ -26,6 +26,7 @@ urlpatterns = [
         path('search/', views.show_search),
         path('results/', views.show_results),
         path('settings/', views.show_settings),
+        path('wijzigdesc/', views.setdesc),
         path('wijzigusers/', views.setusers),
         path('wijzigadmins/', views.setadmins),
         path('wijzigtabs/', views.settabs),

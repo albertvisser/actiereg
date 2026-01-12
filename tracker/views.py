@@ -31,7 +31,7 @@ def index(request, msg=""):
             app['alle'] += 1
             if not actie.arch:
                 app['open'] += 1
-                if actie.status.value > 1:
+                if actie.status.value > 0:
                     app['active'] += 1
         app_list.append(app)
     return render(request, 'index.html', {"apps": sorted(app_list, key=lambda x: x['name']),
@@ -98,6 +98,17 @@ def show_settings(request, proj):
         return core.no_authorization_message('instellingen te wijzigen', proj)
     page_data = core.build_pagedata_for_settings(request, proj)
     return render(request, 'tracker/settings.html', page_data)
+
+
+@login_required
+def setdesc(request, proj):
+    """projectbeschrijving wijzigen
+    """
+    project = my.Project.objects.get(pk=proj)
+    if not core.is_admin(project, request.user):
+        return core.no_authorization_message('instellingen te wijzigen', proj)
+    core.set_desc(request, proj)
+    return HttpResponseRedirect(f"/{proj}/settings/")
 
 
 @login_required
@@ -208,14 +219,16 @@ def show_results(request, proj, msg=''):
 @login_required
 def new_action(request, proj, msg=''):
     "toon scherm voor opvoeren nieuwe actie"
-    return render(request, 'tracker/actie.html',
+    # return render(request, 'tracker/actie.html',
+    return render(request, 'tracker/details.html',
                   core.build_pagedata_for_detail(request, proj, 'new', msg))
 
 
 # @login_required
 def show_action(request, proj, actie, msg=''):
     "toon scherm met gegevens van bestaande actie"
-    return render(request, 'tracker/actie.html',
+    # return render(request, 'tracker/actie.html',
+    return render(request, 'tracker/details.html',
                   core.build_pagedata_for_detail(request, proj, actie, msg))
 
 

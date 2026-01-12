@@ -39,10 +39,10 @@ def add_default_pages():
     """
     for x, y, z in [("index", 0, "lijst"),
                     ("detail", 1, "titel/status"),
-                    ("meld", 2, "probleem/wens"),
-                    ("oorz", 3, "oorzaak/analyse"),
-                    ("opl", 4, "oplossing"),
-                    ("verv", 5, "vervolgactie"),
+                    # ("meld", 2, "probleem/wens"),
+                    # ("oorz", 3, "oorzaak/analyse"),
+                    # ("opl", 4, "oplossing"),
+                    # ("verv", 5, "vervolgactie"),
                     ("voortg", 6, "voortgang")]:
         my.Page.objects.create(link=x, order=y, title=z)
 
@@ -113,7 +113,7 @@ def build_pagedata_for_project(request, proj, msg):
                  "page_titel": "lijst",
                  "name": project.name,
                  "root": proj,
-                 "pages": my.Page.objects.all().order_by('order'),
+                 "pages": get_pages(),  # my.Page.objects.all().order_by('order'),
                  "admin": is_admin(project, request.user),
                  "msg": msg,
                  'readonly': determine_readonly(project, request.user)}
@@ -167,8 +167,9 @@ def build_pagedata_for_settings(request, proj):  # request arg unused
             admin_users.append(user)
     page_data = {"title": "Instellingen",
                  "name": project.name,
+                 "desc": project.description,
                  "root": proj,
-                 "pages": my.Page.objects.all().order_by('order'),
+                 "pages": get_pages(),  # my.Page.objects.all().order_by('order'),
                  "soorten": project.soort.order_by('order'),
                  "stats": project.status.order_by('order'),
                  "all_users": all_users,
@@ -176,6 +177,14 @@ def build_pagedata_for_settings(request, proj):  # request arg unused
                  "admin_users": admin_users,
                  "proj_admins": proj_admins}
     return page_data
+
+
+def set_desc(request, proj):
+    "werk de opgegeven bescrijving bij in het project"
+    project = my.Project.objects.get(pk=proj)
+    project.description = request.POST.get('desc', '')
+    # raise TypeError(f'{project.description=}')
+    project.save(update_fields=['description'])
 
 
 def set_users(request, proj):
@@ -224,7 +233,7 @@ def set_admins(request, proj):
 def set_tabs(request):
     "leg de ingevulde titels vast bij het project"
     data = request.POST
-    pages = my.Page.objects.all().order_by('order')
+    pages = get_pages()  # my.Page.objects.all().order_by('order'),
     for ix, item in enumerate(pages):
         field = "page" + str(ix + 1)
         if data[field] != item.title:
@@ -307,7 +316,7 @@ def build_pagedata_for_selection(request, proj, msg):
                  "name": project.name,
                  "root": project.id,
                  "msg": msg,
-                 "pages": my.Page.objects.all().order_by('order'),
+                 "pages": get_pages(),  # my.Page.objects.all().order_by('order'),
                  "soorten": project.soort.all(),
                  "stats": project.status.all(),
                  "users": [x.assigned for x in project.workers.all()],
@@ -377,7 +386,7 @@ def build_pagedata_for_search(request, proj, msg):
                  "name": project.name,
                  "root": project.id,
                  "msg": msg,
-                 "pages": my.Page.objects.all().order_by('order'),
+                 "pages": get_pages(),  # my.Page.objects.all().order_by('order'),
                  'search': '',
                  'results': []}
     return page_data
@@ -393,7 +402,7 @@ def build_pagedata_for_results(request, proj, msg):
                  "name": project.name,
                  "root": project.id,
                  "msg": msg,
-                 "pages": my.Page.objects.all().order_by('order'),
+                 "pages": get_pages(),  # my.Page.objects.all().order_by('order'),
                  'search': search,
                  'results': results}
     return page_data
@@ -619,7 +628,7 @@ def build_pagedata_for_ordering(request, proj, msg):
     page_data = {"title": "Actielijst: volgorde",
                  "name": project.name,
                  "root": proj,
-                 "pages": my.Page.objects.all().order_by('order'),
+                 "pages": get_pages(),  # my.Page.objects.all().order_by('order'),
                  "msg": msg,
                  "fields": [("nummer", "nummer"),
                             ("gewijzigd", "laatst gewijzigd"),
@@ -673,7 +682,7 @@ def build_pagedata_for_detail(request, proj, actie, msg=""):
     project = my.Project.objects.get(pk=proj)
     page_data = {"name": project.name,
                  "root": proj,
-                 "pages": my.Page.objects.all().order_by('order'),
+                 "pages": get_pages(),  # my.Page.objects.all().order_by('order'),
                  "soorten": project.soort.all().order_by('order'),
                  "stats": project.status.all().order_by('order'),
                  "users": [x.assigned for x in project.workers.all()],
@@ -686,9 +695,10 @@ def build_pagedata_for_detail(request, proj, actie, msg=""):
         aant = project.acties.count()
         nw_date = dt.timezone.now()   # dt.datetime.now()
         if aant:
-            acties_dit_jaar = project.acties.filter(nummer__startswith=f'{nw_date.year}')
+            acties_dit_jaar = project.acties.filter(nummer__startswith=f'{nw_date.year}').order_by(
+                    "-nummer")
             if acties_dit_jaar:
-                last = sorted(acties_dit_jaar)[-1]
+                last = acties_dit_jaar[0]
                 volgnr = int(last.nummer.split("-", 1)[1])
         volgnr += 1
         page_data["nummer"] = f"{nw_date.year}-{volgnr:04}"
@@ -716,8 +726,8 @@ def wijzig_detail(request, project, actie):
         actie.starter = request.user
         actie.behandelaar = request.user
         nieuw = True
-        srt = my.Soort.objects.get(order=0)
-        stat = my.Status.objects.get(order=0)
+        srt = my.Soort.objects.get(project=project, order=0)
+        stat = my.Status.objects.get(project=project, order=0)
     else:
         actie = get_object_or_404(my.Actie, pk=actie)
         over, wat, wie = actie.about, actie.title, actie.behandelaar
@@ -729,15 +739,19 @@ def wijzig_detail(request, project, actie):
     oldarch = actie.arch
     actie.arch = data.get("archstat", "False") == "True"
     actie.behandelaar = auth.User.objects.get(pk=int(data.get("user", "0")))
-    actie.soort = my.Soort.objects.get(value=data.get("soort", " "))
-    actie.status = my.Status.objects.get(value=int(data.get("status", "1")))
+    actie.soort = my.Soort.objects.get(project=project, value=data.get("soort", " "))
+    actie.status = my.Status.objects.get(project=project, value=int(data.get("status", "1")))
     actie.lasteditor = request.user
+    if nieuw:
+        actie.melding = data.get("data1", "")
     actie.save()
 
     msg, mld = '', []
     if nieuw:
         msg = "Actie opgevoerd"
         store_event(msg, actie, request.user)
+        if actie.melding:
+            store_event("Meldingtekst aangepast", actie, request.user)
     else:
         if actie.arch != oldarch and not actie.arch:
             msg = "Actie herleefd"
@@ -876,7 +890,7 @@ def build_pagedata_for_tekstpage(request, proj, actie, page="", msg=''):
     page_data = {
         "root": proj,
         "name": project.name,
-        "pages": my.Page.objects.all().order_by('order'),
+        "pages": get_pages(),  # my.Page.objects.all().order_by('order'),
         "msg": msg}
     page_data["readonly"] = determine_readonly(project, request.user)
     actie = get_object_or_404(my.Actie, pk=actie)
@@ -909,43 +923,51 @@ def wijzig_tekstpage(request, proj, actie, page=""):
     if not is_user(project, request.user):  # and not is_admin(project, request.user):
         return no_authorization_message('acties te wijzigen', proj)
     data = request.POST
-    tekst = data.get("data", "")
-    vervolg = data.get("vervolg", "")
+    # tekst = data.get("data", "")
+    # vervolg = data.get("vervolg", "")
     actie = get_object_or_404(my.Actie, pk=actie)
 
+    msg = ""
     if page == "meld":
         orig = actie.melding
-        actie.melding = tekst
+        actie.melding = data.get("data1", "")
+        if actie.melding == orig:
+            msg = "Er is niks gewijzigd"
     elif page == "oorz":
         orig = actie.oorzaak
-        actie.oorzaak = tekst
+        actie.oorzaak = data.get("data2", "")
+        if actie.oorzaak == orig:
+            msg = "Er is niks gewijzigd"
     elif page == "opl":
         orig = actie.oplossing
-        actie.oplossing = tekst
+        actie.oplossing = data.get("data3", "")
+        if actie.oplossing == orig:
+            msg = "Er is niks gewijzigd"
     elif page == "verv":
         orig = actie.vervolg
-        actie.vervolg = tekst
+        actie.vervolg = data.get("data4", "")
+        if actie.vervolg == orig:
+            msg = "Er is niks gewijzigd"
     else:
-        raise ValueError('missing/wrong page')  # actie niet per ongeluk aanpassen
+        raise ValueError('missing/wrong page')  # failsafe
 
-    actie.lasteditor = request.user
-    actie.save()
+    if not msg:
+        actie.lasteditor = request.user
+        actie.save()
 
-    if page == "meld" and actie.melding != orig:
-        msg = "Meldingtekst aangepast"
-        store_event(msg, actie, request.user)
-    elif page == "oorz" and actie.oorzaak != orig:
-        msg = "Beschrijving oorzaak aangepast"
-        store_event(msg, actie, request.user)
-    elif page == "opl" and actie.oplossing != orig:
-        msg = "Beschrijving oplossing aangepast"
-        store_event(msg, actie, request.user)
-    else:  # if page == "verv" and actie.vervolg != orig:  - enige mogelijkheid
-        msg = "Beschrijving vervolgactie aangepast"
+        if page == "meld":
+            msg = "Meldingtekst aangepast"
+        elif page == "oorz":
+            msg = "Beschrijving oorzaak aangepast"
+        elif page == "opl":
+            msg = "Beschrijving oplossing aangepast"
+        else:  # if page == "verv": - nu echt enige mogelijkheid
+            msg = "Beschrijving vervolgactie aangepast"
         store_event(msg, actie, request.user)
 
-    page = vervolg if vervolg else page
-    return f"/{proj}/{actie.id}/{page}/meld/{msg}"
+    # page = vervolg if vervolg else page
+    # return f"/{proj}/{actie.id}/{page}/mld/{msg}"
+    return f"/{proj}/{actie.id}/mld/{msg}"
 
 
 def build_pagedata_for_events(request, proj, actie, event='', msg=''):
@@ -968,7 +990,7 @@ def build_pagedata_for_events(request, proj, actie, event='', msg=''):
         "name": project.name,
         "root": proj,
         "msg": msg,
-        "pages": my.Page.objects.all().order_by('order'),
+        "pages": get_pages(),  # my.Page.objects.all().order_by('order'),
         "actie": actie,
         "events": actie.events.order_by("-start").order_by("-id"),
         "user": request.user}
@@ -1201,3 +1223,7 @@ def store_gewijzigd(msg, txt, mld, actie, user):
     store_event(f'{msg} gewijzigd in "{txt}"', actie, user)
     mld.append(msg)
     return mld
+
+def get_pages():
+    "return a sorted list of all the pages to show"
+    return my.Page.objects.filter(link__in=['index', 'detail', 'voortg']).order_by('order')
