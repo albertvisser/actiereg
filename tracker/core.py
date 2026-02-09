@@ -43,7 +43,8 @@ def add_default_pages():
                     # ("oorz", 3, "oorzaak/analyse"),
                     # ("opl", 4, "oplossing"),
                     # ("verv", 5, "vervolgactie"),
-                    ("voortg", 6, "voortgang")]:
+                    # ("voortg", 6, "voortgang")
+                    ]:
         my.Page.objects.create(link=x, order=y, title=z)
 
 
@@ -669,16 +670,18 @@ def setordering(request, proj):
         ix += 1
 
 
-def build_pagedata_for_detail(request, proj, actie, msg=""):
+def build_pagedata_for_detail(request, proj, actie, msg="", edit=False, event=None):
     """bouw het scherm met actiegegevens op.
     de soort user wordt meegegeven aan het scherm om indien nodig wijzigen onmogelijk te
         maken en diverse knoppen te verbergen.
     """
     ## msg = request.GET.get("msg", "")
-    if not msg:
-        msg = get_appropriate_login_message(request.user, proj, actie)
-        if request.user.is_authenticated and actie != 'new':
-            msg += "Klik op een van onderstaande termen om meer te zien."
+    if msg:
+        message, msg = msg, ''
+    else:
+        message, msg = '', get_appropriate_login_message(request.user, proj, actie)
+        # if request.user.is_authenticated and actie != 'new':
+        #     msg += "Klik op een van onderstaande termen om meer te zien."
     project = my.Project.objects.get(pk=proj)
     page_data = {"name": project.name,
                  "root": proj,
@@ -686,6 +689,8 @@ def build_pagedata_for_detail(request, proj, actie, msg=""):
                  "soorten": project.soort.all().order_by('order'),
                  "stats": project.status.all().order_by('order'),
                  "users": [x.assigned for x in project.workers.all()],
+                 "edit": edit,
+                 "message": message,
                  "msg": msg}
     page_data["readonly"] = determine_readonly(project, request.user)
     if actie == "new":
@@ -701,20 +706,25 @@ def build_pagedata_for_detail(request, proj, actie, msg=""):
                 last = acties_dit_jaar[0]
                 volgnr = int(last.nummer.split("-", 1)[1])
         volgnr += 1
+        page_data['edit'] = True
         page_data["nummer"] = f"{nw_date.year}-{volgnr:04}"
-        page_data["nieuw"] = request.user
+        page_data["nieuw"] = request.user  # of "not assigned"?
         page_data["start"] = nw_date
     else:
         actie = my.Actie.objects.get(pk=actie)
         page_data["actie"] = actie
         titel = f"Actie {actie.nummer} - "
-        page_titel = "Titel/Status"
+        page_titel = "Actie details"
+        page_data["events"] = [(x, is_system_event(x)) for x in actie.events.all()]
+        if event:  # de waarde "nieuw" hebben we niet nodig
+            # event tekst tonen in textarea onderin
+            page_data['curr_ev'] = my.Event.objects.get(pk=event)
     page_data["title"] = titel
     page_data["page_titel"] = page_titel
     return page_data
 
 
-def wijzig_detail(request, project, actie):
+def wijzig_detail(request, project, actie, event=None):
     """verwerk de aanpassingen en koppel door naar tonen van het scherm
     """
     data = request.POST
@@ -732,6 +742,7 @@ def wijzig_detail(request, project, actie):
         actie = get_object_or_404(my.Actie, pk=actie)
         over, wat, wie = actie.about, actie.title, actie.behandelaar
         srt, stat = actie.soort, actie.status
+        waarom = actie.melding
         nieuw = False
 
     actie.about = data.get("about", "")
@@ -742,14 +753,17 @@ def wijzig_detail(request, project, actie):
     actie.soort = my.Soort.objects.get(project=project, value=data.get("soort", " "))
     actie.status = my.Status.objects.get(project=project, value=int(data.get("status", "1")))
     actie.lasteditor = request.user
-    if nieuw:
-        actie.melding = data.get("data1", "")
+    actie.melding = data.get("data1", "")
     actie.save()
 
     msg, mld = '', []
     if nieuw:
         msg = "Actie opgevoerd"
         store_event(msg, actie, request.user)
+        if actie.soort == srt:
+            store_event(f"categorie is {srt}", actie, request.user)
+        if actie.status == stat:
+            store_event(f"status is {stat}", actie, request.user)
         if actie.melding:
             store_event("Meldingtekst aangepast", actie, request.user)
     else:
@@ -762,6 +776,9 @@ def wijzig_detail(request, project, actie):
             mld = store_gewijzigd('titel', str(actie.title), mld, actie, request.user)
         if actie.behandelaar != wie:
             mld = store_gewijzigd('behandelaar', str(actie.behandelaar), mld, actie, request.user)
+        if actie.melding != waarom:
+            store_event("Meldingtekst aangepast", actie, request.user)
+            mld.append("meldingtekst")
     if actie.soort != srt:
         mld = store_gewijzigd('categorie', str(actie.soort), mld, actie, request.user)
     if actie.status != stat:
@@ -771,11 +788,11 @@ def wijzig_detail(request, project, actie):
         store_event(msg, actie, request.user)
     msg = build_full_message(mld, msg)
 
-    vervolg = data.get("vervolg", "")   # geeft aan of je naar het vervolgscherm mag
-    if vervolg:
-        doc = f"/{project.id}/{actie.id}/{vervolg}/mld/{msg}/"
-    else:
-        doc = f"/{project.id}/{actie.id}/mld/{msg}/"
+    # vervolg = data.get("vervolg", "")   # geeft aan of je naar het vervolgscherm mag
+    # if vervolg:
+    #     doc = f"/{project.id}/{actie.id}/{vervolg}/mld/{msg}/"
+    # else:
+    doc = f"/{project.id}/{actie.id}/mld/{msg}/"
 
     if actie.arch != oldarch:
         # indien nodig eerst naar doctool om de actie af te melden of te herleven
@@ -1031,7 +1048,7 @@ def wijzig_events(request, proj='', actie="", event=""):
 
     event.text = tekst
     event.save()
-    return f"/{proj}/{actie.id}/voortg/meld/De gebeurtenis is {verb}./"
+    return f"/{proj}/{actie.id}/mld/De gebeurtenis is {verb}./"
 
 
 def get_appropriate_login_message(user, root='', actie=''):
@@ -1088,11 +1105,6 @@ def is_user(project, user):
     """geeft indicatie terug of de betreffende gebruiker acties mag wijzigen
     """
     return user in [x.assigned for x in project.workers.all()]
-    # test = root + "_user"
-    # for grp in user.groups.all():
-    #     if grp.name == test:
-    #         return True
-    # return False
 
 
 def is_admin(project, user):
@@ -1210,13 +1222,6 @@ def store_event(msg, actie, user):
     my.Event.objects.create(actie=actie, starter=user, text=msg)
 
 
-# kan waarschijnlijk weg: event.start heeft auto_now_add=True en kan daardoor niet gewijzigd worden
-# def store_event_with_date(msg, actie, date, user):
-#     """Maak nieuw vrije tekst event en sla deze op in de lijst
-#     """
-#     my.Event.objects.create(actie=actie, start=date, starter=user, text=msg)
-
-
 def store_gewijzigd(msg, txt, mld, actie, user):
     """Maak nieuw standaard event (rubriek X is gewijzigd)
     """
@@ -1224,6 +1229,19 @@ def store_gewijzigd(msg, txt, mld, actie, user):
     mld.append(msg)
     return mld
 
+
+def is_system_event(event):
+    "determine if event text should not be editable"
+    if event.text in ('Actie opgevoerd', 'Meldingtekst aangepast', 'Actie gearchiveerd',
+                      'Actie herleefd'):
+        return True
+    if event.text.startswith(('categorie is', 'status is', 'onderwerp gewijzigd in',
+                              'titel gewijzigd in', 'behandelaar gewijzigd in',
+                              'categorie gewijzigd in', 'status gewijzigd in')):
+        return True
+    return False
+
+
 def get_pages():
     "return a sorted list of all the pages to show"
-    return my.Page.objects.filter(link__in=['index', 'detail', 'voortg']).order_by('order')
+    return my.Page.objects.filter(link__in=['index']).order_by('order')

@@ -18,19 +18,12 @@
 {% block content_title %}{% endblock %}
 {% block content %}
 <div class="col_all">
-    {%if message %}<span style="color: red"> {{ message }}</span>{% else %}{{msg|safe}}
+    {%if message %}<span style="color: blue; font-weight: bold"> {{ message }}</span>{% else %}{{msg|safe}}
     {% endif %}</div><div class="clear">&nbsp;</div>
 <div class="col_item"><a href="/">Home</a></div>
-{% for page in pages %}
-    <div class="col_item">
-        {% if forloop.first or actie %}
-            <a href="/{{root}}/{% if actie and not forloop.first%}{{actie.id}}/{%endif%}{{page.link}}/">
-        {%endif%}
-            {% if page.title|upper == page_titel|upper %}<div class="hl">{% endif %}
-                {{page.title}}
-            {% if page.title|upper == page_titel|upper %}</div>{% endif %}
-            {% if forloop.first or actie %}</a>{%endif%}</div>
-    {% endfor%}<div class="clear">&nbsp;</div>
+<div class="col_item"><a href="/{{root}}/">Index</a></div>
+<div class="col_item">{%if actie%}<a href="/{{root}}/{{actie.id}}/">{%endif%}Actie{%if actie%}</a>{%endif%}</div>
+    <div class="clear">&nbsp;</div>
 <div class="col_itall">
 {% block content-data %} {{ content }} {% endblock %}
 </div>

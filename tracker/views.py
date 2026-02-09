@@ -233,6 +233,13 @@ def show_action(request, proj, actie, msg=''):
 
 
 @login_required
+def edit_action(request, proj, actie):
+    "toon scherm met gegevens van bestaande actie en de velden opgengezet voor aanpassen"
+    return render(request, 'tracker/details.html',
+                  core.build_pagedata_for_detail(request, proj, actie, edit=True))
+
+
+@login_required
 def add_action(request, proj):
     "voer nieuwe actie op in de database en ga naar detailscherm"
     project = my.Project.objects.get(pk=proj)
@@ -331,11 +338,11 @@ def new_event(request, proj, actie):
                   core.build_pagedata_for_events(request, proj, actie, event='nieuw'))
 
 
-# @login_required
+@login_required
 def edit_event(request, proj, actie, event):
     "Zet scherm open voor wijzigen"
-    return render(request, 'tracker/voortgang.html',
-                  core.build_pagedata_for_events(request, proj, actie, event=event))
+    return render(request, 'tracker/details.html',
+                  core.build_pagedata_for_detail(request, proj, actie, event=event))
 
 
 @login_required

@@ -409,6 +409,18 @@ def test_show_action(monkeypatch):
             request, 'tracker/details.html', (request, myproj.id, 'actie', 'message'))
 
 @pytest.mark.django_db
+def test_edit_action(monkeypatch, capsys):
+    """unittest for views.show_action
+    """
+    monkeypatch.setattr(views, 'render', lambda *x: x)
+    myproj = my.Project.objects.create(name='first')
+    myuser = auth.User.objects.create(username='me')
+    request = types.SimpleNamespace(user=myuser)
+    monkeypatch.setattr(views.core, 'build_pagedata_for_detail', lambda *x, **y: (x, y))
+    assert views.edit_action(request, myproj.id, 'actie') == (
+            request, 'tracker/details.html', ((request, myproj.id, 'actie'), {'edit': True}))
+
+@pytest.mark.django_db
 def test_add_action(monkeypatch):
     """unittest for views.add_action
     """
@@ -572,12 +584,13 @@ def test_new_event(monkeypatch):
 def test_edit_event(monkeypatch):
     """unittest for views.edit_event
     """
-    monkeypatch.setattr(views.core, 'build_pagedata_for_events', lambda *x, **y: (x, y))
+    # monkeypatch.setattr(views.core, 'build_pagedata_for_events', lambda *x, **y: (x, y))
+    monkeypatch.setattr(views.core, 'build_pagedata_for_detail', lambda *x, **y: (x, y))
     monkeypatch.setattr(views, 'render', lambda *x: x)
     myuser = auth.User.objects.create(username='me')
     request = types.SimpleNamespace(user=myuser)
     assert views.edit_event(request, 'proj', 'actie', 15) == (
-            request, 'tracker/voortgang.html', ((request, 'proj', 'actie'), {'event': 15}))
+            request, 'tracker/details.html', ((request, 'proj', 'actie'), {'event': 15}))
 
 def test_add_event(monkeypatch):
     """unittest for views.add_event
