@@ -14,6 +14,9 @@ There's also the possibility to communicate with another web app of mine,
 a `software project administration </albertvisser/myprojects/>`_,
 to provide some context to the activity.
 
+I was a bit embarrassed about not using this myself, 
+so after my Trac installation failed me on switching to Python 3.14
+I dusted off this app, changed it a bit and started using it for real.
 
 Usage
 -----
