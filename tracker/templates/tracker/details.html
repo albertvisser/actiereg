@@ -1,44 +1,5 @@
 {% extends "tracker/base_site.html" %}
 {% load extratags %}
-{% block extrastyle %}<style>
-div.clear,
-span.clear {
-	background: none;
-	border: 0;
-	clear: both;
-	display: block;
-	float: none;
-	font-size: 0;
-	margin: 0;
-	padding: 0;
-	overflow: hidden;
-	visibility: hidden;
-	width: 0;
-	height: 0;
-}
-.col_txt,
-.col_lbl,
-.col_inp {
-    font-family:"Lucida Grande", Verdana, Arial, sans-serif;
-    line-height:14px; border-top:1px solid #eee; vertical-align:top;
-    padding: 5px 0 5px 0 ;
-    font-size:13px;
-    display: inline;
-	float: left;
-}
-.col_txt,
-.col_lbl {
-    font-size:13px;
-    font-weight:bold;
-	width: 140px;
-}
-.col_lbl {
-    padding-top: 10px;
-}
-.col_inp {
-	width: 740px;
-}
-</style> {% endblock %}
 {% block extrahead %}
 <script type="text/javascript">
 function setarch() {
@@ -149,7 +110,7 @@ function setarch() {
 </form>
   {% if events %}
     {%for ev, sysev in events%}
-    <div class="col_lbl">{{ev.start|date:"d-m-Y H:i:s"}} by {{ev.starter}}
+    <div class="col_lbl">{{ev.start|date:"d-m-Y H:i:s"}}<br/> by {{ev.starter}}
     {% if not readonly and not actie.arch and not sysev %}<br>
 	  <a href="/{{root}}/{{actie.id}}/voortg/{{ev.id}}/edit/">
       <input type="button" value="wijzig"/></a>

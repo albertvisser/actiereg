@@ -1,9 +1,6 @@
 {% extends "base_site.html" %}
 {% load i18n %}{% load static %}
 {% load extratags %}
-{% block style %} <link rel="stylesheet" type="text/css" href="/static/admin/css/base.css" />
-<link rel="stylesheet" type="text/css" href="{% static 'actiereg.css' %}" />
-{% endblock %}
 {% block extrahead %}{% endblock %}
 {% block title %} ActieReg | {{name|capfirst}}: {{ title}}{{ page_titel }}{% endblock %}
 {% block branding %}

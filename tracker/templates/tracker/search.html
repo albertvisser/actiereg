@@ -1,49 +1,4 @@
 {% extends "tracker/base_site.html" %}
-{% block extrastyle %}<style>
-div.clear,
-span.clear {
-	background: none;
-	border: 0;
-	clear: both;
-	display: block;
-	float: none;
-	font-size: 0;
-	margin: 0;
-	padding: 0;
-	overflow: hidden;
-	visibility: hidden;
-	width: 0;
-	height: 0;
-}
-.col_ord,
-.col_ordh,
-.col_fld,
-.col_dir {
-    font-family:"Lucida Grande", Verdana, Arial, sans-serif;
-    line-height:13px; border-top:1px solid #eee; vertical-align:top;
-    padding: 5px 0 5px 0 ;
-    font-size:11px;
-    display: inline;
-	float: left;
-}
-.head {
-    font-size:12px;
-    font-weight:bold;
-}
-.col_ordh,
-.col_ord {
-	width: 70px;
-}
-.col_ord {
-    padding-top: 10px;
-}
-.col_fld {
-	width: 120px;
-}
-.col_dir {
-	width: 180px;
-}
-</style> {% endblock %}
 {% block branding %}<h1>{{name|capfirst}} | {{title}}</h1>{% endblock %}
 {% block content-data %}
 <form action="/{{root}}/results/" method="post">{% csrf_token %}

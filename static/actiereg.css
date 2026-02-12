@@ -16,26 +16,176 @@ span.clear {
 	width: 0;
 	height: 0;
 }
-.col_all,
-.col_itall,
-.col_item {
-    font-family:"Lucida Grande", Verdana, Arial, sans-serif;
-    line-height:13px; border-top:1px solid #eee; vertical-align:top;
+/* site */
+.col_all, .col_itall, .col_item {
     padding: 5px 15px 5px 0 ;
-    font-size:11px;
     display: inline;
-	float: left;
+    float: left;
 }
 .col_all {
-    width: 660px;
+    width: 700px;
 }
 .col_itall {
     margin-left: 15px;
     width: 880px;
 }
 .hl {
-	font-weight: bold;
+    font-weight: bold;
 }
 .ttl {
-	font-size: 1.2em;
+    font-size: 1.2em;
+}
+.head {
+    font-weight:bold;
+}
+/* site index */
+.col_link, .col_stats {
+    /* padding: 5px 15px 5px 0 ; */
+    padding-bottom: 2px;
+    display: inline;
+    float: left;
+}
+.col_link {
+    width: 500px;
+}
+.col_stats {
+    text-align: center;
+    width: 300px;
+}
+/* nieuw project */
+.col_title,
+.col_enter,
+.col_user {
+    display: inline;
+    float: left;
+}
+.col_title {
+	/* vertical-align: middle; */
+	padding-top: 5px;
+	width: 140px;
+}
+.col_enter {
+	width: 500px;
+}
+.col_user {
+	width: 400px;
+}
+/* actie instellingen */
+.col {
+    font-family:"Lucida Grande", Verdana, Arial, sans-serif;
+    line-height:13px; border-top:1px solid #eee; vertical-align:top;
+    padding: 5px 0 5px 0 ;
+    font-size:11px;
+    display: inline;
+        float: left;
+}
+.bold {
+    font-weight:bold;
+}
+.sel_left {
+        width: 130px;
+    text-align: center;
+}
+.sel_mid {
+        width: 100px;
+}
+.sel_right {
+        width: 175px;
+    text-align: center;
+}
+.tab {
+        width: 110px;
+}
+.set_ord {
+        width: 80px;
+    text-align: center;
+}
+.set_nam {
+        width: 140px;
+}
+.set_wrd {
+        width: 80px;
+    text-align: center;
+}
+.set_del {
+        width: 110px;
+}
+/* actie index */
+.col_nr, .col_srt, .col_stat, .col_who, .col_when, .col_oms {    
+    padding: 5px 1px 5px 1px ;    
+    display: inline;
+    float: left;
+}
+.col_nr {
+    width: 80px;    
+    /* padding-left:15px; */
+}
+.col_srt {
+    width: 92px;
+}
+.col_stat {
+    width: 180px;
+}
+.col_who {
+    width: 80px;
+}
+.col_when {
+    width: 84px;
+}
+.col_oms {
+    width: 340px;
+}
+/* actie details */
+.col_txt, .col_lbl, .col_inp {
+    padding: 5px 0 5px 0 ;
+    display: inline;
+    float: left;
+}
+.col_txt,
+.col_lbl {
+    /* font-size:11px; */
+    font-weight:bold;
+    width: 160px;
+}
+.col_lbl {
+    padding-top: 10px;
+}
+.col_inp {
+    width: 720px;
+}
+/* sorteren */
+.col_ord,
+.col_ordh,
+.col_fld,
+.col_dir {
+    padding: 5px 0 5px 0 ;
+    display: inline;
+    float: left;
+}
+.col_ordh,
+.col_ord {
+        width: 70px;
+}
+.col_ord {
+    padding-top: 10px;
+}
+.col_fld {
+        width: 160px;
+}
+.col_dir {
+        width: 180px;
+}
+/* selecteren */
+.col_all,
+.col_left,
+.col_right {
+    padding: 5px 0 5px 0 ;
+    display: inline;
+    float: left;
+}   
+.col_left {
+        width: 280px;
+}   
+.col_right {
+        width: 440px; 
 }

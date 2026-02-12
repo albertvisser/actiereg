@@ -1,42 +1,5 @@
 {% extends "tracker/base_site.html" %}
 {% block extrahead %}
-<style>
-div.clear,
-span.clear {
-	background: none;
-	border: 0;
-	clear: both;
-	display: block;
-	float: none;
-	font-size: 0;
-	margin: 0;
-	padding: 0;
-	overflow: hidden;
-	visibility: hidden;
-	width: 0;
-	height: 0;
-}
-.col_all,
-.col_left,
-.col_right {
-    font-family:"Lucida Grande", Verdana, Arial, sans-serif;
-    line-height:13px; border-top:1px solid #eee; vertical-align:top;
-    padding: 5px 0 5px 0 ;
-    font-size:11px;
-    display: inline;
-	float: left;
-}
-.head {
-    font-size:12px;
-    font-weight:bold;
-}
-.col_left {
-	width: 240px;
-}
-.col_right {
-	width: 440px;
-}
-</style>
 <script type="text/javascript">
 function tick_tick(field,box) {
     if (field.checked == true)
@@ -64,15 +27,15 @@ function tick_two(field1, field2,box) {
 
 <div class="col_left">
     <input type="checkbox" name="select" value="act" id="selact"
-        {% if selected.nummer %}checked="checked"{% endif %}>actienummer:</input>
+        {% if selected.nummer %}checked="checked"{% endif %}> actienummer:</input>
 </div>
 <div class="col_right">
     <div>groter dan: <input type="text" name="txtgt" value="{{selected.gt}}"
             onkeyup="tick_two(this,txtlt,selact)" /></div>
     <div><input name="enof" type="radio" value="en"
-            {%if selected.enof1 == "en"%} checked="checked"{%endif%}>en</input>
+            {%if selected.enof1 == "en"%} checked="checked"{%endif%}> en </input>
             <input name="enof" type="radio" value="of"
-            {%if selected.enof1 == "of"%} checked="checked"{%endif%}>of</input>
+            {%if selected.enof1 == "of"%} checked="checked"{%endif%}> of </input>
     </div>
     <div>kleiner dan: <input type="text" name="txtlt" value="{{selected.lt}}"
             onkeyup="tick_two(this,txtgt,selact)"/></div>
@@ -81,31 +44,31 @@ function tick_two(field1, field2,box) {
 
 <div class="col_left">
     <input type="checkbox" name="select" value="srt" id="selsrt"
-        {% if selected.soort %}checked="checked"{% endif %}>soort -</input>
+        {% if selected.soort %}checked="checked"{% endif %}> soort -</input>
     selecteer een of meer:</div>
 <div class="col_right">{% for srt in soorten %}
     <input type="checkbox" name="srtval" value="{{srt.value}}" onclick="tick_tick(this,selsrt)"
         {% for  s in selected.soort %}
         {% if srt.value == s %}checked ="checked"{% endif %}
-        {% endfor %}>{{srt.title}}</input><br/>
+        {% endfor %}> {{srt.title}}</input><br/>
     {% endfor %}</div>
 <div class="clear">&nbsp;</div>
 
 <div class="col_left">
     <input type="checkbox" name="select" value="stat" id="selstat"
-        {% if selected.status %}checked="checked"{% endif %}>status -</input>
+        {% if selected.status %}checked="checked"{% endif %}> status -</input>
         selecteer een of meer:</div>
 <div class="col_right">{% for stat in stats %}
     <input type="checkbox" name="statval" value="{{stat.value}}" onclick="tick_tick(this,selstat)"
         {% for  s in selected.status %}
         {% if stat.value == s %}checked="checked"{% endif %}
-        {% endfor %}>{{stat.title}}</input><br/>
+        {% endfor %}> {{stat.title}}</input><br/>
     {% endfor %}</div>
 <div class="clear">&nbsp;</div>
 
 <div class="col_left">
     <input type="checkbox" name="select" value="user" id="seluser"
-       {% if selected.user %}checked="checked"{% endif %}>behandelaar -</input>
+       {% if selected.user %}checked="checked"{% endif %}> behandelaar -</input>
         selecteer een of meer:</div>
 <div class="col_right">
     <select name="userval" multiple="multiple" onchange="tick_multi(this,seluser)">
@@ -115,31 +78,29 @@ function tick_two(field1, field2,box) {
 <div class="clear">&nbsp;</div>
 
 <div class="col_left"><input type="checkbox" name="select" value="txt" id="seltxt"
-    {% if selected.zoek %}checked="checked"{% endif %}>zoek op tekst(deel) in:</input>
+    {% if selected.zoek %}checked="checked"{% endif %}> zoek op tekst(deel) in:</input>
 </div>
 <div class="col_right">
-    <div>'betreft': <input type="text" name="txtabout" value="{{selected.about}}"
+    <div>"betreft": <input type="text" name="txtabout" value="{{selected.about}}"
         onkeyup="tick_two(this,txttitle,seltxt)" /></div>
     <div><input name="enof2" type="radio" value="en"
-        {%if selected.enof2 == "en"%} checked="checked"{%endif%}>en</input>
+        {%if selected.enof2 == "en"%} checked="checked"{%endif%}> en </input>
         <input name="enof2" type="radio" value="of"
-        {%if selected.enof2 == "of"%} checked="checked"{%endif%}>of</input>
+        {%if selected.enof2 == "of"%} checked="checked"{%endif%}> of </input>
     </div>
-    <div>'omschrijving': <input type="text" name="txttitle" value="{{selected.title}}"
+    <div>"omschrijving": <input type="text" name="txttitle" value="{{selected.title}}"
         onkeyup="tick_two(this,txtabout,seltxt)" /></div>
     </div>
 <div class="clear">&nbsp;</div>
 
 <div class="col_left"><input type="checkbox" name="select" value="arch" id="selarch"
-    {% if selected.arch != 1 %}checked="checked"{% endif %}>archiefstatus:</input>
+    {% if selected.arch != 1 %}checked="checked"{% endif %}> archiefstatus:</input>
 </div>
 <div class="col_right">
     <input name="archall" type="radio" value="arch"  onclick="tick_tick(this,selarch)"
-        {% if selected.arch == 2 %}checked="checked"{% endif %}>
-        alleen gearchiveerd</input>
+        {% if selected.arch == 2 %}checked="checked"{% endif %}> alleen gearchiveerd </input>
     <input name="archall" type="radio" value="all"  onclick="tick_tick(this,selarch)"
-        {% if selected.arch == 0 %}checked="checked"{% endif %}>
-        gearchiveerd en lopend</input>
+        {% if selected.arch == 0 %}checked="checked"{% endif %}> gearchiveerd en lopend </input>
 </div>
 <div class="clear">&nbsp;</div>
 

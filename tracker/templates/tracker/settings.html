@@ -1,66 +1,6 @@
 {% extends "tracker/base_site.html" %}
 {% block branding %}<h1>{{name|capfirst}} | {{title}}</h1>{% endblock %}
 {% block extrahead %}
-<style>
-div.clear,
-span.clear {
-	background: none;
-	border: 0;
-	clear: both;
-	display: block;
-	float: none;
-	font-size: 0;
-	margin: 0;
-	padding: 0;
-	overflow: hidden;
-	visibility: hidden;
-	width: 0;
-	height: 0;
-}
-.col {
-    font-family:"Lucida Grande", Verdana, Arial, sans-serif;
-    line-height:13px; border-top:1px solid #eee; vertical-align:top;
-    padding: 5px 0 5px 0 ;
-    font-size:11px;
-    display: inline;
-	float: left;
-}
-.head {
-    font-size:12px;
-    font-weight:bold;
-}
-.bold {
-    font-weight:bold;
-}
-.sel_left {
-	width: 130px;
-    text-align: center;
-}
-.sel_mid {
-	width: 100px;
-}
-.sel_right {
-	width: 175px;
-    text-align: center;
-}
-.tab {
-	width: 110px;
-}
-.set_ord {
-	width: 80px;
-    text-align: center;
-}
-.set_nam {
-	width: 140px;
-}
-.set_wrd {
-	width: 80px;
-    text-align: center;
-}
-.set_del {
-	width: 110px;
-}
-</style>
 <script type="text/javascript">
 function move_item(from, to)
 {
@@ -91,14 +31,15 @@ function herbepaal(o,p)
 </script>
 {% endblock %}
 {% block content %}
-<a href="#usr">Gebruikers voor dit project</a><br/>
-<a href="#tab">Tab headers</a><br/>
-<a href="#srt">Soorten acties</a><br/>
-<a href="#stat">Mogelijke statussen voor actie</a><br/>
-<a href="/{{root}}/" title="back">Terug naar de actielijst</a>
+<a href="#desc">Project beschrijving</a>
+&nbsp; <a href="#usr">Gebruikers voor dit project</a>
+&nbsp; <a href="#tab">Tab headers</a>
+&nbsp; <a href="#srt">Soorten acties</a>
+&nbsp; <a href="#stat">Mogelijke statussen voor actie</a>
+&nbsp; &nbsp;  <a href="/{{root}}/" title="back">Terug naar de actielijst</a>
 <hr/>
-<a name="usr"></a>
-<div><h3>Gebruikers</h3></div>
+<a name="desc"></a>
+<div><h3>Project</h3></div>
 <form action="/{{root}}/wijzigdesc/" method="post">{% csrf_token %}
     <div>
       <div class="col_title">Korte beschrijving: </div>
@@ -109,6 +50,8 @@ function herbepaal(o,p)
     <a href="/{{root}}/" title="back"><input type="button" value="terug naar actielijst"/></a>
     <a href="#top">terug naar het begin van de pagina</a>
     </form>
+<a name="usr"></a>
+<div><h3>Gebruikers</h3></div>
 <form action="/{{root}}/wijzigusers/" method="post">{% csrf_token %}
 <div>
     <div class="col sel_left bold">Bekende gebruikers:</div>
