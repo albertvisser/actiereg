@@ -341,7 +341,7 @@ def new_event(request, proj, actie):
 @login_required
 def edit_event(request, proj, actie, event):
     "Zet scherm open voor wijzigen"
-    return render(request, 'tracker/details.html',
+    return render(request, 'tracker/details.html/',
                   core.build_pagedata_for_detail(request, proj, actie, event=event))
 
 
