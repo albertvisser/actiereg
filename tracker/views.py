@@ -26,10 +26,12 @@ def index(request, msg=""):
     new_apps = []
     for project in my.Project.objects.all():
         app = {'root': project.id, 'name': project.name, 'desc': project.description,
-               'alle': 0, 'open': 0, 'active': 0}
+               'alle': 0, 'open': 0, 'active': 0, 'arch': 0}
         for actie in project.acties.all():
             app['alle'] += 1
-            if not actie.arch:
+            if actie.arch:
+                app['arch'] += 1
+            else:
                 app['open'] += 1
                 if actie.status.value > 0:
                     app['active'] += 1
@@ -341,7 +343,7 @@ def new_event(request, proj, actie):
 @login_required
 def edit_event(request, proj, actie, event):
     "Zet scherm open voor wijzigen"
-    return render(request, 'tracker/details.html/',
+    return render(request, 'tracker/details.html',
                   core.build_pagedata_for_detail(request, proj, actie, event=event))
 
 

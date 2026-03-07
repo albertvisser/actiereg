@@ -44,23 +44,23 @@ def test_index(monkeypatch):
     assert views.index(request, 'message') == (
             request, 'index.html',
             {'apps': [{'root': 2, 'name': 'ahem', 'desc': 'another project',
-                      'alle': 0, 'open': 0, 'active': 0},
+                       'alle': 0, 'open': 0, 'active': 0, 'arch': 0},
                       {'root': 1, 'name': 'first', 'desc': 'a project',
-                      'alle': 3, 'open': 2, 'active': 1}],
+                       'alle': 3, 'open': 2, 'active': 1, 'arch': 1}],
              'new': [], 'msg': 'message<br/><br/>login_message', 'who': myuser})
     assert views.index(request2) == (
             request2, 'index.html',
             {'apps': [{'root': 2, 'name': 'ahem', 'desc': 'another project',
-                      'alle': 0, 'open': 0, 'active': 0},
+                       'alle': 0, 'open': 0, 'active': 0, 'arch': 0},
                       {'root': 1, 'name': 'first', 'desc': 'a project',
-                      'alle': 3, 'open': 2, 'active': 1}],
+                       'alle': 3, 'open': 2, 'active': 1, 'arch': 1}],
              'new': [], 'msg': 'login_message', 'who': myuser2})
     assert views.index(request3) == (
             request3, 'index.html',
             {'apps': [{'root': 2, 'name': 'ahem', 'desc': 'another project',
-                      'alle': 0, 'open': 0, 'active': 0},
+                       'alle': 0, 'open': 0, 'active': 0, 'arch': 0},
                       {'root': 1, 'name': 'first', 'desc': 'a project',
-                      'alle': 3, 'open': 2, 'active': 1}],
+                       'alle': 3, 'open': 2, 'active': 1, 'arch': 1}],
              'new': [], 'msg': 'massage<br/><br/>login_message', 'who': myuser})
 
 def test_log_out(monkeypatch, capsys):
