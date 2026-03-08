@@ -90,7 +90,7 @@ function setarch() {
       <div class="col_inp"><textarea name="data1" cols="84" rows="4">{{actie.melding}}</textarea></div>
   {% else %}
       <div class="col_txt">melding:</div>
-      <div class="col_inp">{{actie.melding|linebreaks}}</div>
+      <div class="col_inp">{{actie.melding|safe|linebreaks}}</div>
   {% endif %}
       <div class="clear">&nbsp;</div>
   {% if not readonly %}
@@ -100,33 +100,37 @@ function setarch() {
       <input type="submit" value="{% if actie %}{% if edit %}Actie updaten{%else %}Gegevens wijzigen{% endif %}{%else%}Actie opvoeren{%endif%}"/>
     <!--  <input type="reset" value="Terugzetten"/> -->
     {% endif %}
+    {% if edit %}
     <input type="hidden" name="archstat" id="archstat" value="{{actie.arch}}"/>
     <input type="button" value="actie {% if actie.arch %}herleven{%else%}archiveren{%endif%}"
-      onclick="{setarch(); form.submit();}"
+      onclick="{setarch(); document.forms['mainform'].submit();}"
       {%if not actie %}disabled="disabled"{% endif %}/>
+    {% endif %}
+    {% if events %}<a href="#commentform">Naar meest recente commentaar</a>{% endif %}
     </div>
     <div class="clear">&nbsp;</div>
   {% endif %}
 </form>
   {% if events %}
     {%for ev, sysev in events%}
-    <div class="col_lbl">{{ev.start|date:"d-m-Y H:i:s"}}<br/> by {{ev.starter}}
+    <div id="ev{{ev.id}}" class="col_lbl">{{ev.start|date:"d-m-Y H:i:s"}}<br/> by {{ev.starter}}
     {% if not readonly and not actie.arch and not sysev %}<br>
 	  <a href="/{{root}}/{{actie.id}}/voortg/{{ev.id}}/edit/">
       <input type="button" value="wijzig"/></a>
     {%endif%}</div>
-    <div class="col_inp">{{ev.text|linebreaks}}</div>
+    <div class="col_inp">{{ev.text|safe|linebreaks}}</div>
     <div class="clear">&nbsp;</div>
     {%endfor%}
    {% endif %}
     {% if actie and not readonly and not actie.arch %}
-        <div><form action="/{{root}}/{{actie.id}}/voortg/{% if curr_ev %}{{curr_ev.id}}{% else %}nieuw{% endif %}/update/" method="post">{% csrf_token %}
+        <div><form id="commentform" action="/{{root}}/{{actie.id}}/voortg/{% if curr_ev %}{{curr_ev.id}}{% else %}nieuw{% endif %}/update/" method="post">{% csrf_token %}
 	    <div class="col_lbl"><label for = "data">
         {%if  curr_ev%}Wijzig opmerking <br/>{{curr_ev.start|date:"d-m-Y H:i:s"}}{%else%}Nieuwe opmerking:{%endif%}</label></div>
 	    <div class="col_inp"><textarea name="data" cols="84" rows="6">{% if curr_ev %}{{curr_ev.text}}{% endif %}</textarea>
             <input type="submit" value="{% if curr_ev %}Wijzigen{%else%}Opvoeren{%endif%}" />
             {% if curr_ev %} <input type="reset" value="Terugzetten"/>{% endif %}
             <a href="/{{root}}/{{actie.id}}/"><input type="button" value="afbreken" /></a>
+	    <a href="#top">Naar actiegegevens</a>
 	    <div class="clear">&nbsp;</div>
 	</form></div>
     {% endif %}
