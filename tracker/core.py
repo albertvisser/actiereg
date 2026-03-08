@@ -713,7 +713,7 @@ def build_pagedata_for_detail(request, proj, actie, msg="", edit=False, event=No
     else:
         actie = my.Actie.objects.get(pk=actie)
         page_data["actie"] = actie
-        titel = f"Actie {actie.nummer} - "
+        titel = f"Actie {actie.nummer} - {actie.about}:"
         page_titel = "Actie details"
         page_data["events"] = [(x, is_system_event(x)) for x in actie.events.all()]
         if event:  # de waarde "nieuw" hebben we niet nodig
@@ -1040,15 +1040,17 @@ def wijzig_events(request, proj='', actie="", event=""):
         ## actie.nummer = nummer
         ## event.start = dt.timezone.now()  # dt.datetime.now()
         verb = 'toegevoegd'
+        vervolg = ''
     elif event:
         event = get_object_or_404(my.Event, pk=event)
         verb = 'bijgewerkt'
+        vervolg = f'#ev{event.id}'
     else:
         raise Http404    # Response(f"{actie} {event}")
 
     event.text = tekst
     event.save()
-    return f"/{proj}/{actie.id}/mld/De gebeurtenis is {verb}./"
+    return f"/{proj}/{actie.id}/mld/De gebeurtenis is {verb}./{vervolg}"
 
 
 def get_appropriate_login_message(user, root='', actie=''):
@@ -1189,10 +1191,11 @@ def filter_data_on_description(data, seltest):
 def filter_data_on_arch(data, seltest):
     "apply filter on archive status to the data"
     filtered = seltest.filter(veldnm="arch")
-    if not filtered:
-        data = data.exclude(arch=True)
-    elif len(filtered) == 1:
-        data = data.filter(arch=True)
+    if filtered:
+        if filtered[0].value == 'False':
+            data = data.exclude(arch=True)
+        else:
+            data = data.filter(arch=True)
     return data
 
 
