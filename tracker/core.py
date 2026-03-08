@@ -415,15 +415,15 @@ def search_for(project, search):
     acties = my.Actie.objects.filter(project=project)
     # if acties:
     #     results.extend(acties)
-    results.extend([(x, 'about', x.about) for x in acties.filter(about__contains=search)])
-    results.extend([(x, 'title', x.title) for x in acties.filter(title__contains=search)])
-    results.extend([(x, 'melding', x.melding) for x in acties.filter(melding__contains=search)])
-    results.extend([(x, 'oorzaak', x.oorzaak) for x in acties.filter(oorzaak__contains=search)])
-    results.extend([(x, 'oplossing', x.oplossing)
+    results.extend([(x, '', 'betreft', x.about) for x in acties.filter(about__contains=search)])
+    results.extend([(x, '', 'omschrijving', x.title) for x in acties.filter(title__contains=search)])
+    results.extend([(x, '', 'melding', x.melding) for x in acties.filter(melding__contains=search)])
+    results.extend([(x, '', 'oorzaak', x.oorzaak) for x in acties.filter(oorzaak__contains=search)])
+    results.extend([(x, '', 'oplossing', x.oplossing)
                     for x in acties.filter(oplossing__contains=search)])
-    results.extend([(x, 'vervolg', x.vervolg) for x in acties.filter(vervolg__contains=search)])
+    results.extend([(x, '', 'vervolg', x.vervolg) for x in acties.filter(vervolg__contains=search)])
     for actie in acties:
-        results.extend([(actie, f'event {str(x.start)[:19]}', x.text)
+        results.extend([(actie, f'#ev{x.id}', f'event {str(x.start)[:19]}', x.text)
                         for x in actie.events.filter(text__contains=search)])
     return results
 

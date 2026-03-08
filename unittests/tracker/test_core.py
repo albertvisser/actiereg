@@ -334,16 +334,16 @@ def test_filter_data_on_arch():
     my.Actie.objects.create(project=project, nummer='0004', starter=user, lasteditor=user,
                             soort=soort, status=status, behandelaar=user, arch=True)
     data = testee.filter_data_on_arch(my.Actie.objects.all(), my.Selection.objects.all())
-    assert [x.nummer for x in data] == ['0001', '0003']
+    assert [x.nummer for x in data] == ['0001', '0002', '0003', '0004']
 
-    my.Selection.objects.create(user=user.id, project=project, veldnm="arch")
+    my.Selection.objects.create(user=user.id, project=project, veldnm="arch", value='True')
     data = testee.filter_data_on_arch(my.Actie.objects.all(), my.Selection.objects.all())
     assert [x.nummer for x in data] == ['0002', '0004']
 
-    # kan eigenlijk niet?
-    my.Selection.objects.create(user=user.id, project=project, veldnm="arch")
+    my.Selection.objects.all().delete()
+    my.Selection.objects.create(user=user.id, project=project, veldnm="arch", value='False')
     data = testee.filter_data_on_arch(my.Actie.objects.all(), my.Selection.objects.all())
-    assert [x.nummer for x in data] == ['0001', '0002', '0003', '0004']
+    assert [x.nummer for x in data] == ['0001', '0003']
 
 
 @pytest.mark.django_db
@@ -1650,7 +1650,7 @@ def test_search_for_2():
     result = testee.search_for(myproject, 'xxx')
     assert len(result) == 1
     assert result[0][0] == myactie
-    assert result[0][1:] == ('about', 'axxxe')
+    assert result[0][1:] == ('', 'betreft', 'axxxe')
 
 @pytest.mark.django_db
 def test_search_for_3():
@@ -1673,7 +1673,7 @@ def test_search_for_3():
     result = testee.search_for(myproject, 'xxx')
     assert len(result) == 1
     assert result[0][0] == myactie
-    assert result[0][1:] == ('title', 'fxxxj')
+    assert result[0][1:] == ('', 'omschrijving', 'fxxxj')
 
 @pytest.mark.django_db
 def test_search_for_4():
@@ -1696,7 +1696,7 @@ def test_search_for_4():
     result = testee.search_for(myproject, 'xxx')
     assert len(result) == 1
     assert result[0][0] == myactie
-    assert result[0][1:] == ('melding', 'ffxxxij')
+    assert result[0][1:] == ('', 'melding', 'ffxxxij')
 
 @pytest.mark.django_db
 def test_search_for_5():
@@ -1719,7 +1719,7 @@ def test_search_for_5():
     result = testee.search_for(myproject, 'xxx')
     assert len(result) == 1
     assert result[0][0] == myactie
-    assert result[0][1:] == ('oorzaak', 'hgxxxgv')
+    assert result[0][1:] == ('', 'oorzaak', 'hgxxxgv')
 
 @pytest.mark.django_db
 def test_search_for_6():
@@ -1742,7 +1742,7 @@ def test_search_for_6():
     result = testee.search_for(myproject, 'xxx')
     assert len(result) == 1
     assert result[0][0] == myactie
-    assert result[0][1:] == ('oplossing', 'xxxbnm')
+    assert result[0][1:] == ('', 'oplossing', 'xxxbnm')
 
 @pytest.mark.django_db
 def test_search_for_7():
@@ -1765,7 +1765,7 @@ def test_search_for_7():
     result = testee.search_for(myproject, 'xxx')
     assert len(result) == 1
     assert result[0][0] == myactie
-    assert result[0][1:] == ('vervolg', 'ertxxxop')
+    assert result[0][1:] == ('', 'vervolg', 'ertxxxop')
 
 @pytest.mark.django_db
 def test_search_for_8():
@@ -1788,7 +1788,7 @@ def test_search_for_8():
     result = testee.search_for(myproject, 'xxx')
     assert len(result) == 1
     assert result[0][0] == myactie
-    assert result[0][1:] == (f'event {str(myevent.start)[:19]}', 'lkjxxxvbn')
+    assert result[0][1:] == (f'#ev{myevent.id}', f'event {str(myevent.start)[:19]}', 'lkjxxxvbn')
 
 @pytest.mark.django_db
 def test_build_pagedata_for_detail(monkeypatch):
@@ -1819,7 +1819,7 @@ def test_build_pagedata_for_detail(monkeypatch):
     mystatus = my.Status.objects.create(project=myproject, order=0, value=0, title='z')
     my.Worker.objects.create(project=myproject, assigned=myuser)
     myactie = my.Actie.objects.create(project=myproject, nummer='x', starter=myuser,
-                                      lasteditor=myuser,
+                                      lasteditor=myuser, about='yyy',
                                       soort=mysoort, status=mystatus, behandelaar=myuser)
     monkeypatch.setattr(testee, 'get_appropriate_login_message', lambda *x: 'login_message')
     monkeypatch.setattr(testee, 'determine_readonly', lambda *x: True)
@@ -1830,7 +1830,7 @@ def test_build_pagedata_for_detail(monkeypatch):
     assert (data['actie'], data['msg'], data['name']) == (myactie, 'login_message', 'first')
     assert (data['page_titel'], list(data['pages'])) == ('Actie details', [mypage])
     assert (data['readonly'], data['root'], list(data['soorten'])) == (True, 1, [mysoort])
-    assert (list(data['stats']), data['title']) == ([mystatus], 'Actie x - ')
+    assert (list(data['stats']), data['title']) == ([mystatus], 'Actie x - yyy:')
     assert list(data['users']) == [myuser]
     assert not data['edit']
 
@@ -1839,7 +1839,7 @@ def test_build_pagedata_for_detail(monkeypatch):
     assert data['msg'], data['message'] == ('login_message', '')
     assert (data['page_titel'], list(data['pages'])) == ('Actie details', [mypage])
     assert (data['readonly'], data['root'], list(data['soorten'])) == (True, 1, [mysoort])
-    assert (list(data['stats']), data['title']) == ([mystatus], 'Actie x - ')
+    assert (list(data['stats']), data['title']) == ([mystatus], 'Actie x - yyy:')
     assert list(data['users']) == [myuser]
     assert not data['edit']
 
@@ -1847,7 +1847,7 @@ def test_build_pagedata_for_detail(monkeypatch):
     assert (data['msg'], data['message'],  data['name']) == ('', 'a message', 'first')
     assert (data['page_titel'], list(data['pages'])) == ('Actie details', [mypage])
     assert (data['readonly'], data['root'], list(data['soorten'])) == (True, 1, [mysoort])
-    assert (list(data['stats']), data['title']) == ([mystatus], 'Actie x - ')
+    assert (list(data['stats']), data['title']) == ([mystatus], 'Actie x - yyy:')
     assert list(data['users']) == [myuser]
     assert not data['edit']
 
@@ -1858,7 +1858,7 @@ def test_build_pagedata_for_detail(monkeypatch):
     assert data['msg'], data['message'] == ('login_message', '')
     assert (data['page_titel'], list(data['pages'])) == ('Actie details', [mypage])
     assert (data['readonly'], data['root'], list(data['soorten'])) == (True, 1, [mysoort])
-    assert (list(data['stats']), data['title']) == ([mystatus], 'Actie x - ')
+    assert (list(data['stats']), data['title']) == ([mystatus], 'Actie x - yyy:')
     assert list(data['users']) == [myuser]
     assert data['curr_ev'] == myevent
     assert not data['edit']
@@ -2404,4 +2404,4 @@ def test_wijzig_events(monkeypatch):
             f'/{myproject.id}/{myactie.id}/mld/De gebeurtenis is toegevoegd./')
     myevent = list(myactie.events.all())[0]
     assert testee.wijzig_events(request, myproject.id, myactie.id, myevent.id) == (
-            f'/{myproject.id}/{myactie.id}/mld/De gebeurtenis is bijgewerkt./')
+            f'/{myproject.id}/{myactie.id}/mld/De gebeurtenis is bijgewerkt./#ev{myevent.id}')

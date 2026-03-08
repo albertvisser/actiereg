@@ -10,9 +10,9 @@
   <table>
     <thead><tr><th>actie</th><th>gevonden in</th><th>tekst</th></tr></thead>
     <tbody>
-    {% for actie, loc, text in results %}
+    {% for actie, dest, loc, text in results %}
     <tr>
-	    <td><a href="/{{ actie.id }}">{{ actie.nummer }}</a></td>
+	    <td><a href="/{{root}}/{{ actie.id }}/{% if dest %}{{dest}}{% endif %} ">{{ actie.nummer }}</a></td>
 	    <td>{{ loc }}</td>
 	    <td>{{ text }}</td>
     </tr>
