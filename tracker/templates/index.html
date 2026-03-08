@@ -17,7 +17,7 @@
       <div>
         <div class="col_link">
           <a href="/{{app.root}}/" title="{{app.name}}">{{app.name|capfirst}}: {{app.desc}}</a></div>
-	<div class="col_stats">{{app.alle}} / {{app.open}} / {{app.active}} / {{ app.arch }}</div>
+	<div class="col_stats">{{app.alle}} / {{app.open}} / {% if app.active > 0 %}<b>{% endif %} {{app.active}} {% if app.active > 0 %}</b>{% endif %} / {{ app.arch }}</div>
         <div class="clear">&nbsp;</div>
       </div>
     {% endfor %}
