@@ -115,7 +115,7 @@ function setarch() {
     {%for ev, sysev in events%}
     <div id="ev{{ev.id}}" class="col_lbl">{{ev.start|date:"d-m-Y H:i:s"}}<br/> by {{ev.starter}}
     {% if not readonly and not actie.arch and not sysev %}<br>
-	  <a href="/{{root}}/{{actie.id}}/voortg/{{ev.id}}/edit/">
+    <a href="/{{root}}/{{actie.id}}/voortg/{{ev.id}}/edit/#commentform">
       <input type="button" value="wijzig"/></a>
     {%endif%}</div>
     <div class="col_inp">{{ev.text|safe|linebreaks}}</div>
