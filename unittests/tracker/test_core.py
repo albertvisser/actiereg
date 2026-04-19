@@ -2405,3 +2405,4 @@ def test_wijzig_events(monkeypatch):
     myevent = list(myactie.events.all())[0]
     assert testee.wijzig_events(request, myproject.id, myactie.id, myevent.id) == (
             f'/{myproject.id}/{myactie.id}/mld/De gebeurtenis is bijgewerkt./#ev{myevent.id}')
+    assert my.Actie.objects.get(pk=myactie.id).gewijzigd > myactie.gewijzigd

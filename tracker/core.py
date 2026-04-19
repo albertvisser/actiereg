@@ -1050,6 +1050,8 @@ def wijzig_events(request, proj='', actie="", event=""):
 
     event.text = tekst
     event.save()
+    # update laatst-gewijzigd datum van actie
+    actie.save()
     return f"/{proj}/{actie.id}/mld/De gebeurtenis is {verb}./{vervolg}"
 
 
