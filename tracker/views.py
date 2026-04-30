@@ -237,8 +237,13 @@ def show_action(request, proj, actie, msg=''):
 @login_required
 def edit_action(request, proj, actie):
     "toon scherm met gegevens van bestaande actie en de velden opgengezet voor aanpassen"
-    return render(request, 'tracker/details.html',
-                  core.build_pagedata_for_detail(request, proj, actie, edit=True))
+    data = core.build_pagedata_for_detail(request, proj, actie, edit=True)
+    if 'doc' in data:
+        project = my.Project.objects.get(pk=proj)
+        if not core.is_user(project, request.user):  # and not is_admin(project, request.user):
+            return core.no_authorization_message("acties te wijzigen", proj)
+        return HttpResponseRedirect(data['doc'])
+    return render(request, 'tracker/details.html', data)
 
 
 @login_required

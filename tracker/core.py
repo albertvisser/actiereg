@@ -675,7 +675,6 @@ def build_pagedata_for_detail(request, proj, actie, msg="", edit=False, event=No
     de soort user wordt meegegeven aan het scherm om indien nodig wijzigen onmogelijk te
         maken en diverse knoppen te verbergen.
     """
-    ## msg = request.GET.get("msg", "")
     if msg:
         message, msg = msg, ''
     else:
@@ -683,6 +682,7 @@ def build_pagedata_for_detail(request, proj, actie, msg="", edit=False, event=No
         # if request.user.is_authenticated and actie != 'new':
         #     msg += "Klik op een van onderstaande termen om meer te zien."
     project = my.Project.objects.get(pk=proj)
+
     page_data = {"name": project.name,
                  "root": proj,
                  "pages": get_pages(),  # my.Page.objects.all().order_by('order'),
@@ -701,7 +701,7 @@ def build_pagedata_for_detail(request, proj, actie, msg="", edit=False, event=No
         nw_date = dt.timezone.now()   # dt.datetime.now()
         if aant:
             acties_dit_jaar = project.acties.filter(nummer__startswith=f'{nw_date.year}').order_by(
-                    "-nummer")
+                "-nummer")
             if acties_dit_jaar:
                 last = acties_dit_jaar[0]
                 volgnr = int(last.nummer.split("-", 1)[1])
@@ -719,6 +719,19 @@ def build_pagedata_for_detail(request, proj, actie, msg="", edit=False, event=No
         if event:  # de waarde "nieuw" hebben we niet nodig
             # event tekst tonen in textarea onderin
             page_data['curr_ev'] = my.Event.objects.get(pk=event)
+
+    data = request.POST     # submit vanaf het raadpleegscherm
+    if data:
+        archstat = data.get("archstat", "False")
+        # raise ValueError(f'{archstat=}, {oldarch=}')
+        if archstat == 'True' and not actie.arch:
+            actie.arch = True
+            actie.save()
+            page_data['doc'] = f'/{project.id}/meld/Actie {actie.nummer} is gearchiveerd/'
+        elif archstat == 'False' and actie.arch:
+            actie.arch = False
+            actie.save()
+
     page_data["title"] = titel
     page_data["page_titel"] = page_titel
     return page_data
@@ -745,11 +758,13 @@ def wijzig_detail(request, project, actie, event=None):
         waarom = actie.melding
         nieuw = False
 
+    oldarch = actie.arch
+
     actie.about = data.get("about", "")
     actie.title = data.get("title", "")
-    oldarch = actie.arch
     actie.arch = data.get("archstat", "False") == "True"
-    actie.behandelaar = auth.User.objects.get(pk=int(data.get("user", "0")))
+    # actie.behandelaar = auth.User.objects.get(pk=int(data.get("user", "0")))
+    actie.behandelaar = request.user
     actie.soort = my.Soort.objects.get(project=project, value=data.get("soort", " "))
     actie.status = my.Status.objects.get(project=project, value=int(data.get("status", "1")))
     actie.lasteditor = request.user
@@ -784,7 +799,7 @@ def wijzig_detail(request, project, actie, event=None):
     if actie.status != stat:
         mld = store_gewijzigd('status', str(actie.status), mld, actie, request.user)
     if actie.arch != oldarch and actie.arch:
-        msg = "Actie gearchiveerd"
+        msg = f"Actie {actie.nummer} gearchiveerd"
         store_event(msg, actie, request.user)
     msg = build_full_message(mld, msg)
 
@@ -801,6 +816,8 @@ def wijzig_detail(request, project, actie, event=None):
         if UIT_DOCTOOL in follow:  # follow.startswith(UIT_DOCTOOL):
             # doc = f"{follow.split()[-1].strip()}meld/{doe}/{project.id}/{actie.id}/"
             doc = f"{follow.split()[-1].strip()}/meld/{doe}/{project.id}/{actie.id}/"
+        elif actie.arch:
+            doc = f'/{project.id}/meld/{msg}/'
     return doc
 
 

@@ -13,125 +13,230 @@ function setarch() {
 {%endblock%}
 {% block branding %}<h1>{{name|capfirst}} | {{title}} {{ actie.title|trim_at:80 }}</h1>{% endblock %}
 {% block content-data %}
-<form action="/{{root}}/{% if actie %}{{actie.id}}{%if edit %}/update/{%else%}/edit/{%endif%}{% else %}nieuw/update/{% endif %}"
-  id="mainform" method="post">{% csrf_token %}
-    <input type="hidden" name="nummer"
-      value="{% if actie %}{{actie.nummer}}{% else %}{{nummer}}{% endif %}"/>
+<form
+	action="/{{root}}/
+		{% if actie %}{{actie.id}}
+			{%if edit %}/update/{%else%}/edit/{%endif%}
+		{% else %}
+			nieuw/update/
+		{% endif %}"
+  	id="mainform" method="post"
+>{% csrf_token %}
+  <input 
+	type="hidden" name="nummer"
+ 	value="{% if actie %}{{actie.nummer}}{% else %}{{nummer}}{% endif %}"
+  />
   <div class="col_txt">actie:</div>
   <div class="col_inp">{% if actie %}{{actie.nummer}}{% else %}{{nummer}}{% endif %}</div>
   <div class="clear">&nbsp;</div>
+
   <div class="col_txt">gemeld op:</div>
-  <div class="col_inp"> {% if actie %}{{actie.start|date:"d-m-Y H:i:s"}}
-    {% else %}{{start|date:"d-m-Y H:i:s"}}{% endif %}
-    {% if actie %} door: {{actie.starter}}{% endif %}</div>
+  <div class="col_inp">
+	{% if actie %}
+	  	{{actie.start|date:"d-m-Y H:i:s"}}
+	{% else %}
+		{{start|date:"d-m-Y H:i:s"}}
+	{% endif %}
+	{% if actie %} door: {{actie.starter}}{% endif %}
+  </div>
   <div class="clear">&nbsp;</div>
+  
   {% if edit %}
-  <div class="col_lbl"><label for = "about">betreft: </label></div>
-  <div class="col_inp"><input type="text" {% if actie.arch or readonly %}readonly="readonly"{% endif %}
-    name="about" id="about" value="{{actie.about}}" /></div>
+  	<div class="col_lbl"><label for = "about">betreft: </label></div>
+  	<div class="col_inp">
+		<input type="text" {% if actie.arch or readonly %}readonly="readonly"{% endif %}
+    		name="about" id="about" value="{{actie.about}}" />
+	</div>
   {% else %}
-  <div class="col_txt">betreft: </div>
-  <div class="col_inp">{{actie.about}}</div>
+  	<div class="col_txt">betreft: </div>
+  	<div class="col_inp">{{actie.about}}</div>
   {% endif %}
   <div class="clear">&nbsp;</div>
+  
   {% if edit %}
-  <div class="col_lbl"><label for = "title">omschrijving:</label></div>
-  <div class="col_inp"><input  type="text" {% if actie.arch or readonly %}readonly="readonly"{% endif %}
-    name="title" id="title" value="{{actie.title}}" size="60"/></div>
+  	<div class="col_lbl"><label for = "title">omschrijving:</label></div>
+  	<div class="col_inp">
+		<input  type="text" {% if actie.arch or readonly %}readonly="readonly"{% endif %}
+    		name="title" id="title" value="{{actie.title}}" size="60"/>
+	</div>
   {% else %}
-  <div class="col_txt">omschrijving:</div>
-  <div class="col_inp">{{actie.title}}</div>
+  	<div class="col_txt">omschrijving:</div>
+  	<div class="col_inp">{{actie.title}}</div>
   {% endif %}
   <div class="clear">&nbsp;</div>
+  
   {% if edit %}
-  <div class="col_lbl"><label for = "soort">soort:</label></div>
-  <div class="col_inp"><select name="soort" {% if actie.arch or readonly %}disabled="disabled"{% endif %}>
-     {% for soort in soorten %}<option value="{{soort.value}}"
-        {% if soort == actie.soort %}selected="selected"{% endif %}>
-        {{soort.title}}</option>{% endfor %}</select></div>
+  	<div class="col_lbl"><label for = "soort">soort:</label></div>
+  	<div class="col_inp">
+		<select name="soort" {% if actie.arch or readonly %}disabled="disabled"{% endif %}>
+     			{% for soort in soorten %}
+				<option value="{{soort.value}}"
+					{% if soort == actie.soort %}selected="selected"{% endif %}>
+					{{soort.title}}
+				</option>
+			{% endfor %}
+		</select>
+	</div>
   {% else %}
-  <div class="col_txt">soort:</div>
-  <div class="col_inp">{% for soort in soorten %}{% if soort == actie.soort %}{{soort.title}}{% endif %}{% endfor %}</div>
+  	<div class="col_txt">soort:</div>
+  	<div class="col_inp">
+		{% for soort in soorten %}
+			{% if soort == actie.soort %}{{soort.title}}{% endif %}
+		{% endfor %}
+	</div>
   {% endif %}
   <div class="clear">&nbsp;</div>
+  
   {% if edit %}
-  <div class="col_lbl"><label for = "status">status:</label></div>
-  <div class="col_inp"><select name="status" {% if actie.arch or readonly %}disabled="disabled"{% endif %}>
-    {% for stat in stats %}<option value="{{stat.value}}"
-    {% if stat == actie.status %}selected="selected"{% endif %}>
-    {{stat.title}}</option>{% endfor %}</select></div>
+  	<div class="col_lbl"><label for = "status">status:</label></div>
+  	<div class="col_inp">
+		<select name="status" {% if actie.arch or readonly %}disabled="disabled"{% endif %}>
+    			{% for stat in stats %}
+				<option value="{{stat.value}}"
+    					{% if stat == actie.status %}selected="selected"{% endif %}>
+    					{{stat.title}}
+				</option>
+			{% endfor %}
+		</select>
+	</div>
   {% else %}
-  <div class="col_txt">status:</div>
-  <div class="col_inp">{% for stat in stats %}{% if stat == actie.status %}{{stat.title}}{% endif %}{% endfor %}</div>
+  	<div class="col_txt">status:</div>
+  	<div class="col_inp">
+		{% for stat in stats %}
+			{% if stat == actie.status %}{{stat.title}}{% endif %}
+		{% endfor %}
+	</div>
   {% endif %}
   <div class="clear">&nbsp;</div>
+  
   {% if edit %}
-  <div class="col_lbl"><label for="user">In behandeling bij:</label></div>
-  <div class="col_inp"><select name="user" {% if actie.arch or readonly %}disabled="disabled"{% endif %}>
-    <option value="">(not assigned)</option>
-    {% for user in users %}<option value="{{user.id}}"
-    {% if nieuw %} {% if user == nieuw %}selected="selected"{% endif %}
-    {%else %}{% if user == actie.behandelaar %}selected="selected"{% endif %}
-    {%endif%}>{{user}}</option>{% endfor %}</select></div>
+  	<div class="col_lbl"><label for="user">In behandeling bij:</label></div>
+  	<div class="col_inp">
+		<select name="user" {% if actie.arch or readonly %}disabled="disabled"{% endif %}>
+    			<option value="">(not assigned)</option>
+    			{% for user in users %}
+				<option value="{{user.id}}"
+    				{% if nieuw %}
+					{% if user == nieuw %}selected="selected"{% endif %}
+    				{%else %}
+					{% if user == actie.behandelaar %}selected="selected"{% endif %}
+    				{%endif%}>{{user}}
+				</option>
+			{% endfor %}
+		</select>
+	</div>
   {% else %}
-  <div class="col_txt">In behandeling bij:</div>
-  <div class="col_inp">{% for user in users %}{% if user == actie.behandelaar %}{{user}}{% endif %}{% endfor %}</div>
+  	<div class="col_txt">In behandeling bij:</div>
+  	<div class="col_inp">
+		{% for user in users %}
+			{% if user == actie.behandelaar %}{{user}}{% endif %}
+		{% endfor %}
+	</div>
   {% endif %}
   <div class="clear">&nbsp;</div>
+
   {% if actie %}
-    <div class="col_txt">&nbsp;</div>
-    <div class="col_inp" style="border-top:1px solid #eee; padding-top: 5px">
-      <p>Laatst gewijzigd op: {{actie.gewijzigd|date:"d-m-Y H:i:s"}}
-        door: {{actie.lasteditor}}</div>{% endif %}</p>
-      {% if actie.arch %}<p>Deze actie is gearchiveerd</p>{% endif %}
-    <div class="clear">&nbsp;</div>
-  {% if edit %}
-      <div class="col_lbl"><label for = "data1">melding:</label></div>
-      <div class="col_inp"><textarea name="data1" cols="84" rows="4">{{actie.melding}}</textarea></div>
-  {% else %}
-      <div class="col_txt">melding:</div>
-      <div class="col_inp">{{actie.melding|safe|linebreaks}}</div>
+  	<div class="col_txt">&nbsp;</div>
+    	<div class="col_inp" style="border-top:1px solid #eee; padding-top: 5px">
+		{% if actie.arch %}
+			<p>Deze actie is gearchiveerd</p>
+		{% else %}
+      			<p> Laatst gewijzigd op: {{actie.gewijzigd|date:"d-m-Y H:i:s"}}
+        		door: {{actie.lasteditor}}</p>
+		{% endif %}
+	</div>
+  	<div class="clear">&nbsp;</div>
   {% endif %}
-      <div class="clear">&nbsp;</div>
+  
+  {% if edit %}
+  	<div class="col_lbl"><label for="data1">melding:</label></div>
+	<div class="col_inp">
+	      <textarea name="data1" cols="84" rows="4">{{actie.melding}}</textarea>
+	</div>
+  {% else %}
+      	<div class="col_txt">melding:</div>
+      	<div class="col_inp">{{actie.melding|safe|linebreaks}}</div>
+  {% endif %}
+  <div class="clear">&nbsp;</div>
+
   {% if not readonly %}
-    <div class="col_lbl">&nbsp;</div>
-    <div class="col_inp">
-    {% if not actie.arch %}
-      <input type="submit" value="{% if actie %}{% if edit %}Actie updaten{%else %}Gegevens wijzigen{% endif %}{%else%}Actie opvoeren{%endif%}"/>
-    <!--  <input type="reset" value="Terugzetten"/> -->
-    {% endif %}
-    {% if edit %}
-    <input type="hidden" name="archstat" id="archstat" value="{{actie.arch}}"/>
-    <input type="button" value="actie {% if actie.arch %}herleven{%else%}archiveren{%endif%}"
-      onclick="{setarch(); document.forms['mainform'].submit();}"
-      {%if not actie %}disabled="disabled"{% endif %}/>
-    {% endif %}
-    {% if events %}<a href="#commentform">Naar meest recente commentaar</a>{% endif %}
-    </div>
-    <div class="clear">&nbsp;</div>
+    	<div class="col_lbl">&nbsp;</div>
+    	<div class="col_inp">
+    		{% if not actie.arch %}
+      			<input type="submit" value=
+				{% if actie %}
+					{% if edit %}
+						"Actie updaten"
+			       		{%else %}
+						"Gegevens wijzigen"
+			       		{% endif %}
+				{%else%}
+					"Actie opvoeren"
+				{%endif%}
+			/>
+    			<!--  <input type="reset" value="Terugzetten"/> -->
+    		{% endif %}
+    		<input type="hidden" name="archstat" id="archstat" value="{{actie.arch}}"/>
+    		<input type="button"
+		       value="actie {% if actie.arch %}herleven{%else%}archiveren{%endif%}"
+		       onclick="{setarch(); document.forms['mainform'].submit();}"
+		       {%if not actie %}disabled="disabled"{% endif %}
+		/>
+    		{% if events %}
+			<a href="#commentform">Naar meest recente commentaar</a>
+		{% endif %}
+    	</div>
+    	<div class="clear">&nbsp;</div>
   {% endif %}
 </form>
-  {% if events %}
-    {%for ev, sysev in events%}
-    <div id="ev{{ev.id}}" class="col_lbl">{{ev.start|date:"d-m-Y H:i:s"}}<br/> by {{ev.starter}}
-    {% if not readonly and not actie.arch and not sysev %}<br>
-    <a href="/{{root}}/{{actie.id}}/voortg/{{ev.id}}/edit/#commentform">
-      <input type="button" value="wijzig"/></a>
-    {%endif%}</div>
-    <div class="col_inp">{{ev.text|safe|linebreaks}}</div>
-    <div class="clear">&nbsp;</div>
-    {%endfor%}
-   {% endif %}
-    {% if actie and not readonly and not actie.arch %}
-        <div><form id="commentform" action="/{{root}}/{{actie.id}}/voortg/{% if curr_ev %}{{curr_ev.id}}{% else %}nieuw{% endif %}/update/" method="post">{% csrf_token %}
-	    <div class="col_lbl"><label for = "data">
-        {%if  curr_ev%}Wijzig opmerking <br/>{{curr_ev.start|date:"d-m-Y H:i:s"}}{%else%}Nieuwe opmerking:{%endif%}</label></div>
-	    <div class="col_inp"><textarea name="data" cols="84" rows="6">{% if curr_ev %}{{curr_ev.text}}{% endif %}</textarea>
-            <input type="submit" value="{% if curr_ev %}Wijzigen{%else%}Opvoeren{%endif%}" />
-            {% if curr_ev %} <input type="reset" value="Terugzetten"/>{% endif %}
-            <a href="/{{root}}/{{actie.id}}/"><input type="button" value="afbreken" /></a>
-	    <a href="#top">Naar actiegegevens</a>
-	    <div class="clear">&nbsp;</div>
-	</form></div>
-    {% endif %}
+
+{% if events %}
+    	{%for ev, sysev in events%}
+    		<div id="ev{{ev.id}}" class="col_lbl">
+			{{ev.start|date:"d-m-Y H:i:s"}}<br/> by {{ev.starter}}
+    			{% if not readonly and not actie.arch and not sysev %}
+				<br>
+    				<a href="/{{root}}/{{actie.id}}/voortg/{{ev.id}}/edit/#commentform">
+      					<input type="button" value="wijzig"/>
+				</a>
+    			{%endif%}
+		</div>
+    		<div class="col_inp">{{ev.text|safe|linebreaks}}</div>
+    		<div class="clear">&nbsp;</div>
+    	{%endfor%}
+{% endif %}
+{% if actie and not readonly and not actie.arch %}
+        <div>
+		<form id="commentform" 
+			action="/{{root}}/{{actie.id}}/voortg/
+				{% if curr_ev %}{{curr_ev.id}}{% else %}nieuw{% endif %}
+				/update/" method="post" >{% csrf_token %}
+			<div class="col_lbl">
+				<label for = "data">
+        				{%if  curr_ev%}
+						Wijzig opmerking <br/>
+						{{curr_ev.start|date:"d-m-Y H:i:s"}}
+					{%else%}
+						Nieuwe opmerking:
+					{%endif%}
+				</label>
+			</div>
+	    		<div class="col_inp">
+				<textarea name="data" cols="84" rows="6">{% if curr_ev %}{{curr_ev.text}}{% endif %}</textarea>
+            			<input 
+					type="submit" 
+					value="{% if curr_ev %}Wijzigen{%else%}Opvoeren{%endif%}"
+				/>
+            			{% if curr_ev %}
+					<input type="reset" value="Terugzetten"/>
+				{% endif %}
+            			<a href="/{{root}}/{{actie.id}}/">
+					<input type="button" value="afbreken" />
+				</a>
+	    			<a href="#top">Naar actiegegevens</a>
+			</div>
+	    		<div class="clear">&nbsp;</div>
+		</form>
+	</div>
+{% endif %}
 {% endblock %}

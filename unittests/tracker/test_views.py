@@ -412,13 +412,32 @@ def test_show_action(monkeypatch):
 def test_edit_action(monkeypatch, capsys):
     """unittest for views.show_action
     """
+    def mock_build(*args, **kwargs):
+        print('called core.build_pagedata_for_detail with args', args, kwargs)
+        return {'x': 'y'}
+    def mock_build_2(*args, **kwargs):
+        print('called core.build_pagedata_for_detail with args', args, kwargs)
+        return {'x': 'y', 'doc': '/x/'}
     monkeypatch.setattr(views, 'render', lambda *x: x)
+    monkeypatch.setattr(views, 'HttpResponseRedirect', lambda x: x)
+    monkeypatch.setattr(views.core, 'no_authorization_message', lambda *x: 'noauth')
     myproj = my.Project.objects.create(name='first')
     myuser = auth.User.objects.create(username='me')
     request = types.SimpleNamespace(user=myuser)
-    monkeypatch.setattr(views.core, 'build_pagedata_for_detail', lambda *x, **y: (x, y))
+    monkeypatch.setattr(views.core, 'build_pagedata_for_detail', mock_build)
     assert views.edit_action(request, myproj.id, 'actie') == (
-            request, 'tracker/details.html', ((request, myproj.id, 'actie'), {'edit': True}))
+            request, 'tracker/details.html', {'x': 'y'})
+    assert capsys.readouterr().out == ("called core.build_pagedata_for_detail with args"
+                                       f" ({request}, 1, 'actie') {{'edit': True}}\n")
+    monkeypatch.setattr(views.core, 'build_pagedata_for_detail', mock_build_2)
+    monkeypatch.setattr(views.core, 'is_user', lambda *x: False)
+    assert views.edit_action(request, myproj.id, 'actie') == 'noauth'
+    assert capsys.readouterr().out == ("called core.build_pagedata_for_detail with args"
+                                       f" ({request}, 1, 'actie') {{'edit': True}}\n")
+    monkeypatch.setattr(views.core, 'is_user', lambda *x: True)
+    assert views.edit_action(request, myproj.id, 'actie') == '/x/'
+    assert capsys.readouterr().out == ("called core.build_pagedata_for_detail with args"
+                                       f" ({request}, 1, 'actie') {{'edit': True}}\n")
 
 @pytest.mark.django_db
 def test_add_action(monkeypatch):

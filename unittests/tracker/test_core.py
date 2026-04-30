@@ -775,10 +775,10 @@ def test_set_desc():
     myproject = my.Project.objects.create(name='first')
     request = types.SimpleNamespace(user=myuser, POST={})
     testee.set_desc(request, myproject.id)
-    my.Project.objects.get(pk=myproject.id).description == ""
+    assert my.Project.objects.get(pk=myproject.id).description == ""
     request = types.SimpleNamespace(user=myuser, POST={'desc': 'xxx'})
     testee.set_desc(request, myproject.id)
-    my.Project.objects.get(pk=myproject.id).description == "xxx"
+    assert my.Project.objects.get(pk=myproject.id).description == "xxx"
 
 
 @pytest.mark.django_db
@@ -1806,11 +1806,23 @@ def test_build_pagedata_for_detail(monkeypatch):
         """stub
         """
         user = types.SimpleNamespace(username='NoAuth', is_authenticated=False)
+        POST = {}
     myname = types.SimpleNamespace(username='MyName', is_authenticated=True)
     class MockRequest2:
         """stub
         """
         user = myname
+        POST = {}
+    class MockRequest3:
+        """stub
+        """
+        user = myname
+        POST = {'archstat': 'True'}
+    class MockRequest4:
+        """stub
+        """
+        user = myname
+        POST = {'archstat': 'False'}
     monkeypatch.setattr(testee, 'get_pages', mock_get)
     myuser = auth.User.objects.create(username='me')
     myproject = my.Project.objects.create(name='first')
@@ -1844,7 +1856,7 @@ def test_build_pagedata_for_detail(monkeypatch):
     assert not data['edit']
 
     data = testee.build_pagedata_for_detail(MockRequest2(), myproject.id, myactie.id, 'a message')
-    assert (data['msg'], data['message'],  data['name']) == ('', 'a message', 'first')
+    assert (data['msg'], data['message'], data['name']) == ('', 'a message', 'first')
     assert (data['page_titel'], list(data['pages'])) == ('Actie details', [mypage])
     assert (data['readonly'], data['root'], list(data['soorten'])) == (True, 1, [mysoort])
     assert (list(data['stats']), data['title']) == ([mystatus], 'Actie x - yyy:')
@@ -1881,6 +1893,38 @@ def test_build_pagedata_for_detail(monkeypatch):
     assert (list(data['stats']), data['title']) == ([mystatus], 'Nieuwe actie')
     assert (list(data['users']), data['nieuw'], data['start']) == ([myuser], myname, FIXDATE)
     assert data['edit']
+
+    assert not myactie.arch
+    data = testee.build_pagedata_for_detail(MockRequest3(), myproject.id, myactie.id)
+    assert my.Actie.objects.get(pk=myactie.id).arch
+    assert (data['actie'], data['name']) == (myactie, 'first')
+    assert data['msg'], data['message'] == ('login_message', '')
+    assert (data['page_titel'], list(data['pages'])) == ('Actie details', [mypage])
+    assert (data['readonly'], data['root'], list(data['soorten'])) == (True, 1, [mysoort])
+    assert (list(data['stats']), data['title']) == ([mystatus], 'Actie x - yyy:')
+    assert list(data['users']) == [myuser]
+    assert not data['edit']
+
+    data = testee.build_pagedata_for_detail(MockRequest4(), myproject.id, myactie.id)
+    assert not my.Actie.objects.get(pk=myactie.id).arch
+    assert (data['actie'], data['name']) == (myactie, 'first')
+    assert data['msg'], data['message'] == ('login_message', '')
+    assert (data['page_titel'], list(data['pages'])) == ('Actie details', [mypage])
+    assert (data['readonly'], data['root'], list(data['soorten'])) == (True, 1, [mysoort])
+    assert (list(data['stats']), data['title']) == ([mystatus], 'Actie x - yyy:')
+    assert list(data['users']) == [myuser]
+    assert not data['edit']
+
+    # t.b.v. full branch coverage: archstat veroorzaakt geen wijziging actie.arch
+    data = testee.build_pagedata_for_detail(MockRequest4(), myproject.id, myactie.id)
+    assert not my.Actie.objects.get(pk=myactie.id).arch
+    assert (data['actie'], data['name']) == (myactie, 'first')
+    assert data['msg'], data['message'] == ('login_message', '')
+    assert (data['page_titel'], list(data['pages'])) == ('Actie details', [mypage])
+    assert (data['readonly'], data['root'], list(data['soorten'])) == (True, 1, [mysoort])
+    assert (list(data['stats']), data['title']) == ([mystatus], 'Actie x - yyy:')
+    assert list(data['users']) == [myuser]
+    assert not data['edit']
 
     # t.b.v. full branch coverage: nog geen acties aanwezig bij project
     myproject = my.Project.objects.create(name='second')
@@ -1944,20 +1988,20 @@ def test_wijzig_detail():
     assert [x.text for x in myactie2.events.all()] == ['Actie opgevoerd',
                                                        'Meldingtekst aangepast',
                                                        'categorie gewijzigd in "new"',
-                                                       'status gewijzigd in "new"' ]
+                                                       'status gewijzigd in "new"']
 
     request = types.SimpleNamespace(POST={'nummer': 'y', 'about': 'a', 'title': 't', 'user': "1",
                                           'soort': 'P', 'status': '1', 'archstat': 'True',
                                           'data1': 'xxxx'},
                                     user=myuser)
-    assert testee.wijzig_detail(request, myproject, myactie2.id) == '/1/2/mld/Actie gearchiveerd/'
+    assert testee.wijzig_detail(request, myproject, myactie2.id) == '/1/meld/Actie y gearchiveerd/'
     myactie2 = myproject.acties.all()[1]
     assert myactie2.arch
     assert [x.text for x in myactie2.events.all()] == ['Actie opgevoerd',
                                                        'Meldingtekst aangepast',
                                                        'categorie gewijzigd in "new"',
                                                        'status gewijzigd in "new"',
-                                                       'Actie gearchiveerd']
+                                                       'Actie y gearchiveerd']
 
     myactie3 = my.Actie.objects.create(project=myproject, nummer='z', starter=myuser,
                                       lasteditor=myuser,
@@ -1967,16 +2011,18 @@ def test_wijzig_detail():
     request = types.SimpleNamespace(POST={'nummer': 'z', 'about': 'a', 'title': 't', 'user': "1",
                                           'soort': 'P', 'status': '1', 'archstat': 'True'},
                                     user=myuser)
-    assert testee.wijzig_detail(request, myproject, myactie3.id) == 'http://doctl.org/9/meld/arch/1/3/'
+    assert testee.wijzig_detail(request, myproject, myactie3.id) == (
+            'http://doctl.org/9/meld/arch/1/3/')
     myactie3_n = my.Actie.objects.get(pk=myactie3.id)
     assert myactie3_n.arch
     # assert len(list(myactie3.events.all())) == 6
-    assert list(myactie3.events.all())[-1].text == 'Actie gearchiveerd'
+    assert list(myactie3.events.all())[-1].text == 'Actie z gearchiveerd'
 
     request = types.SimpleNamespace(POST={'nummer': 'z', 'about': 'a', 'title': 't', 'user': "1",
                                           'soort': 'P', 'status': '1', 'archstat': 'False'},
                                     user=myuser)
-    assert testee.wijzig_detail(request, myproject, myactie3.id) == 'http://doctl.org/9/meld/herl/1/3/'
+    assert testee.wijzig_detail(request, myproject, myactie3.id) == (
+            'http://doctl.org/9/meld/herl/1/3/')
     myactie3_nn = my.Actie.objects.get(pk=myactie3.id)
     assert not myactie3_nn.arch
     # assert len(list(myactie3.events.all())) == 7
@@ -2012,6 +2058,17 @@ def test_wijzig_detail():
                                                        'categorie is old',
                                                        'status is old',
                                                        'Meldingtekst aangepast']
+    myactie4 = my.Actie.objects.create(project=myproject, nummer='q', starter=myuser,
+                                      lasteditor=myuser, arch=True,
+                                      soort=mysoort2, status=mystatus2, behandelaar=myuser)
+    my.Event.objects.create(actie=myactie4, starter=myuser, text='actie opgevoerd')
+    request = types.SimpleNamespace(POST={'nummer': 'q', 'user': "1",
+                                          'soort': 'P', 'status': '1', 'archstat': 'False'},
+                                    user=myuser)
+    assert myactie4.arch
+    assert testee.wijzig_detail(request, myproject, myactie4.id) == '/1/6/mld/Actie herleefd/'
+    assert not my.Actie.objects.get(pk=myactie4.id).arch
+    assert list(myactie4.events.all())[-1].text == 'Actie herleefd'
 
 @pytest.mark.django_db
 def test_copy_existing_action_from_here():
