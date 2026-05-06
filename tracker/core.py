@@ -1057,7 +1057,9 @@ def wijzig_events(request, proj='', actie="", event=""):
         ## actie.nummer = nummer
         ## event.start = dt.timezone.now()  # dt.datetime.now()
         verb = 'toegevoegd'
-        vervolg = ''
+        # vervolg = ''
+        # vervolg = f'#ev{event.id}'
+        vervolg = '#commentform'
     elif event:
         event = get_object_or_404(my.Event, pk=event)
         verb = 'bijgewerkt'
