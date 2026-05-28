@@ -35,8 +35,6 @@ def trim_at(text, leng, autoescape=None):
 
 trim_at.needs_autoescape = False
 trim_at.is_safe = True
-
-
 # def initial_letter_filter(text, autoescape=None):
 #     first, other = text[0], text[1:]
 #     if autoescape:

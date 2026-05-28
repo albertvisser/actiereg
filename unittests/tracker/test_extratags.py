@@ -5,7 +5,6 @@ import pytest
 import django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'actiereg.settings')
 django.setup()
-import pytest
 from tracker.templatetags import extratags as testee
 
 

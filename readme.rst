@@ -25,7 +25,8 @@ Use manage.py or the provided asgi or wsgi script to start the django app, and
 configure your web server to communicate with it.
 
 WARNING: the texts in the details page are currently marked as safe, to provide an easy way
-to show code fragments and unformatted code. This implies that the application is intended
+to show code fragments and unformatted code. 
+This implies that making changes to the application data is intended
 for trusted users only (i.e. myself in my own environment).
 
 Requirements
