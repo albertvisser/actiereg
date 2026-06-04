@@ -29,6 +29,7 @@ class Project(models.Model):
     description = models.CharField(max_length=80)
 
     def __str__(self):
+        "A project is represented by its name"
         return self.name
 
 
@@ -41,6 +42,7 @@ class Status(models.Model):
     order = models.PositiveSmallIntegerField()
 
     def __str__(self):
+        "A status is represented by its descriptive name"
         return self.title
 
 
@@ -53,6 +55,7 @@ class Soort(models.Model):
     order = models.PositiveSmallIntegerField()
 
     def __str__(self):
+        "Een soort is herkenbaar aan zijn korte naam"
         return self.title
 
 
@@ -64,6 +67,7 @@ class Page(models.Model):
     order = models.PositiveSmallIntegerField(unique=True)
 
     def __str__(self):
+        "A page is represented by its title"
         return self.title
 
 
@@ -87,6 +91,7 @@ class Actie(models.Model):
     vervolg = models.TextField(blank=True)
 
     def __str__(self):
+        "An Action is represented by its number"
         return self.nummer  # ": ".join((self.about, self.title))
 
 
@@ -107,6 +112,7 @@ class SortOrder(models.Model):
     richting = models.CharField(max_length=4, choices=ORIENTS)
 
     def __str__(self):
+        "Een sorteervolgorde wordt weergegeven als <volgnummer> <veldnaam> <op/aflopend>"
         return " ".join((str(self.volgnr), self.veldnm, self.richting))
 
 
@@ -120,6 +126,7 @@ class Selection(models.Model):
     value = models.CharField(max_length=40)
 
     def __str__(self):
+        "een selectie wordt weergegeven als <veldnaam> <vergelijker> <waarde>"
         return f"{self.veldnm} {self.extra} {self.operator} {self.value}"
 
 
@@ -130,4 +137,5 @@ class Worker(models.Model):
     assigned = models.ForeignKey(User, on_delete=models.CASCADE)
 
     def __str__(self):
+        "usernaam en project identificeren een toegekende gebruiker"
         return f'{self.assigned.username} for {self.project.name}'
