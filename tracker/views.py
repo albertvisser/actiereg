@@ -1,7 +1,7 @@
 """views for Django project pages
 """
 from django.shortcuts import render
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import HttpResponseRedirect
 from django.contrib.auth import logout
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
@@ -83,10 +83,6 @@ def show_project(request, proj, msg=''):
     - de soort user wordt meegegeven aan het scherm om indien nodig diverse knoppen
         te verbergen
     """
-    if not msg:
-        msg = core.get_appropriate_login_message(request.user, proj)
-        if request.user.is_authenticated:
-            msg += "Klik op een actienummer om de details te bekijken."
     page_data = core.build_pagedata_for_project(request, proj, msg)
     return render(request, 'tracker/index.html', page_data)
 
@@ -171,11 +167,7 @@ def setstats(request, proj):
 @login_required
 def show_selection(request, proj, msg=''):
     "presenteer selectie mogelijkheden"
-    if not msg:
-        msg = core.logged_in_message(request, proj)
-    page_data, msg = core.build_pagedata_for_selection(request, proj, msg)
-    if msg:
-        return HttpResponse(msg)
+    page_data = core.build_pagedata_for_selection(request, proj, msg)
     return render(request, 'tracker/select.html', page_data)
 
 
@@ -189,12 +181,7 @@ def setselection(request, proj):
 @login_required
 def show_ordering(request, proj):
     "presenteer sorterings mogelijkheden"
-    # if request.user.is_authenticated:  # niet nodig met die decorator?
-    msg = core.logged_in_message(request, proj)
-    # else:
-    #     core.not_logged_in_message('de sortering voor dit scherm te mogen wijzigen', proj)
-    return render(request, 'tracker/order.html',
-                  core.build_pagedata_for_ordering(request, proj, msg))
+    return render(request, 'tracker/order.html', core.build_pagedata_for_ordering(request, proj))
 
 
 @login_required
@@ -206,16 +193,12 @@ def setordering(request, proj):
 
 def show_search(request, proj, msg=''):
     "zoek naar..."
-    msg = core.logged_in_message(request, proj)
-    return render(request, 'tracker/search.html',
-                  core.build_pagedata_for_search(request, proj, msg))
+    return render(request, 'tracker/search.html', core.build_pagedata_for_search(request, proj))
 
 
 def show_results(request, proj, msg=''):
     "Resultatenscherm"
-    msg = core.logged_in_message(request, proj)
-    return render(request, 'tracker/search.html',
-                  core.build_pagedata_for_results(request, proj, msg))
+    return render(request, 'tracker/search.html', core.build_pagedata_for_results(request, proj))
 
 
 @login_required

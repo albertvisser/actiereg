@@ -131,22 +131,28 @@ def test_add_from_doctool(monkeypatch, capsys):
     assert capsys.readouterr().out == (
             f"called core.add_project with args ('new', 'project', [{views.default_admin!r}])\n")
 
-def test_show_project(monkeypatch):
+def test_show_project(monkeypatch, capsys):
     """unittest for views.show_project
     """
+    def mock_build(*args):
+        print('called core.build_pagedata_for_project with args', args)
+        return 'page data'
     monkeypatch.setattr(views.core, 'get_appropriate_login_message', lambda *x: 'login_message')
-    monkeypatch.setattr(views.core, 'build_pagedata_for_project', lambda *x: x)
+    monkeypatch.setattr(views.core, 'build_pagedata_for_project', mock_build)
     monkeypatch.setattr(views, 'render', lambda *x: x)
     request = types.SimpleNamespace(user=auth.AnonymousUser())
-    assert views.show_project(request, 'proj') == (request, 'tracker/index.html',
-                                                   (request, 'proj', 'login_message'))
-    assert views.show_project(request, 'proj', 'ahum') == (request, 'tracker/index.html',
-                                                   (request, 'proj', 'ahum'))
-    myuser = auth.User.objects.create(username='me')
-    request = types.SimpleNamespace(user=myuser)
-    assert views.show_project(request, 'proj') == (request, 'tracker/index.html',
-                                                   (request, 'proj', 'login_messageKlik op een'
-                                                    ' actienummer om de details te bekijken.'))
+    assert views.show_project(request, 'proj') == (request, 'tracker/index.html', 'page data')
+    assert capsys.readouterr().out == (
+            f"called core.build_pagedata_for_project with args ({request}, 'proj', '')\n")
+    assert views.show_project(request, 'proj', 'ahum') == (request, 'tracker/index.html', 'page data')
+    assert capsys.readouterr().out == (
+            f"called core.build_pagedata_for_project with args ({request}, 'proj', 'ahum')\n")
+    # myuser = auth.User.objects.create(username='me')
+    # request = types.SimpleNamespace(user=myuser)
+    # assert views.show_project(request, 'proj') == (request, 'tracker/index.html',
+    #                                                (request, 'proj', 'login_messageKlik op een'
+    #                                                 ' actienummer om de details te bekijken.'))
+    # assert capsys.readouterr().out == ""
 
 @pytest.mark.django_db
 def test_show_settings(monkeypatch):
@@ -285,23 +291,29 @@ def test_setstats(monkeypatch, capsys):
     assert capsys.readouterr().out == "called core.set_stats\n"
 
 @pytest.mark.django_db
-def test_show_selection(monkeypatch):
+def test_show_selection(monkeypatch, capsys):
     """unittest for views.show_selection
     """
-    monkeypatch.setattr(views.core, 'logged_in_message', lambda *x: 'logged in')
+    def mock_build(*args):
+        print('called core.build_pagedata_for_selection with args', args)
+        return 'pagedata'
+    # monkeypatch.setattr(views.core, 'logged_in_message', lambda *x: 'logged in')
     # monkeypatch.setattr(views.core, 'not_logged_in_message', lambda *x: x)
-    monkeypatch.setattr(views, 'HttpResponse', lambda x: x)
+    # monkeypatch.setattr(views, 'HttpResponse', lambda x: x)
     monkeypatch.setattr(views, 'render', lambda *x: x)
     myproj = my.Project.objects.create(name='first')
     myuser = auth.User.objects.create(username='me')
     request = types.SimpleNamespace(user=myuser)
-    monkeypatch.setattr(views.core, 'build_pagedata_for_selection', lambda *x: (x, 'oh-oh'))
-    assert views.show_selection(request, myproj.id) == 'oh-oh'
-    monkeypatch.setattr(views.core, 'build_pagedata_for_selection', lambda *x: (x, ''))
-    assert views.show_selection(request, myproj.id) == (
-            request, 'tracker/select.html', (request, myproj.id, 'logged in'))
-    assert views.show_selection(request, myproj.id, 'xxx') == (
-            request, 'tracker/select.html', (request, myproj.id, 'xxx'))
+    # monkeypatch.setattr(views.core, 'build_pagedata_for_selection', lambda *x: (x, 'oh-oh'))
+    # assert views.show_selection(request, myproj.id) == 'oh-oh'
+    monkeypatch.setattr(views.core, 'build_pagedata_for_selection', mock_build)
+    assert views.show_selection(request, myproj.id) == (request, 'tracker/select.html', 'pagedata')
+    assert capsys.readouterr().out == (
+            f"called core.build_pagedata_for_selection with args ({request}, 1, '')\n")
+    assert views.show_selection(request, myproj.id, 'xxx') == (request, 'tracker/select.html',
+                                                               'pagedata')
+    assert capsys.readouterr().out == (
+            f"called core.build_pagedata_for_selection with args ({request}, 1, 'xxx')\n")
 
 @pytest.mark.django_db
 def test_setselection(monkeypatch, capsys):
@@ -330,17 +342,21 @@ def test_setselection(monkeypatch, capsys):
 
 
 @pytest.mark.django_db
-def test_show_ordering(monkeypatch):
+def test_show_ordering(monkeypatch, capsys):
     """unittest for views.show_ordering
     """
+    def mock_build(*args):
+        print('called core.build_pagedata_for_ordering with args', args)
+        return 'pagedata'
     monkeypatch.setattr(views.core, 'logged_in_message', lambda *x: 'logged in')
     monkeypatch.setattr(views, 'render', lambda *x: x)
     myproj = my.Project.objects.create(name='first')
     myuser = auth.User.objects.create(username='me')
     request = types.SimpleNamespace(user=myuser)
-    monkeypatch.setattr(views.core, 'build_pagedata_for_ordering', lambda *x: x)
-    assert views.show_ordering(request, myproj.id) == (
-            request, 'tracker/order.html', (request, myproj.id, 'logged in'))
+    monkeypatch.setattr(views.core, 'build_pagedata_for_ordering', mock_build)
+    assert views.show_ordering(request, myproj.id) == (request, 'tracker/order.html', 'pagedata')
+    assert capsys.readouterr().out == (
+            f"called core.build_pagedata_for_ordering with args ({request}, 1)\n")
 
 @pytest.mark.django_db
 def test_setordering(monkeypatch, capsys):
@@ -359,30 +375,38 @@ def test_setordering(monkeypatch, capsys):
     assert capsys.readouterr().out == f"called core.setordering with args ({request}, {myproj.id})\n"
 
 @pytest.mark.django_db
-def test_show_search(monkeypatch):
+def test_show_search(monkeypatch, capsys):
     """unittest for views.show_search
     """
+    def mock_build(*args):
+        print('called core.build_pagedata_for_selection with args', args)
+        return 'pagedata'
     monkeypatch.setattr(views.core, 'logged_in_message', lambda *x: 'logged in')
     monkeypatch.setattr(views, 'render', lambda *x: x)
     myproj = my.Project.objects.create(name='first')
     myuser = auth.User.objects.create(username='me')
     request = types.SimpleNamespace(user=myuser)
-    monkeypatch.setattr(views.core, 'build_pagedata_for_search', lambda *x: x)
-    assert views.show_search(request, myproj.id) == (
-            request, 'tracker/search.html', (request, myproj.id, 'logged in'))
+    monkeypatch.setattr(views.core, 'build_pagedata_for_search', mock_build)
+    assert views.show_search(request, myproj.id) == (request, 'tracker/search.html', 'pagedata')
+    assert capsys.readouterr().out == (
+            f"called core.build_pagedata_for_selection with args ({request}, 1)\n")
 
 @pytest.mark.django_db
-def test_show_results(monkeypatch):
+def test_show_results(monkeypatch, capsys):
     """unittest for views.show_results
     """
+    def mock_build(*args):
+        print('called core.build_pagedata_for_selection with args', args)
+        return 'pagedata'
     monkeypatch.setattr(views.core, 'logged_in_message', lambda *x: 'logged in')
     monkeypatch.setattr(views, 'render', lambda *x: x)
     myproj = my.Project.objects.create(name='first')
     myuser = auth.User.objects.create(username='me')
     request = types.SimpleNamespace(user=myuser)
-    monkeypatch.setattr(views.core, 'build_pagedata_for_results', lambda *x: x)
-    assert views.show_results(request, myproj.id) == (
-            request, 'tracker/search.html', (request, myproj.id, 'logged in'))
+    monkeypatch.setattr(views.core, 'build_pagedata_for_results', mock_build)
+    assert views.show_results(request, myproj.id) == (request, 'tracker/search.html', 'pagedata')
+    assert capsys.readouterr().out == (
+            f"called core.build_pagedata_for_selection with args ({request}, 1)\n")
 
 @pytest.mark.django_db
 def test_new_action(monkeypatch):

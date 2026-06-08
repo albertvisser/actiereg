@@ -18,6 +18,7 @@ my = testee.my
 
 FIXDATE = datetime.datetime(2020, 1, 1, tzinfo=datetime.timezone.utc)
 
+
 def test_get_appropriate_login_message():
     """unittest for core.get_appropriate_login_message
     """
@@ -51,11 +52,9 @@ def test_logged_in_message():
         """
         user = types.SimpleNamespace(username='MyName')
     assert testee.logged_in_message(MockRequest()) == ('U bent ingelogd als <i>MyName</i>. '
-            'Klik <a href="/logout/?next=/select/">hier</a> om uit te loggen.'
-            'Klik <a href="/">hier</a> om door te gaan')
+            'Klik <a href="/logout/?next=/select/">hier</a> om uit te loggen.')
     assert testee.logged_in_message(MockRequest(), 1) == ('U bent ingelogd als <i>MyName</i>. '
-            'Klik <a href="/logout/?next=/1/select/">hier</a> om uit te loggen.'
-            'Klik <a href="/1/">hier</a> om door te gaan')
+            'Klik <a href="/logout/?next=/1/select/">hier</a> om uit te loggen.')
 
 
 def test_not_logged_in_message(monkeypatch):
@@ -634,6 +633,8 @@ def test_build_pagedata_for_project(monkeypatch):
     """unittest for core.build_pagedata_for_project
     """
     monkeypatch.setattr(testee, 'get_pages', mock_get)
+    monkeypatch.setattr(testee, 'get_appropriate_login_message', lambda *x: 'login_message')
+    monkeypatch.setattr(testee, 'is_admin', lambda *x: False)
     myuser = auth.User.objects.create(username='me')
     myproject = my.Project.objects.create(name='first')
     mypage = my.Page.objects.create(link='x/', order=1, title='z')
@@ -642,7 +643,8 @@ def test_build_pagedata_for_project(monkeypatch):
     monkeypatch.setattr(testee, 'determine_readonly', lambda *x: True)
     request = types.SimpleNamespace(user=myuser)
     data = testee.build_pagedata_for_project(request, myproject.id, 'message')
-    assert (data['admin'], data['msg'], data['name']) == (False, 'message', 'first')
+    assert (data['admin'], data['message'], data['name']) == (False, 'message', 'first')
+    assert data['msg'] == 'login_messageKlik op een actienummer om de details te bekijken.'
     assert (data['page_titel'], list(data['pages']), data['readonly']) == ('lijst', [mypage], True)
     assert (data['root'], data['title']) == (1, 'Actielijst')
     assert data['geen_items'] == ('<p>Geen acties voor de huidige selectie en '
@@ -652,7 +654,8 @@ def test_build_pagedata_for_project(monkeypatch):
 
     my.Worker.objects.create(project=myproject, assigned=myuser)
     data = testee.build_pagedata_for_project(request, myproject.id, 'message')
-    assert (data['admin'], data['msg'], data['name']) == (False, 'message', 'first')
+    assert (data['admin'], data['message'], data['name']) == (False, 'message', 'first')
+    assert data['msg'] == 'login_messageKlik op een actienummer om de details te bekijken.'
     assert (data['page_titel'], list(data['pages']), data['readonly']) == ('lijst', [mypage], True)
     assert (data['root'], data['title']) == (1, 'Actielijst')
     assert data['geen_items'] == ('<p>Geen acties voor de huidige selectie en user</p>')
@@ -661,8 +664,18 @@ def test_build_pagedata_for_project(monkeypatch):
                                       lasteditor=myuser,
                                       soort=mysoort, status=mystatus, behandelaar=myuser)
     monkeypatch.setattr(testee, 'get_acties', lambda *x: [myactie])
+    request = types.SimpleNamespace(user=types.SimpleNamespace(username='MyName', id=1,
+                                                               is_authenticated=False))
     data = testee.build_pagedata_for_project(request, myproject.id, 'message')
-    assert (data['admin'], data['msg'], data['name']) == (False, 'message', 'first')
+    assert (data['admin'], data['message'], data['name']) == (False, 'message', 'first')
+    assert data['msg'] == 'login_message'
+    assert (data['page_titel'], list(data['pages']), data['readonly']) == ('lijst', [mypage], True)
+    assert (data['root'], data['title'], list(data['acties'])) == (1, 'Actielijst', [myactie])
+    request = types.SimpleNamespace(user=types.SimpleNamespace(username='MyName', id=1,
+                                                               is_authenticated=True))
+    data = testee.build_pagedata_for_project(request, myproject.id, 'message')
+    assert (data['admin'], data['message'], data['name']) == (False, 'message', 'first')
+    assert data['msg'] == 'login_messageKlik op een actienummer om de details te bekijken.'
     assert (data['page_titel'], list(data['pages']), data['readonly']) == ('lijst', [mypage], True)
     assert (data['root'], data['title'], list(data['acties'])) == (1, 'Actielijst', [myactie])
 
@@ -967,8 +980,13 @@ def test_build_pagedata_for_selection(monkeypatch):
     my.Worker.objects.create(project=myproject, assigned=myuser)
     mysel = my.Selection.objects.create(user=myuser.id, project=myproject, veldnm='xxx',
                                         operator='', extra='', value='')
-    assert testee.build_pagedata_for_selection(request, myproject.id, 'message') == (
-            {}, 'Unknown search argument: xxx')
+    data = testee.build_pagedata_for_selection(request, myproject.id, 'message')
+    assert (data['name'], list(data['pages'])) == ('first', [mypage])
+    assert data['message'] == 'message; unknown search argument: xxx'
+    assert data['msg'] == ('U bent ingelogd als <i>me</i>.'
+                           ' Klik <a href="/logout/?next=/1/select/">hier</a> om uit te loggen.')
+    assert (data['root'], list(data['soorten']), list(data['stats'])) == (1, [mysoort], [mystatus])
+    assert (data['title'], list(data['users'])) == ('Actielijst - selectie', [myuser])
     mysel.delete()
     my.Selection.objects.create(user=myuser.id, project=myproject, veldnm='soort',
                                 operator='', extra='', value='P')
@@ -990,8 +1008,10 @@ def test_build_pagedata_for_selection(monkeypatch):
                                 operator='', extra='OR', value='aaa')
     my.Selection.objects.create(user=myuser.id, project=myproject, veldnm='title',
                                 operator='', extra='', value='bbb')
-    data, msg = testee.build_pagedata_for_selection(request, myproject.id, 'message')
-    assert (data['msg'], data['name'], list(data['pages'])) == ('message', 'first', [mypage])
+    data = testee.build_pagedata_for_selection(request, myproject.id, 'message')
+    assert (data['message'], data['name'], list(data['pages'])) == ('message', 'first', [mypage])
+    assert data['msg'] == ('U bent ingelogd als <i>me</i>.'
+                           ' Klik <a href="/logout/?next=/1/select/">hier</a> om uit te loggen.')
     assert (data['root'], list(data['soorten']), list(data['stats'])) == (1, [mysoort], [mystatus])
     assert (data['title'], list(data['users'])) == ('Actielijst - selectie', [myuser])
     assert data['selected'] == {'about': 'yyy', 'arch': 1, 'enof1': 'en', 'enof2': 'or',
@@ -1001,25 +1021,44 @@ def test_build_pagedata_for_selection(monkeypatch):
     my.Selection.objects.all().delete()
     my.Selection.objects.create(user=myuser.id, project=myproject, veldnm='arch',
                                 operator='', extra='', value='True')
-    data, msg = testee.build_pagedata_for_selection(request, myproject.id, 'message')
-    assert (data['msg'], data['name'], list(data['pages'])) == ('message', 'first', [mypage])
+    data = testee.build_pagedata_for_selection(request, myproject.id, 'message')
+    assert (data['message'], data['name'], list(data['pages'])) == ('message', 'first', [mypage])
+    assert data['msg'] == ('U bent ingelogd als <i>me</i>.'
+                           ' Klik <a href="/logout/?next=/1/select/">hier</a> om uit te loggen.')
     assert (data['root'], list(data['soorten']), list(data['stats'])) == (1, [mysoort], [mystatus])
     assert (data['title'], list(data['users'])) == ('Actielijst - selectie', [myuser])
     assert data['selected'] == {'arch': 2, 'enof1': 'of', 'enof2': 'of', 'gewijzigd': [],
                                 'nummer': [], 'soort': [], 'status': [], 'user': []}
     my.Selection.objects.create(user=myuser.id, project=myproject, veldnm='arch',
                                 operator='', extra='', value='False')
-    data, msg = testee.build_pagedata_for_selection(request, myproject.id, 'message')
-    assert (data['msg'], data['name'], list(data['pages'])) == ('message', 'first', [mypage])
+    data = testee.build_pagedata_for_selection(request, myproject.id, 'message')
+    assert (data['message'], data['name'], list(data['pages'])) == ('message', 'first', [mypage])
+    assert data['msg'] == ('U bent ingelogd als <i>me</i>.'
+                           ' Klik <a href="/logout/?next=/1/select/">hier</a> om uit te loggen.')
     assert (data['root'], list(data['soorten']), list(data['stats'])) == (1, [mysoort], [mystatus])
     assert (data['title'], list(data['users'])) == ('Actielijst - selectie', [myuser])
     assert data['selected'] == {'arch': 3, 'enof1': 'of', 'enof2': 'of', 'gewijzigd': [],
                                 'nummer': [], 'soort': [], 'status': [], 'user': []}
     my.Selection.objects.create(user=myuser.id, project=myproject, veldnm='arch',
                                 operator='', extra='', value=1)
-    with pytest.raises(ValueError) as exc:
-        testee.build_pagedata_for_selection(request, myproject.id, 'message')
-    assert str(exc.value) == 'Unknown value for arch: 1'
+    data = testee.build_pagedata_for_selection(request, myproject.id, 'message')
+    assert (data['name'], list(data['pages'])) == ('first', [mypage])
+    assert data['message'] == 'message; unknown value for arch: 1'
+    assert data['msg'] == ('U bent ingelogd als <i>me</i>.'
+                           ' Klik <a href="/logout/?next=/1/select/">hier</a> om uit te loggen.')
+    assert (data['root'], list(data['soorten']), list(data['stats'])) == (1, [mysoort], [mystatus])
+    assert (data['title'], list(data['users'])) == ('Actielijst - selectie', [myuser])
+    assert data['selected'] == {'arch': 3, 'enof1': 'of', 'enof2': 'of', 'gewijzigd': [],
+                                'nummer': [], 'soort': [], 'status': [], 'user': []}
+    data = testee.build_pagedata_for_selection(request, myproject.id, '')
+    assert (data['name'], list(data['pages'])) == ('first', [mypage])
+    assert data['message'] == 'Unknown value for arch: 1'
+    assert data['msg'] == ('U bent ingelogd als <i>me</i>.'
+                           ' Klik <a href="/logout/?next=/1/select/">hier</a> om uit te loggen.')
+    assert (data['root'], list(data['soorten']), list(data['stats'])) == (1, [mysoort], [mystatus])
+    assert (data['title'], list(data['users'])) == ('Actielijst - selectie', [myuser])
+    assert data['selected'] == {'arch': 3, 'enof1': 'of', 'enof2': 'of', 'gewijzigd': [],
+                                'nummer': [], 'soort': [], 'status': [], 'user': []}
 
 
 @pytest.mark.django_db
@@ -1523,9 +1562,17 @@ def test_set_selection_for_arch():
 
 
 @pytest.mark.django_db
-def test_build_pagedata_for_ordering():
+def test_build_pagedata_for_ordering(monkeypatch):
     """unittest for core.build_pagedata_for_ordering
     """
+    def mock_logged_in(*args):
+        print('called core.logged_in_message with args', args)
+        return 'logged in'
+    def mock_not_logged_in(*args):
+        # de raise is om te realiseren dat de te testen routine voortijdig wordt afgebroken
+        raise ValueError(f'called core.not_logged_in_message with args {args}')
+    monkeypatch.setattr(testee, 'logged_in_message', mock_logged_in)
+    monkeypatch.setattr(testee, 'not_logged_in_message', mock_not_logged_in)
     myuser = auth.User.objects.create(username='me')
     request = types.SimpleNamespace(user=myuser)
     myproject = my.Project.objects.create(name='first')
@@ -1534,8 +1581,26 @@ def test_build_pagedata_for_ordering():
                                            veldnm='nummer', richting='desc')
     myorder2 = my.SortOrder.objects.create(user=myuser.id, project=myproject, volgnr=1,
                                            veldnm='gewijzigd')
-    data = testee.build_pagedata_for_ordering(request, myproject.id, 'message')
+    request = types.SimpleNamespace(user=types.SimpleNamespace(username='MyName', id=1,
+                                                               is_authenticated=False))
+    with pytest.raises(ValueError) as exc:
+        testee.build_pagedata_for_ordering(request, myproject.id)
+    assert str(exc.value) == ("called core.not_logged_in_message with args"
+                              " ('de sortering voor dit scherm te mogen wijzigen', 1)")
+    # assert (data["title"], data["name"]) == ("Actielijst: volgorde", 'first')
+    # # assert data['msg'] == ('U bent ingelogd als <i>me</i>.'
+    # #                        ' Klik <a href="/logout/?next=/1/select/">hier</a> om uit te loggen.')
+    # assert data["root"], list(data["pages"]) == (myproject.id, [mypage])
+    # assert data["fields"] == [("nummer", "nummer"), ("gewijzigd", "laatst gewijzigd"),
+    #                           ("soort", "soort"), ("status", "status"),
+    #                           ("behandelaar", "behandelaar"), ("title", "omschrijving")]
+    # assert data["sorters"] == [myorder1, myorder2, None, None, None, None]
+    request = types.SimpleNamespace(user=types.SimpleNamespace(username='MyName', id=1,
+                                                               is_authenticated=True))
+    data = testee.build_pagedata_for_ordering(request, myproject.id)
     assert (data["title"], data["name"]) == ("Actielijst: volgorde", 'first')
+    # assert data['msg'] == ('U bent ingelogd als <i>me</i>.'
+    #                        ' Klik <a href="/logout/?next=/1/select/">hier</a> om uit te loggen.')
     assert data["root"], list(data["pages"]) == (myproject.id, [mypage])
     assert data["fields"] == [("nummer", "nummer"), ("gewijzigd", "laatst gewijzigd"),
                               ("soort", "soort"), ("status", "status"),
@@ -1563,14 +1628,18 @@ def test_setordering():
 def test_build_pagedata_for_search(monkeypatch):
     """unittest for core.build_pagedata_for_search
     """
+    def mock_message(*args):
+        print('called core.logged_in_message with args', args)
+        return 'logged_in message'
     monkeypatch.setattr(testee, 'get_pages', mock_get)
+    monkeypatch.setattr(testee, 'logged_in_message', mock_message)
     myproject = my.Project.objects.create(name='first')
     mypage = my.Page.objects.create(link='x/', order=1, title='z')
-    result = testee.build_pagedata_for_search('request', myproject.id, 'xxx')
+    result = testee.build_pagedata_for_search('request', myproject.id)
     assert result['title'] == 'Zoek op tekst'
     assert result['name'] == myproject.name
     assert result['root'] == myproject.id
-    assert result['msg'] == 'xxx'
+    assert result['msg'] == 'logged_in message'
     assert result['search'] == ''
     assert list(result['pages']) == [mypage]
     assert result['results'] == []
@@ -1579,35 +1648,57 @@ def test_build_pagedata_for_search(monkeypatch):
 def test_build_pagedata_for_results(monkeypatch):
     """unittest for core.build_pagedata_for_results
     """
+    def mock_message(*args):
+        print('called core.logged_in_message with args', args)
+        return 'logged_in message'
     def mock_search(*args):
         print('called search_for with args', args)
-        return 'search results'
+        return []
+    def mock_search_2(*args):
+        print('called search_for with args', args)
+        return ['search results']
     monkeypatch.setattr(testee, 'get_pages', mock_get)
+    monkeypatch.setattr(testee, 'logged_in_message', mock_message)
     monkeypatch.setattr(testee, 'search_for', mock_search)
     myproject = my.Project.objects.create(name='first')
     mypage = my.Page.objects.create(link='x/', order=1, title='z')
     postdict = QueryDict(mutable=True)
     request = types.SimpleNamespace(POST=postdict)
-    result = testee.build_pagedata_for_results(request, myproject.id, 'xxx')
+    result = testee.build_pagedata_for_results(request, myproject.id)
     assert result['title'] == 'Zoekresultaten'
     assert result['name'] == myproject.name
     assert result['root'] == myproject.id
-    assert result['msg'] == 'xxx'
+    assert result['msg'] == 'logged_in message'
     assert result['search'] == ''
     assert list(result['pages']) == [mypage]
-    assert result['results'] == 'search results'
+    assert result['results'] == []
+    assert result['message'] == 'Niks gevonden'
+
+    monkeypatch.setattr(testee, 'search_for', mock_search_2)
+    postdict = QueryDict(mutable=True)
+    request = types.SimpleNamespace(POST=postdict)
+    result = testee.build_pagedata_for_results(request, myproject.id)
+    assert result['title'] == 'Zoekresultaten'
+    assert result['name'] == myproject.name
+    assert result['root'] == myproject.id
+    assert result['msg'] == 'logged_in message'
+    assert result['search'] == ''
+    assert list(result['pages']) == [mypage]
+    assert result['results'] == ['search results']
+    assert result['message'] == ''
 
     postdict = QueryDict(mutable=True)
     postdict.setdefault('search', 'yyy')
     request = types.SimpleNamespace(POST=postdict)
-    result = testee.build_pagedata_for_results(request, myproject.id, 'xxx')
+    result = testee.build_pagedata_for_results(request, myproject.id)
     assert result['title'] == 'Zoekresultaten'
     assert result['name'] == myproject.name
     assert result['root'] == myproject.id
-    assert result['msg'] == 'xxx'
+    assert result['msg'] == 'logged_in message'
     assert result['search'] == 'yyy'
     assert list(result['pages']) == [mypage]
-    assert result['results'] == 'search results'
+    assert result['results'] == ['search results']
+    assert result['message'] == ''
 
 @pytest.mark.django_db
 def test_search_for():

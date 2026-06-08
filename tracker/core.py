@@ -3,7 +3,7 @@
 # import datetime as dt
 import contextlib
 import django.utils as dt
-from django.http import HttpResponse  # , HttpResponseRedirect
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.core.exceptions import ObjectDoesNotExist
 from django.http import Http404
@@ -107,15 +107,19 @@ def add_users(project, user_list):
         my.Worker.objects.create(project=project, assigned=user)
 
 
-def build_pagedata_for_project(request, proj, msg):
+def build_pagedata_for_project(request, proj, message):
     "bouw het scherm op dat acties bij het project toont"
     project = my.Project.objects.get(pk=proj)
+    msg = get_appropriate_login_message(request.user, proj)
+    if request.user.is_authenticated:
+        msg += "Klik op een actienummer om de details te bekijken."
     page_data = {"title": "Actielijst",
                  "page_titel": "lijst",
                  "name": project.name,
                  "root": proj,
                  "pages": get_pages(),  # my.Page.objects.all().order_by('order'),
                  "admin": is_admin(project, request.user),
+                 "message": message,
                  "msg": msg,
                  'readonly': determine_readonly(project, request.user)}
     data = get_acties(project, request.user.id)
@@ -312,10 +316,12 @@ def build_pagedata_for_selection(request, proj, msg):
     """bouw het scherm op aan de hand van de huidige selectiegegevens
     bij de gebruiker
     """
+    message, msg = msg, logged_in_message(request, proj)
     project = my.Project.objects.get(pk=proj)
     page_data = {"title": "Actielijst - selectie",
                  "name": project.name,
                  "root": project.id,
+                 "message": message,
                  "msg": msg,
                  "pages": get_pages(),  # my.Page.objects.all().order_by('order'),
                  "soorten": project.soort.all(),
@@ -341,7 +347,8 @@ def build_pagedata_for_selection(request, proj, msg):
             elif sel.value == 'True':
                 page_data["selected"][sel.veldnm] += 2
             else:
-                raise ValueError(f'Unknown value for arch: {sel.value}')
+                between = '; u' if page_data['message'] else 'U'
+                page_data['message'] += f'{between}nknown value for arch: {sel.value}'
         elif sel.veldnm == "nummer":
             page_data["selected"]["nummer"] = True
             if sel.extra.strip():
@@ -353,8 +360,9 @@ def build_pagedata_for_selection(request, proj, msg):
                 page_data["selected"]["enof2"] = sel.extra.lower()
             page_data["selected"][sel.veldnm] = sel.value
         else:
-            return {}, "Unknown search argument: " + sel.veldnm
-    return page_data, ''
+            between = '; u' if page_data['message'] else 'U'
+            page_data['message'] += f"{between}nknown search argument: {sel.veldnm}"
+    return page_data
 
 
 def setselection(request, proj):
@@ -379,9 +387,9 @@ def setselection(request, proj):
     return msg, back
 
 
-def build_pagedata_for_search(request, proj, msg):
+def build_pagedata_for_search(request, proj):
     "bouw het scherm op voor uitvoeren van een zoekactie"
-    # msg = 'under construction'
+    msg = logged_in_message(request, proj)
     project = my.Project.objects.get(pk=proj)
     page_data = {"title": "Zoek op tekst",
                  "name": project.name,
@@ -393,19 +401,23 @@ def build_pagedata_for_search(request, proj, msg):
     return page_data
 
 
-def build_pagedata_for_results(request, proj, msg):
+def build_pagedata_for_results(request, proj):
     "bouw het scherm op om het resultaat te tonen"
     data = request.POST
     search = data.get('search', '')
+    msg = logged_in_message(request, proj)
     project = my.Project.objects.get(pk=proj)
     results = search_for(project, search)
     page_data = {"title": "Zoekresultaten",
                  "name": project.name,
                  "root": project.id,
                  "msg": msg,
+                 "message": '',
                  "pages": get_pages(),  # my.Page.objects.all().order_by('order'),
                  'search': search,
                  'results': results}
+    if not results:
+        page_data['message'] = 'Niks gevonden'
     return page_data
 
 
@@ -621,10 +633,14 @@ def set_selection_for_arch(project, user, data):
     return modified
 
 
-def build_pagedata_for_ordering(request, proj, msg):
+def build_pagedata_for_ordering(request, proj):  # , msg):
     """bouw het scherm op aan de hand van de huidige sorteringsgegevens
     bij de gebruiker
     """
+    if request.user.is_authenticated:
+        msg = logged_in_message(request, proj)
+    else:  # dit geeft een HttpresponseRedirect
+        not_logged_in_message('de sortering voor dit scherm te mogen wijzigen', proj)
     project = my.Project.objects.get(pk=proj)
     page_data = {"title": "Actielijst: volgorde",
                  "name": project.name,
@@ -1104,8 +1120,8 @@ def logged_in_message(request, root=''):
     if root:
         root = f'{root}/'
     return (f'U bent ingelogd als <i>{request.user.username}</i>. '
-            f'Klik <a href="/logout/?next=/{root}select/">hier</a> om uit te loggen.'
-            f'Klik <a href="/{root}">hier</a> om door te gaan')
+            f'Klik <a href="/logout/?next=/{root}select/">hier</a> om uit te loggen.')
+            # f'Klik <a href="/{root}">hier</a> om door te gaan')
 
 
 def not_logged_in_message(to_do, root=''):

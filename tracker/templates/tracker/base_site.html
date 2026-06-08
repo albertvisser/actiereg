@@ -15,8 +15,8 @@
 {% block content_title %}{% endblock %}
 {% block content %}
 <div class="col_all">
-    {%if message %}<span style="color: blue; font-weight: bold"> {{ message }}</span>{% else %}{{msg|safe}}
-    {% endif %}</div><div class="clear">&nbsp;</div>
+    {%if message %}<span style="color: blue; font-weight: bold"> {{ message }}</span>
+    {% else %}{{msg|safe}}{% endif %}</div><div class="clear">&nbsp;</div>
 <div class="col_item"><a href="/">Home</a></div>
 <div class="col_item"><a href="/{{root}}/">Index</a></div>
 <div class="col_item">{%if actie%}<a href="/{{root}}/{{actie.id}}/">{%endif%}Actie{%if actie%}</a>{%endif%}</div>
