@@ -42,7 +42,7 @@ function setarch() {
   <div class="clear">&nbsp;</div>
   
   {% if edit %}
-  	<div class="col_lbl"><label for = "about">betreft: </label></div>
+  	<div class="col_lbl"><label for="about">betreft: </label></div>
   	<div class="col_inp">
 		<input type="text" {% if actie.arch or readonly %}readonly="readonly"{% endif %}
     		name="about" id="about" value="{{actie.about}}" />
@@ -54,7 +54,7 @@ function setarch() {
   <div class="clear">&nbsp;</div>
   
   {% if edit %}
-  	<div class="col_lbl"><label for = "title">omschrijving:</label></div>
+  	<div class="col_lbl"><label for="title">omschrijving:</label></div>
   	<div class="col_inp">
 		<input  type="text" {% if actie.arch or readonly %}readonly="readonly"{% endif %}
     		name="title" id="title" value="{{actie.title}}" size="60"/>
@@ -66,9 +66,9 @@ function setarch() {
   <div class="clear">&nbsp;</div>
   
   {% if edit %}
-  	<div class="col_lbl"><label for = "soort">soort:</label></div>
+  	<div class="col_lbl"><label for="soort">soort:</label></div>
   	<div class="col_inp">
-		<select name="soort" {% if actie.arch or readonly %}disabled="disabled"{% endif %}>
+		<select name="soort" id="soort" {% if actie.arch or readonly %}disabled="disabled"{% endif %}>
      			{% for soort in soorten %}
 				<option value="{{soort.value}}"
 					{% if soort == actie.soort %}selected="selected"{% endif %}>
@@ -88,9 +88,9 @@ function setarch() {
   <div class="clear">&nbsp;</div>
   
   {% if edit %}
-  	<div class="col_lbl"><label for = "status">status:</label></div>
+  	<div class="col_lbl"><label for="status">status:</label></div>
   	<div class="col_inp">
-		<select name="status" {% if actie.arch or readonly %}disabled="disabled"{% endif %}>
+		<select name="status" id="status" {% if actie.arch or readonly %}disabled="disabled"{% endif %}>
     			{% for stat in stats %}
 				<option value="{{stat.value}}"
     					{% if stat == actie.status %}selected="selected"{% endif %}>
@@ -112,7 +112,7 @@ function setarch() {
   {% if edit %}
   	<div class="col_lbl"><label for="user">In behandeling bij:</label></div>
   	<div class="col_inp">
-		<select name="user" {% if actie.arch or readonly %}disabled="disabled"{% endif %}>
+		<select name="user" id="user" {% if actie.arch or readonly %}disabled="disabled"{% endif %}>
     			<option value="">(not assigned)</option>
     			{% for user in users %}
 				<option value="{{user.id}}"
@@ -151,7 +151,7 @@ function setarch() {
   {% if edit %}
   	<div class="col_lbl"><label for="data1">melding:</label></div>
 	<div class="col_inp">
-	      <textarea name="data1" cols="84" rows="4">{{actie.melding}}</textarea>
+	      <textarea name="data1" id="data1" cols="84" rows="4">{{actie.melding}}</textarea>
 	</div>
   {% else %}
       	<div class="col_txt">melding:</div>
@@ -212,7 +212,7 @@ function setarch() {
 				{% if curr_ev %}{{curr_ev.id}}{% else %}nieuw{% endif %}
 				/update/" method="post" >{% csrf_token %}
 			<div class="col_lbl">
-				<label for = "data">
+				<label for="data">
         				{%if  curr_ev%}
 						Wijzig opmerking <br/>
 						{{curr_ev.start|date:"d-m-Y H:i:s"}}
@@ -222,7 +222,7 @@ function setarch() {
 				</label>
 			</div>
 	    		<div class="col_inp">
-				<textarea name="data" cols="84" rows="6">{% if curr_ev %}{{curr_ev.text}}{% endif %}</textarea>
+				<textarea name="data" id="data" cols="84" rows="6">{% if curr_ev %}{{curr_ev.text}}{% endif %}</textarea>
             			<input 
 					type="submit" 
 					value="{% if curr_ev %}Wijzigen{%else%}Opvoeren{%endif%}"
