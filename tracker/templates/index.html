@@ -10,14 +10,14 @@
   <div style="max-height: 600px; overflow: auto">
     <div>
       <div class="col_link">&nbsp;</div>
-      <div class="col_stats">alle / open acties / in behandeling / gearchiveerd</div>
+      <div class="col_stats">alle acties / gearchiveerd / open / in&nbsp;behandeling</div>
       <div class="clear">&nbsp;</div>
     </div>
     {% for app in apps %}
       <div>
         <div class="col_link">
           <a href="/{{app.root}}/" title="{{app.name}}">{{app.name|capfirst}}: {{app.desc}}</a></div>
-	<div class="col_stats">{{app.alle}} / {{app.open}} / {% if app.active > 0 %}<b>{% endif %} {{app.active}} {% if app.active > 0 %}</b>{% endif %} / {{ app.arch }}</div>
+	<div class="col_stats">{{app.alle}} / {{ app.arch }} / {{app.open}} / {% if app.active > 0 %}<b>{% endif %} {{app.active}} {% if app.active > 0 %}</b>{% endif %}</div>
         <div class="clear">&nbsp;</div>
       </div>
     {% endfor %}
