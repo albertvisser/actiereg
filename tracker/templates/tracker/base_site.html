@@ -4,24 +4,30 @@
 {% block extrahead %}{% endblock %}
 {% block title %} ActieReg | {{name|capfirst}}: {{ title}}{{ page_titel }}{% endblock %}
 {% block branding %}
-<h1 id="site-name">{{branding|escape}}{% trans 'ActieReg ' %} | {{title}}{{page_titel}}</h1>
+  <h1 id="site-name">{{branding|escape}}{% trans 'ActieReg ' %} | {{title}}{{page_titel}}</h1>
 {% endblock %}
 {% block nav-global %}{{menu}} {% endblock %}
 {% block breadcrumbs %}
-{% for x in crumbs %}
-&rsaquo; <a href="{{x.0}}" title="{{x.2}}">{{x.1}}</a>
-{% endfor %}
+  {% for x in crumbs %}
+    &rsaquo; <a href="{{x.0}}" title="{{x.2}}">{{x.1}}</a>
+  {% endfor %}
 {% endblock %}
 {% block content_title %}{% endblock %}
 {% block content %}
-<div class="col_all">
-    {%if message %}<span style="color: blue; font-weight: bold"> {{ message }}</span>
-    {% else %}{{msg|safe}}{% endif %}</div><div class="clear">&nbsp;</div>
-<div class="col_item"><a href="/">Home</a></div>
-<div class="col_item"><a href="/{{root}}/">Index</a></div>
-<div class="col_item">{%if actie%}<a href="/{{root}}/{{actie.id}}/">{%endif%}Actie{%if actie%}</a>{%endif%}</div>
-    <div class="clear">&nbsp;</div>
-<div class="col_itall">
-{% block content-data %} {{ content }} {% endblock %}
-</div>
+  <div class="col_all">
+      {%if message %}
+        <span style="color: blue; font-weight: bold"> {{ message }}</span>
+      {% else %}
+        {{msg|safe}}{% endif %}
+  </div>
+  <div class="clear">&nbsp;</div>
+  <div class="col_item"><a href="/">Home</a></div>
+  <div class="col_item"><a href="/{{root}}/">Index</a></div>
+  <div class="col_item">
+    {%if actie%}<a href="/{{root}}/{{actie.id}}/">{%endif%}Actie{%if actie%}</a>{%endif%}
+  </div>
+  <div class="clear">&nbsp;</div>
+  <div class="col_itall">
+    {% block content-data %} {{ content }} {% endblock %}
+  </div>
 {% endblock %}

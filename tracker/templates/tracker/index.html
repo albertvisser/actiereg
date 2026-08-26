@@ -1,1 +1,38 @@
-<html><body>{% extends "tracker/base_site.html" %}{% load extratags %}{% block branding %}<h1>{{name|capfirst}} | {{title}}</h1>{% endblock %}{% block content-data %}{% if acties %}  <div class="col_nr head">nummer</div> <div class="col_srt head">soort</div> <div class="col_stat head">status</div> <div class="col_who head">uitgezet bij</div> <div class="col_when head">ltst. wijz.</div> <div class="col_oms head">omschrijving</div> <div class="clear head"> </div>{% for actie in acties %}  <div class="col_nr"><a href="/{{root}}/{{actie.id}}/"> {{actie.nummer}} </a></div> <div class="col_srt"> {{actie.soort.title}} </div> <div class="col_stat"> {{actie.status.title|default:"onbekend"}} </div> <div class="col_who"> {{actie.behandelaar}} </div> <div class="col_when"> {{actie.gewijzigd|date:"d-m-Y"}} </div> <div class="col_oms"> {{actie.about}}: {{actie.title|trim_at:50}} {% if actie.arch %}(A){%endif %}</div> <div class="clear"> </div>{% endfor %}{% else %}<div>{{geen_items|safe}}</div>{% endif %}<a href="/{{root}}/order/"><input type="button" value="sorteren"/>&nbsp;</a><a href="/{{root}}/select/"><input type="button" value="selecteren"/></a>&nbsp;<a href="/{{root}}/search/"><input type="button" value="Zoek naar..."/></a>{% if not readonly %}<a href="/{{root}}/nieuw/"> <input type="button" value="Nieuwe actie opvoeren"/></a>{% endif %}{% if admin %} <a href="/{{root}}/settings/"><input type="button" value="settings"/></a>{% endif%}{% endblock %}</body></html>
+{% extends "tracker/base_site.html" %}
+{% load extratags %}
+{% block title %}{{name|capfirst}} | {{title}}{% endblock %}
+{% block branding %}<h1>{{name|capfirst}} | {{title}}</h1>{% endblock %}
+{% block content-data %}
+  {% if acties %}
+    <div class="col_nr head">nummer</div>
+    <div class="col_srt head">soort</div>
+    <div class="col_stat head">status</div>
+    <div class="col_who head">uitgezet bij</div>
+    <div class="col_when head">ltst. wijz.</div>
+    <div class="col_oms head">omschrijving</div>
+    <div class="clear head"> </div>
+    {% for actie in acties %}
+      <div class="col_nr"> <a href="/{{root}}/{{actie.id}}/"> {{actie.nummer}} </a></div>
+      <div class="col_srt"> {{actie.soort.title}} </div>
+      <div class="col_stat"> {{actie.status.title|default:"onbekend"}} </div>
+      <div class="col_who"> {{actie.behandelaar}} </div>
+      <div class="col_when"> {{actie.gewijzigd|date:"d-m-Y"}} </div>
+      <div class="col_oms">
+         {{actie.about}}: {{actie.title|trim_at:50}}
+         {% if actie.arch %}(A){%endif %}
+      </div>
+      <div class="clear"> </div>
+    {% endfor %}
+  {% else %}
+    <div>{{geen_items|safe}}</div>i
+  {% endif %}
+  <a href="/{{root}}/order/"><input type="button" value="sorteren"/>&nbsp;</a>
+  <a href="/{{root}}/select/"><input type="button" value="selecteren"/></a>&nbsp;
+  <a href="/{{root}}/search/"><input type="button" value="Zoek naar..."/></a>
+  {% if not readonly %}
+    <a href="/{{root}}/nieuw/"> <input type="button" value="Nieuwe actie opvoeren"/></a>
+  {% endif %}
+  {% if admin %}
+    <a href="/{{root}}/settings/"><input type="button" value="settings"/></a>
+  {% endif%}
+{% endblock %}

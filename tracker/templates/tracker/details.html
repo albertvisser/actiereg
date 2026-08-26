@@ -11,6 +11,7 @@ function setarch() {
 }
 </script>
 {%endblock%}
+{% block title %}{{name|capfirst}} | {{title}} {{ actie.title }}{% endblock %}
 {% block branding %}<h1>{{name|capfirst}} | {{title}} {{ actie.title|trim_at:80 }}</h1>{% endblock %}
 {% block content-data %}
 <form
